@@ -4,6 +4,7 @@ import { GatePage } from './components/GatePage';
 import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
 import { ReviewPanel } from './components/ReviewPanel';
+import { FeedbackSurvey } from './components/FeedbackSurvey';
 import { Icon } from './components/Icon';
 import { SAMPLE_CASE } from './sampleCase';
 import {
@@ -20,7 +21,7 @@ import {
 const STORAGE_KEY = 'regassess-answers';
 const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
-type Screen = 'gate' | 'dashboard' | 'assess';
+type Screen = 'gate' | 'dashboard' | 'assess' | 'feedback';
 
 const isAnsweredValue = (value: unknown): boolean => {
   if (Array.isArray(value)) return value.length > 0;
@@ -310,6 +311,13 @@ export const App: React.FC = () => {
     );
   }
 
+  // --- Feedback survey ---
+  if (screen === 'feedback') {
+    return (
+      <FeedbackSurvey onBack={() => setScreen('assess')} />
+    );
+  }
+
   // --- Assessment (existing flow) ---
 
   // Render current block content
@@ -326,6 +334,7 @@ export const App: React.FC = () => {
           blocks={blocks}
           getQuestionsForBlock={getQuestionsForBlock}
           onEditBlock={handleBlockSelect}
+          onFeedback={() => setScreen('feedback')}
         />
       );
     }

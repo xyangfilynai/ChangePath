@@ -24,6 +24,7 @@ interface ReviewPanelProps {
   blocks: Block[];
   getQuestionsForBlock: (blockId: string) => Question[];
   onEditBlock: (blockIndex: number) => void;
+  onFeedback?: () => void;
 }
 
 // Map pathway names to docRequirements keys
@@ -57,6 +58,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   blocks,
   getQuestionsForBlock,
   onEditBlock,
+  onFeedback,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['pathway', 'summary', 'documentation', 'reasoning', 'A', 'B', 'C', 'D', 'E', 'F'])
@@ -899,6 +901,64 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </div>
         </div>
       </div>
+      {/* Feedback CTA */}
+      {onFeedback && (
+        <div
+          data-testid="feedback-cta"
+          style={{
+            padding: 'var(--space-lg)',
+            borderRadius: 'var(--radius-lg)',
+            background: 'var(--color-info-bg)',
+            border: '1px solid var(--color-info-border)',
+            marginTop: 'var(--space-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--space-lg)',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div>
+            <h4 style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--color-text)',
+              margin: '0 0 var(--space-xs)',
+            }}>
+              How did this assessment work for you?
+            </h4>
+            <p style={{
+              fontSize: 13,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.5,
+              margin: 0,
+            }}>
+              Share a quick survey to help us improve — takes about 2 minutes.
+            </p>
+          </div>
+          <button
+            onClick={onFeedback}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-sm)',
+              padding: 'var(--space-md) var(--space-lg)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-primary)',
+              border: 'none',
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            Share Feedback
+            <Icon name="arrow" size={16} color="#fff" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
