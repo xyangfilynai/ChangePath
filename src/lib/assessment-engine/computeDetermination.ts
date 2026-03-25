@@ -1,0 +1,153 @@
+import { Answer, AuthPathway, Pathway, Answers } from './types';
+
+export const computeDetermination = (ans: Answers) => {
+  const _isIntendedUseChange = ans.B3 === Answer.Yes;
+  const _isIntendedUseUncertain = ans.B3 === Answer.Uncertain;
+  const _isCyberOnly = !_isIntendedUseChange && !_isIntendedUseUncertain && ans.C1 === Answer.Yes;
+  const _isBugFix = !_isIntendedUseChange && !_isIntendedUseUncertain && !_isCyberOnly && ans.C2 === Answer.Yes;
+  const _isPMA = ans.A1 === AuthPathway.PMA;
+  const _isDeNovo = ans.A1 === AuthPathway.DeNovo;
+  const _hasPCCP = ans.A2 === Answer.Yes;
+
+  const _deNovoDeviceTypeFitFailed = _isDeNovo && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    (ans.C0_DN1 === Answer.No || ans.C0_DN2 === Answer.No);
+  const _deNovoDeviceTypeFitUncertain = _isDeNovo && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    (ans.C0_DN1 === Answer.Uncertain || ans.C0_DN2 === Answer.Uncertain);
+
+  const _baselineMissing = !ans.A1b || !ans.A1c || !ans.A1d;
+  const _baselineIncomplete = _baselineMissing && !_isIntendedUseChange;
+
+  const sigAnswers = [ans.C3, ans.C4, ans.C5, ans.C6];
+  const _baseSignificant = !_isPMA && !_isIntendedUseUncertain && (
+    sigAnswers.includes(Answer.Yes) || sigAnswers.includes(Answer.Uncertain)
+  );
+  const _hasUncertainSignificance = !_isPMA && !_isIntendedUseUncertain && sigAnswers.includes(Answer.Uncertain);
+  const _allSignificanceNo = !_isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    !_isCyberOnly && !_isBugFix &&
+    ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No;
+
+  const _cumulativeEscalation = !_isPMA && (ans.C10 === Answer.Yes || ans.C10 === Answer.Uncertain);
+  const _seNotSupportable = !_isPMA && ans.C11 === Answer.No;
+  const _seUncertain = !_isPMA && ans.C11 === Answer.Uncertain;
+  const _needsCumulativeSEQuestion = !_isPMA && ans.A1 === AuthPathway.FiveOneZeroK &&
+    !_isIntendedUseChange && !_isIntendedUseUncertain && !_isCyberOnly && !_isBugFix &&
+    ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No &&
+    ans.C10 === Answer.Yes && ![Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C11);
+
+  const _significanceIncomplete = !_isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    !_isCyberOnly && !_isBugFix && (
+      (!_baseSignificant && !_allSignificanceNo) ||
+      _deNovoDeviceTypeFitUncertain ||
+      _seUncertain ||
+      _needsCumulativeSEQuestion
+    );
+
+  const _genAIHighImpactChange = !_isPMA && (ans.D1 === Answer.Yes || ans.D4 === Answer.Yes);
+
+  const _consistencyIssues: string[] = [];
+  if (!_isPMA && ans.D4 === Answer.Yes && ans.C5 === Answer.No) {
+    _consistencyIssues.push("A GenAI guardrail / safety filter change was marked YES, but the risk-control significance question was marked NO. Reassess C5 before relying on the determination.");
+  }
+  if (!_isPMA && ans.D1 === Answer.Yes && ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No) {
+    _consistencyIssues.push("A foundation/base model change was marked non-significant across all U.S. significance questions. This is unusual and should be re-reviewed against performance, risk, and intended-use baselines.");
+  }
+  if (!_isPMA && (ans.D2 === Answer.Yes || ans.D3 === Answer.Yes) && ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No) {
+    _consistencyIssues.push("A prompt or RAG knowledge-base change was marked non-significant across all U.S. significance questions. Confirm the clinical behavior, risk-control, and performance rationale before closing as Letter to File.");
+  }
+  if (ans.E3 === Answer.Yes && ans.B3 === Answer.No) {
+    _consistencyIssues.push("New demographic populations were introduced while intended-use impact was marked NO. Confirm that this does not expand the authorized population or effective clinical scope.");
+  }
+  if (_cumulativeEscalation && _allSignificanceNo) {
+    _consistencyIssues.push("Cumulative drift / substantial-equivalence answers conflict with an otherwise non-significant U.S. assessment. Reassess against the last authorized baseline before finalizing.");
+  }
+  if (_deNovoDeviceTypeFitFailed && _allSignificanceNo) {
+    _consistencyIssues.push("The modified device may no longer fit the De Novo device type / special controls, but all U.S. significance questions were marked non-significant. The device-type fit concern takes priority — an FDA Pre-Submission is strongly recommended before closing as Letter to File.");
+  }
+  if (_deNovoDeviceTypeFitUncertain) {
+    _consistencyIssues.push("The modified device\u2019s continued fit with the De Novo device type / special controls is uncertain. Resolve this with expert review or an FDA Pre-Submission before relying on a non-submission pathway.");
+  }
+  if (ans.B1 === "Post-Market Surveillance" && ans.C5 === Answer.No && (ans.B2 || "").includes("Monitoring threshold")) {
+    _consistencyIssues.push("A monitoring threshold change was reported with no risk-control impact. If the change weakens monitoring sensitivity, it may affect an existing risk control measure. Reassess C5.");
+  }
+  if (_baselineIncomplete && !_isCyberOnly && !_isBugFix) {
+    _consistencyIssues.push("One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'");
+  }
+  const _consistencyBlock = false;
+
+  const _isSignificant = _baseSignificant || _seNotSupportable;
+
+  const _pmaQuestionsAnswered = _isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && (
+    [Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C_PMA1) &&
+    [Answer.Yes, Answer.No].includes(ans.C_PMA2) &&
+    [Answer.Yes, Answer.No].includes(ans.C_PMA3)
+  );
+  const _pmaIncomplete = _isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && !_pmaQuestionsAnswered;
+  const _pmaRequiresSupplement = _isPMA && (
+    _isIntendedUseChange || ans.C_PMA1 === Answer.Yes || ans.C_PMA1 === Answer.Uncertain ||
+    ans.C_PMA2 === Answer.Yes || ans.C_PMA3 === Answer.Yes
+  );
+
+  const _p5Applicable = ans.P1 === Answer.Yes && ans.P2 !== Answer.No && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes;
+  const _pccpScopeVerified = ans.P1 === Answer.Yes && ans.P2 === Answer.Yes && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes &&
+    (!_p5Applicable || ans.P5 === Answer.Yes);
+  const _pccpScopeFailed = _hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    (ans.P1 === Answer.No || ans.P2 === Answer.No || ans.P3 === Answer.No || ans.P4 === Answer.No || ans.P5 === Answer.No);
+  const _pccpIncomplete = _hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    !_pccpScopeVerified && !_pccpScopeFailed &&
+    (_isSignificant || (_isPMA && !_pmaIncomplete));
+
+  let pathway;
+  if (_isPMA) {
+    if (_pmaIncomplete) pathway = Pathway.AssessmentIncomplete;
+    else if (_isIntendedUseChange || _isIntendedUseUncertain) pathway = Pathway.PMASupplementRequired;
+    else if (_hasPCCP && _pccpScopeVerified && _pmaRequiresSupplement) pathway = Pathway.ImplementPCCP;
+    else if (_hasPCCP && _pccpIncomplete && _pmaRequiresSupplement) pathway = Pathway.AssessmentIncomplete;
+    else if (_pmaRequiresSupplement) pathway = Pathway.PMASupplementRequired;
+    else pathway = Pathway.PMAAnnualReport;
+  } else {
+    if (_consistencyBlock) pathway = Pathway.AssessmentIncomplete;
+    else if (_isIntendedUseChange) pathway = Pathway.NewSubmission;
+    else if (_isIntendedUseUncertain) pathway = Pathway.NewSubmission;
+    else if (_deNovoDeviceTypeFitFailed) pathway = Pathway.NewSubmission;
+    else if (_isCyberOnly) pathway = Pathway.LetterToFile;
+    else if (_isBugFix) pathway = Pathway.LetterToFile;
+    else if (_significanceIncomplete) pathway = Pathway.AssessmentIncomplete;
+    else if (_isSignificant) {
+      if (_hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain && _pccpScopeVerified) pathway = Pathway.ImplementPCCP;
+      else if (_hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain && _pccpIncomplete) pathway = Pathway.AssessmentIncomplete;
+      else pathway = Pathway.NewSubmission;
+    } else if (_allSignificanceNo) pathway = Pathway.LetterToFile;
+    else pathway = Pathway.AssessmentIncomplete;
+  }
+
+  const isDocOnly = pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport;
+  const isPCCPImpl = pathway === Pathway.ImplementPCCP;
+  const isNewSub = pathway === Pathway.NewSubmission || pathway === Pathway.PMASupplementRequired;
+  const isIncomplete = pathway === Pathway.AssessmentIncomplete;
+
+  const _pccpRecommendation = (() => {
+    if (_hasPCCP || isDocOnly || isPCCPImpl || isIncomplete) return null;
+    if (!isNewSub && !_pmaRequiresSupplement) return null;
+    return { shouldRecommend: true };
+  })();
+
+  return {
+    pathway, isDocOnly, isPCCPImpl, isNewSub, isIncomplete, isLTF: isDocOnly,
+    isIntendedUseChange: _isIntendedUseChange, isIntendedUseUncertain: _isIntendedUseUncertain,
+    isCyberOnly: _isCyberOnly, isBugFix: _isBugFix,
+    isSignificant: _isSignificant, baseSignificant: _baseSignificant, allSignificanceNo: _allSignificanceNo,
+    significanceIncomplete: _significanceIncomplete,
+    hasUncertainSignificance: _hasUncertainSignificance,
+    cumulativeEscalation: _cumulativeEscalation,
+    seNotSupportable: _seNotSupportable,
+    seUncertain: _seUncertain,
+    genAIHighImpactChange: _genAIHighImpactChange,
+    consistencyIssues: _consistencyIssues,
+    consistencyBlock: _consistencyBlock,
+    deNovoDeviceTypeFitFailed: _deNovoDeviceTypeFitFailed,
+    baselineIncomplete: _baselineIncomplete,
+    pmaRequiresSupplement: _pmaRequiresSupplement, pmaIncomplete: _pmaIncomplete,
+    pccpScopeVerified: _pccpScopeVerified, pccpScopeFailed: _pccpScopeFailed, pccpIncomplete: _pccpIncomplete,
+    pccpRecommendation: _pccpRecommendation,
+  };
+};

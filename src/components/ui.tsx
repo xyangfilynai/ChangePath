@@ -1,0 +1,942 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { T, font, fontMono } from '../theme';
+import { Icon } from './Icon';
+import {
+  guidanceLinks,
+  findGuidanceLink,
+  sourceCitations,
+  REG_SOURCES,
+  getSourceBadge,
+  statusBadgeStyle,
+  statusBadgeLabel,
+} from '../lib/content';
+
+/* ── Re-export content helpers so consumers can import from ui if needed ── */
+export { getSourceBadge, statusBadgeStyle, statusBadgeLabel };
+
+/* ── Collapsible ── */
+
+interface CollapsibleProps {
+  label: React.ReactNode;
+  icon?: string;
+  color?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  badge?: React.ReactNode;
+}
+
+export const Collapsible: React.FC<CollapsibleProps> = ({
+  label,
+  icon,
+  color,
+  defaultOpen = false,
+  children,
+  badge,
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: 12,
+          color: color || T.slateMid,
+          fontWeight: 600,
+          fontFamily: font,
+          padding: '4px 0',
+          width: '100%',
+          textAlign: 'left',
+        }}
+      >
+        {icon && <Icon name={icon} size={12} color={color || T.slateMid} />}
+        <span style={{ flex: 1 }}>{label}</span>
+        {badge && (
+          <span
+            style={{
+              fontSize: 9.5,
+              fontWeight: 700,
+              padding: '1px 6px',
+              borderRadius: 4,
+              background: T.sandMid,
+              color: T.slateMid,
+              marginRight: 4,
+            }}
+          >
+            {badge}
+          </span>
+        )}
+        <span
+          style={{
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: 'transform .15s ease',
+            display: 'inline-flex',
+            flexShrink: 0,
+          }}
+        >
+          <Icon name="arrow" size={10} color={color || T.slateMid} />
+        </span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 6, animation: 'fadeIn .15s ease' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── ReportSection ── */
+
+interface ReportSectionProps {
+  title: string;
+  icon?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  count?: number;
+  accentColor?: string;
+  subtitle?: string;
+}
+
+export const ReportSection: React.FC<ReportSectionProps> = ({
+  title,
+  icon,
+  defaultOpen = false,
+  children,
+  count,
+  accentColor,
+  subtitle,
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+  const accent = accentColor || T.slate;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          width: '100%',
+          padding: '14px 20px',
+          background: open ? T.white : T.cream,
+          border: `1px solid ${open ? T.border : T.sandDark}`,
+          borderRadius: open ? '10px 10px 0 0' : 10,
+          cursor: 'pointer',
+          fontFamily: font,
+          transition: 'all .15s ease',
+        }}
+      >
+        <Icon name={icon || 'info'} size={15} color={accent} />
+        <span style={{ flex: 1, textAlign: 'left' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.navy }}>
+            {title}
+          </span>
+          {subtitle && (
+            <span
+              style={{ fontSize: 11.5, color: T.textLight, marginLeft: 8 }}
+            >
+              {subtitle}
+            </span>
+          )}
+        </span>
+        {count !== undefined && (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: 10,
+              background:
+                accent === T.red
+                  ? T.redLight
+                  : accent === T.amber
+                    ? T.amberLight
+                    : T.sandMid,
+              color:
+                accent === T.red
+                  ? T.red
+                  : accent === T.amber
+                    ? T.amber
+                    : T.slateMid,
+            }}
+          >
+            {count}
+          </span>
+        )}
+        <span
+          style={{
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: 'transform .2s ease',
+            display: 'inline-flex',
+          }}
+        >
+          <Icon name="arrow" size={12} color={T.slateMid} />
+        </span>
+      </button>
+      {open && (
+        <div
+          style={{
+            padding: '18px 20px',
+            background: T.white,
+            border: `1px solid ${T.border}`,
+            borderTop: 'none',
+            borderRadius: '0 0 10px 10px',
+            animation: 'fadeIn .15s ease',
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── DebouncedText ── */
+
+interface DebouncedTextProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}
+
+export const DebouncedText: React.FC<DebouncedTextProps> = ({
+  value,
+  onChange,
+  placeholder,
+  rows,
+}) => {
+  const [local, setLocal] = useState(value || '');
+  const committed = useRef(value || '');
+  useEffect(() => {
+    if (value !== committed.current) {
+      setLocal(value || '');
+      committed.current = value || '';
+    }
+  }, [value]);
+  const commit = () => {
+    if (local !== committed.current) {
+      committed.current = local;
+      onChange(local);
+    }
+  };
+  return (
+    <textarea
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={commit}
+      placeholder={placeholder || 'Describe in detail...'}
+      rows={rows || 3}
+      style={{
+        padding: '10px 14px',
+        borderRadius: 7,
+        border: `1.5px solid ${T.border}`,
+        fontSize: 14,
+        fontFamily: font,
+        width: '100%',
+        outline: 'none',
+        resize: 'vertical',
+        lineHeight: 1.6,
+        boxSizing: 'border-box',
+      }}
+    />
+  );
+};
+
+/* ── DebouncedNumber ── */
+
+interface DebouncedNumberProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+export const DebouncedNumber: React.FC<DebouncedNumberProps> = ({
+  value,
+  onChange,
+  placeholder,
+}) => {
+  const [local, setLocal] = useState(value || '');
+  const committed = useRef(value || '');
+  useEffect(() => {
+    if (value !== committed.current) {
+      setLocal(value || '');
+      committed.current = value || '';
+    }
+  }, [value]);
+  const commit = () => {
+    if (local !== committed.current) {
+      committed.current = local;
+      onChange(local);
+    }
+  };
+  return (
+    <input
+      type="number"
+      min="0"
+      max="999"
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={commit}
+      placeholder={placeholder || 'Enter number'}
+      style={{
+        padding: '10px 14px',
+        borderRadius: 7,
+        border: `1.5px solid ${T.border}`,
+        fontSize: 14,
+        fontFamily: font,
+        width: 140,
+        outline: 'none',
+      }}
+    />
+  );
+};
+
+/* ── GuidanceRef ── */
+
+interface GuidanceRefProps {
+  code: string;
+  showSection?: boolean;
+}
+
+export const GuidanceRef: React.FC<GuidanceRefProps> = ({
+  code,
+  showSection = true,
+}) => {
+  const link = findGuidanceLink(code);
+  if (!link)
+    return (
+      <span style={{ fontFamily: fontMono, fontSize: 11 }}>{code}</span>
+    );
+  const section = code
+    .replace(link.shortName, '')
+    .replace(code.split(' ')[0], '')
+    .trim();
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        color: T.blue,
+        textDecoration: 'none',
+        borderBottom: `1px solid ${T.blue}33`,
+        fontSize: 12,
+        fontWeight: 500,
+        lineHeight: 1.4,
+        display: 'inline',
+      }}
+      title={link.fullName + (section ? ` — ${section}` : '')}
+    >
+      {link.fullName}
+      {showSection && section ? ` ${section}` : ''}
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        style={{
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          marginLeft: 3,
+          flexShrink: 0,
+          opacity: 0.6,
+        }}
+      >
+        <path
+          d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"
+          strokeWidth="2"
+          stroke="currentColor"
+          fill="none"
+        />
+        <polyline
+          points="15,3 21,3 21,9"
+          strokeWidth="2"
+          stroke="currentColor"
+          fill="none"
+        />
+        <line
+          x1="10"
+          y1="14"
+          x2="21"
+          y2="3"
+          strokeWidth="2"
+          stroke="currentColor"
+        />
+      </svg>
+    </a>
+  );
+};
+
+/* ── HelpTextWithLinks ── */
+
+interface HelpTextSegment {
+  type: 'text' | 'link';
+  value: string;
+  url?: string;
+  fullName?: string;
+}
+
+interface RefPattern {
+  pattern: RegExp;
+  code: string;
+}
+
+interface HelpTextWithLinksProps {
+  text: string;
+}
+
+export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({
+  text,
+}) => {
+  if (!text) return null;
+
+  const refPatterns: RefPattern[] = [
+    { pattern: /FDA Software Change Guidance[^.;,)"]*/g, code: 'FDA-SW-510K-2017' },
+    { pattern: /FDA PCCP Final Guidance[^.;,)"]*/g, code: 'FDA-PCCP-2025' },
+    { pattern: /FDA AI-DSF Guidance[^.;,)"]*/g, code: 'FDA-LIFECYCLE-2025' },
+    { pattern: /FDA Cybersecurity Guidance[^.;,)"]*/g, code: 'FDA-CYBER-2026' },
+    { pattern: /21 CFR 807\.81\(a\)\(3\)/g, code: '21 CFR 807.81(a)(3)' },
+    { pattern: /21 CFR 814\.39[^.;,)"\s]*/g, code: '21 CFR 814.39' },
+    { pattern: /21 CFR 814\.84/g, code: '21 CFR 814.84' },
+    { pattern: /MDCG 2020-3[^.;,)"]*/g, code: 'MDCG-2020-3' },
+    { pattern: /MDCG 2025-6[^.;,)"]*/g, code: 'MDCG 2025-6' },
+    { pattern: /MDCG 2022-6/g, code: 'MDCG-2022-6' },
+    { pattern: /EU AI Act Article[^.;,)"]*/g, code: 'EU AI Act' },
+    { pattern: /ISO 14971[^.;,)"]*/g, code: 'ISO 14971:2019' },
+    { pattern: /IEC 62304[^.;,)"]*/g, code: 'IEC 62304' },
+    { pattern: /ISO 13485[^.;,)"]*/g, code: 'ISO 13485:2016' },
+    { pattern: /FDORA §515C/g, code: 'FDORA 515C' },
+    { pattern: /§524B/g, code: 'FD&C 524B' },
+    { pattern: /Pre-Submission \(Q-Sub\)/g, code: 'FDA Q-Sub' },
+    { pattern: /QMSR/g, code: 'QMSR' },
+  ];
+
+  const segments: HelpTextSegment[] = [];
+  let remaining = text;
+  let safetyCounter = 0;
+
+  while (remaining.length > 0 && safetyCounter < 200) {
+    safetyCounter++;
+    let earliestMatch: RegExpExecArray | null = null;
+    let earliestIndex = remaining.length;
+    let matchedPattern: RefPattern | null = null;
+
+    for (const ref of refPatterns) {
+      const regex = new RegExp(ref.pattern.source, 'g');
+      const match = regex.exec(remaining);
+      if (match && match.index < earliestIndex) {
+        earliestMatch = match;
+        earliestIndex = match.index;
+        matchedPattern = ref;
+      }
+    }
+
+    if (!earliestMatch || !matchedPattern) {
+      segments.push({ type: 'text', value: remaining });
+      break;
+    }
+
+    if (earliestIndex > 0) {
+      segments.push({
+        type: 'text',
+        value: remaining.substring(0, earliestIndex),
+      });
+    }
+    const link = guidanceLinks[matchedPattern.code];
+    if (link) {
+      segments.push({
+        type: 'link',
+        value: link.fullName,
+        url: link.url,
+        fullName: link.fullName,
+      });
+    } else {
+      segments.push({ type: 'text', value: earliestMatch[0] });
+    }
+    remaining = remaining.substring(earliestIndex + earliestMatch[0].length);
+  }
+
+  return (
+    <span>
+      {segments.map((seg, i) =>
+        seg.type === 'link' ? (
+          <a
+            key={i}
+            href={seg.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={seg.fullName}
+            style={{
+              color: T.blue,
+              textDecoration: 'none',
+              borderBottom: `1px dotted ${T.blue}55`,
+              fontWeight: 500,
+            }}
+          >
+            {seg.value}
+            <svg
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              style={{
+                display: 'inline-block',
+                verticalAlign: 'middle',
+                marginLeft: 2,
+                opacity: 0.5,
+              }}
+            >
+              <path
+                d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"
+                strokeWidth="2.5"
+                stroke="currentColor"
+                fill="none"
+              />
+              <polyline
+                points="15,3 21,3 21,9"
+                strokeWidth="2.5"
+                stroke="currentColor"
+                fill="none"
+              />
+              <line
+                x1="10"
+                y1="14"
+                x2="21"
+                y2="3"
+                strokeWidth="2.5"
+                stroke="currentColor"
+              />
+            </svg>
+          </a>
+        ) : (
+          <span key={i}>{seg.value}</span>
+        ),
+      )}
+    </span>
+  );
+};
+
+/* ── ConfBadge ── */
+
+interface ConfBadgeProps {
+  level: 'HIGH' | 'MODERATE' | 'LOW';
+  size?: 'md' | 'lg';
+}
+
+export const ConfBadge: React.FC<ConfBadgeProps> = ({
+  level,
+  size = 'md',
+}) => {
+  const colors: Record<string, { bg: string; color: string; border: string }> =
+    {
+      HIGH: { bg: T.greenLight, color: T.green, border: '#C6E7D4' },
+      MODERATE: { bg: T.amberLight, color: T.amber, border: '#F5E6B8' },
+      LOW: { bg: T.redLight, color: T.red, border: '#F5CACA' },
+    };
+  const c = colors[level] || colors.MODERATE;
+  const s =
+    size === 'lg'
+      ? { px: 16, py: 8, fs: 14 }
+      : { px: 10, py: 4, fs: 11 };
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: `${s.py}px ${s.px}px`,
+        background: c.bg,
+        color: c.color,
+        borderRadius: 6,
+        fontSize: s.fs,
+        fontWeight: 700,
+        letterSpacing: '.6px',
+        border: `1px solid ${c.border}`,
+        lineHeight: 1,
+      }}
+    >
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: c.color,
+          flexShrink: 0,
+        }}
+      />{' '}
+      {level}
+    </span>
+  );
+};
+
+/* ── AuthorityTag ── */
+
+interface AuthorityTagProps {
+  level: string;
+  compact?: boolean;
+}
+
+export const AuthorityTag: React.FC<AuthorityTagProps> = ({
+  level,
+  compact = false,
+}) => {
+  const levels: Record<
+    string,
+    { label: string; bg: string; color: string; border: string; icon: string }
+  > = {
+    regulation: {
+      label: 'REGULATION',
+      bg: '#EFF6FF',
+      color: '#2563EB',
+      border: '#D0E3FF',
+      icon: '\u2696',
+    },
+    final_guidance: {
+      label: 'FINAL GUIDANCE',
+      bg: '#E7F5EE',
+      color: '#1B7D56',
+      border: '#C6E7D4',
+      icon: '\u2713',
+    },
+    draft_guidance: {
+      label: 'DRAFT GUIDANCE',
+      bg: '#FEF7E0',
+      color: '#B8860B',
+      border: '#F5E6B8',
+      icon: '\u25D0',
+    },
+    best_practice: {
+      label: 'BEST PRACTICE',
+      bg: '#F8F6F1',
+      color: '#64748B',
+      border: '#E2DED5',
+      icon: '\u25CB',
+    },
+    internal_policy: {
+      label: 'CONSERVATIVE POLICY',
+      bg: '#FFF8F0',
+      color: '#9B7D5C',
+      border: '#F0DCC8',
+      icon: '\u25C7',
+    },
+    standard: {
+      label: 'STANDARD',
+      bg: '#F0F0FF',
+      color: '#6B5CE7',
+      border: '#D8D5F0',
+      icon: '\u25AA',
+    },
+  };
+  const l = levels[(level || '').toLowerCase()] || levels.final_guidance;
+  const isDashed = (level || '').toLowerCase() === 'internal_policy';
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: compact ? 3 : 4,
+        padding: compact ? '1px 5px' : '2px 8px',
+        borderRadius: 4,
+        fontSize: compact ? 8.5 : 9.5,
+        fontWeight: 700,
+        letterSpacing: '.5px',
+        background: l.bg,
+        color: l.color,
+        border: `1px ${isDashed ? 'dashed' : 'solid'} ${l.border}`,
+        lineHeight: 1,
+        verticalAlign: 'middle',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span style={{ fontSize: compact ? 7 : 8 }}>{l.icon}</span> {l.label}
+    </span>
+  );
+};
+
+/* ── Disclaimer ── */
+
+interface DisclaimerProps {
+  compact?: boolean;
+}
+
+export const Disclaimer: React.FC<DisclaimerProps> = ({
+  compact = false,
+}) => (
+  <div
+    style={{
+      background: '#FFF8F0',
+      border: '1px solid #F0DCC8',
+      borderRadius: 8,
+      padding: compact ? '10px 14px' : '12px 16px',
+      marginBottom: compact ? 12 : 20,
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      <span
+        style={{
+          fontSize: compact ? 12 : 14,
+          flexShrink: 0,
+          marginTop: 1,
+        }}
+      >
+        {'\u2696'}
+      </span>
+      <div
+        style={{
+          fontSize: compact ? 11 : 12,
+          color: '#78593D',
+          lineHeight: 1.55,
+        }}
+      >
+        <strong style={{ color: '#1B7D56' }}>Intended for:</strong> Internal
+        change-control, RA review initiation, and submission planning.{' '}
+        <strong style={{ color: '#5C3D1F' }}>Not intended for:</strong> Formal
+        regulatory judgment, legal advice, or citation in submissions.{' '}
+        U.S.-primary assessment using FDA software change framework and PCCP
+        scope verification. Non-U.S. jurisdictions are covered by escalation
+        cues only, not full determinations.
+        {!compact && (
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 10.5,
+              fontFamily: fontMono,
+              color: '#9B7D5C',
+            }}
+          >
+            v1 &bull; Sources verified Mar 2026 &bull; Primary: US (FDA) &bull;
+            Follow-up cues: EU, UK, CA, JP, CN
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+/* ── RadioRow ── */
+
+interface RadioRowProps {
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}
+
+export const RadioRow: React.FC<RadioRowProps> = ({
+  name,
+  value,
+  onChange,
+  options,
+}) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    {options.map((opt) => (
+      <label
+        key={opt}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          cursor: 'pointer',
+          padding: '6px 10px',
+          borderRadius: 6,
+          background: value === opt ? T.blueLight : 'transparent',
+          border: `1px solid ${value === opt ? '#BFDBFE' : 'transparent'}`,
+          transition: 'all .1s',
+        }}
+      >
+        <input
+          type="radio"
+          name={name}
+          value={opt}
+          checked={value === opt}
+          onChange={() => onChange(opt)}
+          style={{ accentColor: T.blue }}
+        />
+        <span style={{ fontSize: 13, color: T.text }}>{opt}</span>
+      </label>
+    ))}
+  </div>
+);
+
+/* ── CheckboxGroup ── */
+
+interface CheckboxGroupProps {
+  values: string[];
+  onChange: (values: string[]) => void;
+  options: string[];
+}
+
+export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
+  values,
+  onChange,
+  options,
+}) => {
+  const toggle = (opt: string) => {
+    const current = values || [];
+    onChange(
+      current.includes(opt)
+        ? current.filter((v) => v !== opt)
+        : [...current, opt],
+    );
+  };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {options.map((opt) => (
+        <label
+          key={opt}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            padding: '6px 10px',
+            borderRadius: 6,
+            background: (values || []).includes(opt)
+              ? T.blueLight
+              : 'transparent',
+            border: `1px solid ${(values || []).includes(opt) ? '#BFDBFE' : 'transparent'}`,
+            transition: 'all .1s',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={(values || []).includes(opt)}
+            onChange={() => toggle(opt)}
+            style={{ accentColor: T.blue }}
+          />
+          <span style={{ fontSize: 13, color: T.text }}>{opt}</span>
+        </label>
+      ))}
+    </div>
+  );
+};
+
+/* ── GlossaryPanel ── */
+
+import { glossary } from '../lib/content';
+
+interface GlossaryPanelProps {
+  searchTerm?: string;
+}
+
+export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' }) => {
+  const [localSearch, setLocalSearch] = useState(searchTerm);
+  const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
+
+  const filteredTerms = Object.entries(glossary).filter(([term, definition]) => {
+    const search = localSearch.toLowerCase();
+    return term.toLowerCase().includes(search) || definition.toLowerCase().includes(search);
+  });
+
+  const toggleTerm = (term: string) => {
+    const newSet = new Set(expandedTerms);
+    if (newSet.has(term)) {
+      newSet.delete(term);
+    } else {
+      newSet.add(term);
+    }
+    setExpandedTerms(newSet);
+  };
+
+  return (
+    <div>
+      {/* Search input */}
+      <div style={{ marginBottom: 12 }}>
+        <input
+          type="text"
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          placeholder="Search glossary..."
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 7,
+            border: `1.5px solid ${T.border}`,
+            fontSize: 13,
+            fontFamily: font,
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+      </div>
+
+      {/* Terms list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {filteredTerms.length === 0 ? (
+          <div style={{ 
+            padding: 16, 
+            textAlign: 'center', 
+            color: T.textLight,
+            fontSize: 13,
+          }}>
+            No glossary terms match your search.
+          </div>
+        ) : (
+          filteredTerms.map(([term, definition]) => {
+            const isExpanded = expandedTerms.has(term);
+            return (
+              <div key={term} style={{
+                borderRadius: 8,
+                border: `1px solid ${T.border}`,
+                background: T.white,
+                overflow: 'hidden',
+              }}>
+                <button
+                  onClick={() => toggleTerm(term)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: isExpanded ? T.cream : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: font,
+                    textAlign: 'left',
+                  }}
+                >
+                  <span style={{
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: T.navy,
+                  }}>
+                    {term}
+                  </span>
+                  <span style={{
+                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                    transition: 'transform .15s ease',
+                    display: 'inline-flex',
+                    flexShrink: 0,
+                  }}>
+                    <Icon name="arrow" size={12} color={T.slateMid} />
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div style={{
+                    padding: '12px 16px',
+                    borderTop: `1px solid ${T.border}`,
+                    fontSize: 12,
+                    lineHeight: 1.65,
+                    color: T.text,
+                    animation: 'fadeIn .15s ease',
+                  }}>
+                    <HelpTextWithLinks text={definition} />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
