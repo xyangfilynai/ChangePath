@@ -153,6 +153,21 @@ export const docRequirements: Record<string, any> = {
     basis: "21 CFR 814.39; PMA Supplement Guidance",
     scopeNote: "Scope limitation: This tool identifies that a PMA supplement is required but does not route to supplement-type-specific documentation requirements. The specific supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) — selected in question C_PMA4 — determines the actual submission format, clinical data requirements, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order for supplement-type-specific requirements.",
   },
+  "Assessment Incomplete": {
+    required: [
+      { doc: "Document the specific unresolved questions and the reason each could not be answered", source: "Internal change-control records" },
+      { doc: "Record the current assessment state and all answers provided so far", source: "QMSR; internal change-control records" },
+    ],
+    recommended: [
+      { doc: "Pre-Submission (Q-Sub) meeting request with FDA to resolve unresolved questions", source: "FDA Q-Sub Guidance" },
+      { doc: "Senior RA / clinical expert review of the unresolved areas before re-assessment", source: "Best practice" },
+      { doc: "Risk analysis of the change under the assumption of the most conservative answer to each unresolved question", source: "ISO 14971:2019" },
+    ],
+    orgSpecific: [
+      { doc: "Escalation to regulatory decision board or equivalent internal governance body", source: "Organization policy" },
+    ],
+    basis: "Assessment could not produce a reliable pathway recommendation because one or more questions critical to the determination remain unresolved. This is not a final regulatory conclusion — it is a signal that expert judgment, additional evidence, or FDA interaction is needed before proceeding.",
+  },
   "PMA Annual Report / Letter to File": {
     required: [
       { doc: "Letter to File with change description and rationale", source: "QMSR; internal change-control records" },

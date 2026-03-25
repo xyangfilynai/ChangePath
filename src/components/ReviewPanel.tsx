@@ -33,12 +33,14 @@ const pathwayToDocKey: Record<string, string> = {
   [Pathway.NewSubmission]: "New Submission Required",
   [Pathway.PMASupplementRequired]: "PMA Supplement Required",
   [Pathway.PMAAnnualReport]: "PMA Annual Report / Letter to File",
+  [Pathway.AssessmentIncomplete]: "Assessment Incomplete",
 };
 
 // Map determination rules to reasoning library keys
 const getRuleKey = (determination: any): string | null => {
   if (determination.isIntendedUseChange) return "SCREEN-01-Yes";
   if (determination.isIntendedUseUncertain) return "SCREEN-01-Uncertain";
+  if (determination.deNovoDeviceTypeFitFailed) return "DENOVO-FIT-FAILED";
   if (determination.isCyberOnly) return "SCREEN-02-Yes";
   if (determination.isBugFix) return "SCREEN-03-Yes";
   if (determination.pccpScopeVerified) return "PCCP-Verified";
@@ -92,7 +94,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           accent: '#16a34a',
           icon: 'checkCircle',
           statusLabel: 'Documentation Only',
-          confidence: 'HIGH' as const,
+          confidence: determination.consistencyIssues?.length > 0 ? 'MODERATE' as const : 'HIGH' as const,
         };
       case Pathway.ImplementPCCP:
         return {
@@ -101,7 +103,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           accent: '#2563eb',
           icon: 'checkCircle',
           statusLabel: 'PCCP Implementation',
-          confidence: 'HIGH' as const,
+          confidence: determination.consistencyIssues?.length > 0 ? 'MODERATE' as const : 'HIGH' as const,
         };
       case Pathway.NewSubmission:
       case Pathway.PMASupplementRequired:
@@ -219,7 +221,23 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     if (pathway === Pathway.PMASupplementRequired) {
       return "Determine supplement type and prepare submission package";
     }
-    return "Complete remaining assessment questions to finalize determination";
+    // Assessment Incomplete — provide specific guidance based on reason
+    if (determination.isIntendedUseUncertain) {
+      return "Resolve intended use uncertainty through senior RA/clinical expert review or an FDA Pre-Submission (Q-Sub) before re-running this assessment";
+    }
+    if (determination.pmaIncomplete) {
+      return "Complete the PMA safety/effectiveness, labeling, and manufacturing questions before the determination can be finalized";
+    }
+    if (determination.pccpIncomplete) {
+      return "Complete the PCCP scope verification questions (P1–P5) to determine whether this change can be implemented under the authorized PCCP";
+    }
+    if (determination.hasUncertainSignificance) {
+      return "Resolve uncertain significance answers — gather additional evidence or consult with RA/clinical experts to convert 'Uncertain' responses to 'Yes' or 'No'";
+    }
+    if (determination.seUncertain) {
+      return "Resolve substantial equivalence uncertainty — compare the modified device against the predicate and consult RA if needed";
+    }
+    return "Complete remaining assessment questions to finalize the determination — review the consistency issues below for specific guidance";
   };
 
   return (
@@ -250,7 +268,15 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }}>
             {config.statusLabel}
           </span>
-          <ConfBadge level={config.confidence} />
+          <span title={
+            config.confidence === 'HIGH'
+              ? 'No consistency issues detected. All pathway-critical questions answered without contradictions.'
+              : config.confidence === 'MODERATE'
+                ? 'Consistency issues detected — review the flagged items below before relying on this determination.'
+                : 'Assessment is incomplete — one or more critical questions remain unresolved.'
+          }>
+            <ConfBadge level={config.confidence} />
+          </span>
         </div>
 
         {/* Primary determination */}
@@ -300,6 +326,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
+            onClick={() => window.print()}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -314,26 +341,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               cursor: 'pointer',
             }}
           >
-            <Icon name="fileText" size={14} color="#fff" />
-            Generate Report
-          </button>
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 18px',
-              borderRadius: 6,
-              background: '#ffffff',
-              border: '1px solid #e5e7eb',
-              color: '#374151',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            <Icon name="download" size={14} color="#6b7280" />
-            Export
+            <Icon name="printer" size={14} color="#fff" />
+            Print Report
           </button>
         </div>
       </div>
@@ -657,8 +666,20 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               }}>
                 <strong>{(answers.B2 as string) || 'This change type'}</strong>{' '}
                 is {pccpEligibility === 'YES' ? 'eligible' : 'conditionally eligible'} for
-                future PCCP coverage. Consider establishing a PCCP in the next submission to streamline future review cycles.
+                future PCCP coverage. Including a PCCP in the upcoming submission could enable future similar changes without additional submissions.
               </p>
+              {pccpEligibility === 'CONDITIONAL' && selectedChangeType?.pccpNote && (
+                <p style={{
+                  fontSize: 12,
+                  color: '#15803d',
+                  lineHeight: 1.6,
+                  margin: '8px 0 0',
+                  paddingTop: 8,
+                  borderTop: '1px solid #dcfce7',
+                }}>
+                  <strong>Conditions:</strong> {selectedChangeType.pccpNote}
+                </p>
+              )}
             </div>
           </CollapsibleSection>
         )}
