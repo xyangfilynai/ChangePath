@@ -305,18 +305,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               },
               {
                 step: '2',
-                title: 'Change Classification',
-                desc: 'Change type, intended use impact, regulatory significance assessment',
+                title: 'Change Assessment',
+                desc: 'Change classification, intended use impact, significance, PCCP scope, and supplemental checks',
               },
               {
                 step: '3',
-                title: 'Non-U.S. Review',
-                desc: 'Escalation signals for EU, UK, Canada, Japan, and China',
+                title: 'Bias & Jurisdictions',
+                desc: 'Population impact, subgroup equity, plus escalation cues for EU, UK, Canada, Japan, and China',
               },
               {
                 step: '4',
                 title: 'Determination',
-                desc: 'Pathway recommendation, confidence level, documentation requirements',
+                desc: 'Pathway recommendation, regulatory reasoning, consistency checks, and documentation requirements',
               },
             ].map((s, i) => (
               <div
