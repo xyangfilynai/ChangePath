@@ -5,6 +5,12 @@ export const ruleReasoningLibrary: Record<string, any> = {
     counter: "Narrowly scoped changes (e.g., adding compatibility with a new component) may be eligible for PCCP on a case-by-case basis. If the scope feels borderline, a Pre-Submission with FDA is recommended.",
     source: "21 CFR 807.81(a)(3); FDA-PCCP-2025 §V",
   },
+  "SCREEN-01-Uncertain": {
+    text: "Whether this change affects intended use could not be determined with confidence. This assessment cannot produce a reliable pathway recommendation until the intended-use question is resolved. An FDA Pre-Submission (Q-Sub) or senior RA/clinical expert review is strongly recommended before proceeding.",
+    verify: "Pull the clearance letter and Indications for Use statement. Compare them word-by-word against the post-change device description. If the comparison does not clearly resolve the question, a Pre-Submission with FDA is the appropriate next step.",
+    counter: "Do not default to 'No' to avoid a submission. Unresolved intended-use uncertainty is the highest-risk gap in any change assessment — resolving it incorrectly in either direction can lead to regulatory action.",
+    source: "21 CFR 807.81(a)(3); FDA-PCCP-2025 §V; FDA Q-Sub",
+  },
   "SCREEN-01-No": {
     text: "The device's fundamental purpose, target population, and clinical indications remain unchanged. It continues to do the same thing for the same people as originally cleared.",
     verify: "Double-check for implicit scope expansion — even if the stated intended use hasn't changed. For generative AI devices, broader prompting capabilities can effectively widen clinical scope without changing any labeling.",

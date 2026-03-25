@@ -66,14 +66,21 @@ export const computeDetermination = (ans: Answers) => {
   if (_deNovoDeviceTypeFitUncertain) {
     _consistencyIssues.push("The modified device\u2019s continued fit with the De Novo device type / special controls is uncertain. Resolve this with expert review or an FDA Pre-Submission before relying on a non-submission pathway.");
   }
+  if (_isIntendedUseUncertain) {
+    _consistencyIssues.push("Intended use impact is marked Uncertain. This uncertainty must be resolved through RA/clinical expert review or an FDA Pre-Submission (Q-Sub) before relying on any pathway determination. Do not treat this assessment as a final regulatory conclusion.");
+  }
+  if (ans.C1 === Answer.Uncertain) {
+    _consistencyIssues.push("Cybersecurity exemption eligibility is uncertain. The exemption requires affirmative demonstration that the change is solely to strengthen cybersecurity with zero functional impact. Because this could not be confirmed, the assessment continues to the full significance evaluation. Resolve the uncertainty before claiming exemption in any regulatory documentation.");
+  }
+  if (ans.C2 === Answer.Uncertain) {
+    _consistencyIssues.push("Restore-to-specification exemption eligibility is uncertain. The exemption requires affirmative demonstration that the change restores the device to a known, documented, cleared state. Because this could not be confirmed, the assessment continues to the full significance evaluation.");
+  }
   if (ans.B1 === "Post-Market Surveillance" && ans.C5 === Answer.No && (ans.B2 || "").includes("Monitoring threshold")) {
     _consistencyIssues.push("A monitoring threshold change was reported with no risk-control impact. If the change weakens monitoring sensitivity, it may affect an existing risk control measure. Reassess C5.");
   }
   if (_baselineIncomplete && !_isCyberOnly && !_isBugFix) {
     _consistencyIssues.push("One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'");
   }
-  const _consistencyBlock = false;
-
   const _isSignificant = _baseSignificant || _seNotSupportable;
 
   const _pmaQuestionsAnswered = _isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && (
@@ -99,15 +106,15 @@ export const computeDetermination = (ans: Answers) => {
   let pathway;
   if (_isPMA) {
     if (_pmaIncomplete) pathway = Pathway.AssessmentIncomplete;
-    else if (_isIntendedUseChange || _isIntendedUseUncertain) pathway = Pathway.PMASupplementRequired;
+    else if (_isIntendedUseChange) pathway = Pathway.PMASupplementRequired;
+    else if (_isIntendedUseUncertain) pathway = Pathway.AssessmentIncomplete;
     else if (_hasPCCP && _pccpScopeVerified && _pmaRequiresSupplement) pathway = Pathway.ImplementPCCP;
     else if (_hasPCCP && _pccpIncomplete && _pmaRequiresSupplement) pathway = Pathway.AssessmentIncomplete;
     else if (_pmaRequiresSupplement) pathway = Pathway.PMASupplementRequired;
     else pathway = Pathway.PMAAnnualReport;
   } else {
-    if (_consistencyBlock) pathway = Pathway.AssessmentIncomplete;
-    else if (_isIntendedUseChange) pathway = Pathway.NewSubmission;
-    else if (_isIntendedUseUncertain) pathway = Pathway.NewSubmission;
+    if (_isIntendedUseChange) pathway = Pathway.NewSubmission;
+    else if (_isIntendedUseUncertain) pathway = Pathway.AssessmentIncomplete;
     else if (_deNovoDeviceTypeFitFailed) pathway = Pathway.NewSubmission;
     else if (_isCyberOnly) pathway = Pathway.LetterToFile;
     else if (_isBugFix) pathway = Pathway.LetterToFile;
@@ -120,7 +127,9 @@ export const computeDetermination = (ans: Answers) => {
     else pathway = Pathway.AssessmentIncomplete;
   }
 
-  const isDocOnly = pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport;
+  const isLetterToFile = pathway === Pathway.LetterToFile;
+  const isPMAAnnualReport = pathway === Pathway.PMAAnnualReport;
+  const isDocOnly = isLetterToFile || isPMAAnnualReport;
   const isPCCPImpl = pathway === Pathway.ImplementPCCP;
   const isNewSub = pathway === Pathway.NewSubmission || pathway === Pathway.PMASupplementRequired;
   const isIncomplete = pathway === Pathway.AssessmentIncomplete;
@@ -132,7 +141,7 @@ export const computeDetermination = (ans: Answers) => {
   })();
 
   return {
-    pathway, isDocOnly, isPCCPImpl, isNewSub, isIncomplete, isLTF: isDocOnly,
+    pathway, isDocOnly, isLetterToFile, isPMAAnnualReport, isPCCPImpl, isNewSub, isIncomplete,
     isIntendedUseChange: _isIntendedUseChange, isIntendedUseUncertain: _isIntendedUseUncertain,
     isCyberOnly: _isCyberOnly, isBugFix: _isBugFix,
     isSignificant: _isSignificant, baseSignificant: _baseSignificant, allSignificanceNo: _allSignificanceNo,
@@ -143,7 +152,6 @@ export const computeDetermination = (ans: Answers) => {
     seUncertain: _seUncertain,
     genAIHighImpactChange: _genAIHighImpactChange,
     consistencyIssues: _consistencyIssues,
-    consistencyBlock: _consistencyBlock,
     deNovoDeviceTypeFitFailed: _deNovoDeviceTypeFitFailed,
     baselineIncomplete: _baselineIncomplete,
     pmaRequiresSupplement: _pmaRequiresSupplement, pmaIncomplete: _pmaIncomplete,

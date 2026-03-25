@@ -88,12 +88,15 @@ describe('computeDetermination — 510(k) / De Novo', () => {
     expect(det.pccpRecommendation).toEqual({ shouldRecommend: true });
   });
 
-  it('routes intended-use uncertainty conservatively to New Submission Required', () => {
+  it('routes intended-use uncertainty to Assessment Incomplete with mandatory consistency warning', () => {
     const det = computeDetermination(base510k({ B3: Answer.Uncertain }));
 
-    expect(det.pathway).toBe(Pathway.NewSubmission);
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
     expect(det.isIntendedUseUncertain).toBe(true);
-    expect(det.isIncomplete).toBe(false);
+    expect(det.isIncomplete).toBe(true);
+    expect(det.consistencyIssues.length).toBeGreaterThan(0);
+    expect(det.consistencyIssues.join(' ')).toContain('Intended use impact is marked Uncertain');
+    expect(det.consistencyIssues.join(' ')).toContain('Pre-Submission');
   });
 
   it('routes significant changes without PCCP to New Submission Required', () => {
@@ -353,5 +356,146 @@ describe('computeDerivedState', () => {
     expect(state.hasCanada).toBe(true);
     expect(state.isDeNovo).toBe(true);
     expect(state.hasGenAI).toBe(false);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════
+// Trust-remediation tests — regulatory correctness validation
+// ════════════════════════════════════════════════════════════════════════
+
+describe('B3 Uncertain escalation (Finding #1)', () => {
+  it('routes 510(k) B3=Uncertain to Assessment Incomplete, not New Submission', () => {
+    const det = computeDetermination(base510k({ B3: Answer.Uncertain }));
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
+    expect(det.isIncomplete).toBe(true);
+    expect(det.isNewSub).toBe(false);
+  });
+
+  it('routes PMA B3=Uncertain to Assessment Incomplete, not PMA Supplement', () => {
+    const det = computeDetermination(basePMA({ B3: Answer.Uncertain }));
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
+    expect(det.isIncomplete).toBe(true);
+    expect(det.isNewSub).toBe(false);
+  });
+
+  it('produces a mandatory consistency warning when B3=Uncertain', () => {
+    const det = computeDetermination(base510k({ B3: Answer.Uncertain }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('Intended use impact is marked Uncertain'))).toBe(true);
+    expect(det.consistencyIssues.some((i: string) => i.includes('Pre-Submission'))).toBe(true);
+  });
+});
+
+describe('C1/C2 Uncertain handling (Finding #2)', () => {
+  it('C1=Uncertain does NOT qualify for cybersecurity exemption', () => {
+    const det = computeDetermination(base510k({ C1: Answer.Uncertain }));
+    expect(det.isCyberOnly).toBe(false);
+    // Uncertain on C1 means the cyber exemption is NOT claimed; the assessment
+    // continues to the full significance evaluation. The final pathway depends on
+    // significance answers — it may still be LTF via allSignificanceNo, but NOT
+    // via the cybersecurity exemption shortcut.
+  });
+
+  it('C2=Uncertain does NOT qualify for restore-to-spec exemption (no Letter to File)', () => {
+    const det = computeDetermination(base510k({ C2: Answer.Uncertain }));
+    expect(det.isBugFix).toBe(false);
+    // All significance questions are defaulted to No in base510k, so it routes to LTF
+    // via allSignificanceNo — but NOT via the bug-fix exemption
+  });
+
+  it('C1=Uncertain produces a consistency warning about exemption uncertainty', () => {
+    const det = computeDetermination(base510k({ C1: Answer.Uncertain }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('Cybersecurity exemption eligibility is uncertain'))).toBe(true);
+  });
+
+  it('C2=Uncertain produces a consistency warning about exemption uncertainty', () => {
+    const det = computeDetermination(base510k({ C2: Answer.Uncertain }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('Restore-to-specification exemption eligibility is uncertain'))).toBe(true);
+  });
+});
+
+describe('isLetterToFile vs isPMAAnnualReport (Finding #15)', () => {
+  it('isLetterToFile is true only for Letter to File pathway', () => {
+    const ltf = computeDetermination(base510k());
+    expect(ltf.isLetterToFile).toBe(true);
+    expect(ltf.isPMAAnnualReport).toBe(false);
+    expect(ltf.isDocOnly).toBe(true);
+  });
+
+  it('isPMAAnnualReport is true only for PMA Annual Report pathway', () => {
+    const pma = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+    }));
+    expect(pma.isPMAAnnualReport).toBe(true);
+    expect(pma.isLetterToFile).toBe(false);
+    expect(pma.isDocOnly).toBe(true);
+  });
+
+  it('New Submission pathway has neither isLetterToFile nor isPMAAnnualReport', () => {
+    const det = computeDetermination(base510k({ B3: Answer.Yes }));
+    expect(det.isLetterToFile).toBe(false);
+    expect(det.isPMAAnnualReport).toBe(false);
+    expect(det.isDocOnly).toBe(false);
+  });
+});
+
+describe('PMA Uncertain safety/effectiveness (Finding #7 test)', () => {
+  it('routes PMA C_PMA1=Uncertain to PMA Supplement Required, not Annual Report', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.Uncertain,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+    }));
+    expect(det.pathway).toBe(Pathway.PMASupplementRequired);
+    expect(det.pmaRequiresSupplement).toBe(true);
+  });
+});
+
+describe('De Novo fit failure + PCCP interaction', () => {
+  it('De Novo with failed device-type fit cannot route to PCCP regardless of scope verification', () => {
+    const det = computeDetermination(baseDeNovo({
+      A2: Answer.Yes,
+      C0_DN1: Answer.No,
+      P1: Answer.Yes,
+      P2: Answer.Yes,
+      P3: Answer.Yes,
+      P4: Answer.Yes,
+      P5: Answer.Yes,
+    }));
+    // Device-type fit failure routes to NewSubmission before PCCP evaluation
+    expect(det.pathway).toBe(Pathway.NewSubmission);
+    expect(det.deNovoDeviceTypeFitFailed).toBe(true);
+    expect(det.isPCCPImpl).toBe(false);
+  });
+});
+
+describe('Cumulative escalation + SE supportable', () => {
+  it('C10=Yes + C11=Yes (SE still supportable) routes to Letter to File, not New Submission', () => {
+    const det = computeDetermination(base510k({
+      A8: '3',
+      C10: Answer.Yes,
+      C11: Answer.Yes,
+    }));
+    expect(det.pathway).toBe(Pathway.LetterToFile);
+    expect(det.cumulativeEscalation).toBe(true);
+    expect(det.seNotSupportable).toBe(false);
+    expect(det.isNewSub).toBe(false);
+  });
+});
+
+describe('GenAI consistency cross-checks', () => {
+  it('D1=Yes (base model swap) + all significance=No produces consistency warnings', () => {
+    const det = computeDetermination(base510k({ D1: Answer.Yes }));
+    expect(det.genAIHighImpactChange).toBe(true);
+    expect(det.consistencyIssues.length).toBeGreaterThan(0);
+    expect(det.consistencyIssues.some((i: string) => i.includes('foundation/base model change'))).toBe(true);
+  });
+});
+
+describe('dead code removal (Finding #3)', () => {
+  it('determination object does not contain consistencyBlock field', () => {
+    const det = computeDetermination(base510k()) as Record<string, any>;
+    expect('consistencyBlock' in det).toBe(false);
   });
 });

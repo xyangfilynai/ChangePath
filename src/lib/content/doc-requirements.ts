@@ -94,8 +94,8 @@ export const docRequirements: Record<string, any> = {
     recommended: [
       ..._docModules.biasRecommended,
       { doc: "Post-deployment performance monitoring plan activation", source: "FDA-PCCP-2025 §VII" },
-      { doc: "Subgroup analysis report", source: "FDA-LIFECYCLE-2025 §V.B" },
-      { doc: "Real-world performance monitoring plan (TPLC approach)", source: "FDA-LIFECYCLE-2025 §VI" },
+      { doc: "Subgroup analysis report (recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §V.B" },
+      { doc: "Real-world performance monitoring plan (TPLC approach; recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §VI" },
     ],
     orgSpecific: [
       { doc: "Independent verification of PCCP boundary compliance (by a reviewer not involved in the change)", source: "Organization policy" },
@@ -120,7 +120,7 @@ export const docRequirements: Record<string, any> = {
       { doc: "Pre-Submission (Q-Sub) meeting with FDA", source: "FDA Q-Sub Guidance" },
       { doc: "Clinical evidence sufficiency assessment", source: "Best practice" },
       ..._docModules.pccpFutureRecommended510k,
-      { doc: "Real-world performance monitoring plan", source: "FDA-LIFECYCLE-2025 §VI" },
+      { doc: "Real-world performance monitoring plan (recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §VI" },
     ],
     orgSpecific: [
       { doc: "Clinical evidence sufficiency assessment", source: "Organization policy" },
@@ -151,6 +151,7 @@ export const docRequirements: Record<string, any> = {
       { doc: "Advisory committee preparation materials (for Panel-Track supplements)", source: "Organization policy" },
     ],
     basis: "21 CFR 814.39; PMA Supplement Guidance",
+    scopeNote: "Scope limitation: This tool identifies that a PMA supplement is required but does not route to supplement-type-specific documentation requirements. The specific supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) — selected in question C_PMA4 — determines the actual submission format, clinical data requirements, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order for supplement-type-specific requirements.",
   },
   "PMA Annual Report / Letter to File": {
     required: [

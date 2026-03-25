@@ -483,3 +483,33 @@ describe('Baseline engine tests still pass (sanity check)', () => {
     expect(getQuestions('Z', base510k(), ds)).toEqual([]);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// 15. C1/C2 Uncertain path — exemption questions accept Uncertain (Finding #2)
+// ════════════════════════════════════════════════════════════════════════
+
+describe('C1/C2 yesnouncertain support', () => {
+  it('C1 is type yesnouncertain', () => {
+    const q = findQ('C', base510k(), 'C1');
+    expect(q).toBeDefined();
+    expect(q!.type).toBe('yesnouncertain');
+  });
+
+  it('C2 is type yesnouncertain', () => {
+    const q = findQ('C', base510k(), 'C2');
+    expect(q).toBeDefined();
+    expect(q!.type).toBe('yesnouncertain');
+  });
+
+  it('C1=Uncertain does not skip C2 (Uncertain does not qualify as exemption)', () => {
+    expect(isVisible('C', base510k({ C1: Answer.Uncertain }), 'C2')).toBe(true);
+  });
+
+  it('C2=Uncertain does not skip C3 (Uncertain does not qualify as exemption)', () => {
+    expect(isVisible('C', base510k({ C1: Answer.No, C2: Answer.Uncertain }), 'C3')).toBe(true);
+  });
+
+  it('C1=Yes still skips C2 (exemption confirmed)', () => {
+    expect(isHidden('C', base510k({ C1: Answer.Yes }), 'C2')).toBe(true);
+  });
+});

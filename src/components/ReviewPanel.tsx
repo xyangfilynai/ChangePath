@@ -38,6 +38,7 @@ const pathwayToDocKey: Record<string, string> = {
 // Map determination rules to reasoning library keys
 const getRuleKey = (determination: any): string | null => {
   if (determination.isIntendedUseChange) return "SCREEN-01-Yes";
+  if (determination.isIntendedUseUncertain) return "SCREEN-01-Uncertain";
   if (determination.isCyberOnly) return "SCREEN-02-Yes";
   if (determination.isBugFix) return "SCREEN-03-Yes";
   if (determination.pccpScopeVerified) return "PCCP-Verified";
@@ -586,6 +587,21 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               <DocList items={docs.orgSpecific} type="orgSpecific" />
             </div>
           )}
+          {docs.scopeNote && (
+            <div style={{
+              marginTop: 'var(--space-md)',
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-warning-bg)',
+              border: '1px solid var(--color-warning-border)',
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.6,
+            }}>
+              <strong style={{ color: 'var(--color-warning)' }}>Scope limitation: </strong>
+              <HelpTextWithLinks text={docs.scopeNote} />
+            </div>
+          )}
         </Section>
       )}
 
@@ -878,7 +894,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               color: 'var(--color-text-muted)',
               margin: 'var(--space-sm) 0 0 0',
             }}>
-              v1 | Sources verified Mar 2026 | Primary: US (FDA) | Follow-up cues: EU, UK, CA, JP, CN
+              v1 | Sources last reviewed Mar 2026 — verify current status at fda.gov before relying on this assessment | Primary: US (FDA) | Follow-up cues: EU, UK, CA, JP, CN
             </p>
           </div>
         </div>
