@@ -363,8 +363,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     [evidenceGapItems],
   );
 
-  const topBlockers = mergedBlockers.slice(0, 3);
-  const remainingBlockerCount = Math.max(0, mergedBlockers.length - topBlockers.length);
+
 
   const snapshotItems = useMemo(() => ([
     {
@@ -467,21 +466,20 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   return (
     <div className="animate-fade-in-up">
-      {/* ─ HERO SECTION: Primary route, reliance, next step ─ */}
+      {/* ─ HERO SECTION: 3 balanced columns ─ */}
       <div style={{
         background: config.bg,
         border: `1px solid ${config.border}`,
         borderRadius: 8,
-        padding: '28px 32px',
-        marginBottom: 24,
+        padding: '24px 28px',
+        marginBottom: 16,
       }}>
-        {/* Status badges */}
+        {/* Status row */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          flexWrap: 'wrap',
-          marginBottom: 18,
+          marginBottom: 16,
         }}>
           <span style={{
             fontSize: 11,
@@ -500,80 +498,103 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           />
         </div>
 
+        {/* 3-column grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)',
-          gap: 24,
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: 20,
           alignItems: 'start',
         }}>
-          {/* LEFT: Route title + reliance detail + rationale reason */}
-          <div>
+          {/* COL 1: Route title + reliance detail */}
+          <div style={{ borderRight: `1px solid ${config.border}`, paddingRight: 20 }}>
+            <div style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 6,
+            }}>
+              Current Route
+            </div>
             <h1 style={{
-              fontSize: 28,
+              fontSize: 22,
               fontWeight: 700,
               color: '#111827',
-              margin: '0 0 8px',
+              margin: '0 0 10px',
               lineHeight: 1.2,
             }}>
               {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
             </h1>
             <p style={{
-              fontSize: 13,
+              fontSize: 12.5,
               color: '#4b5563',
-              margin: '0 0 18px',
-              lineHeight: 1.65,
-              maxWidth: 760,
+              margin: 0,
+              lineHeight: 1.6,
             }}>
               {relianceState.detail}
             </p>
+          </div>
 
-            {whyThisRouteItems.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {/* COL 2: Why this route */}
+          <div style={{ borderRight: `1px solid ${config.border}`, paddingRight: 20 }}>
+            <div style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 10,
+            }}>
+              Why This Route
+            </div>
+            {whyThisRouteItems.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {whyThisRouteItems.map((item, index) => (
                   <div
                     key={`route-reason-${index}`}
                     style={{
-                      fontSize: 13,
+                      fontSize: 12.5,
                       color: '#374151',
-                      lineHeight: 1.6,
+                      lineHeight: 1.55,
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: 8,
+                      gap: 7,
                     }}
                   >
-                    <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 2 }}>•</span>
+                    <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 3, fontSize: 10 }}>▸</span>
                     <span><HelpTextWithLinks text={item} /></span>
                   </div>
                 ))}
               </div>
+            ) : (
+              <p style={{ fontSize: 12.5, color: '#9ca3af', margin: 0, lineHeight: 1.55 }}>
+                No additional reasoning available.
+              </p>
             )}
 
             {pccpHeroSummary && (
               <div
                 data-testid="pccp-recommendation"
                 style={{
-                  marginTop: 16,
-                  padding: '12px 14px',
+                  marginTop: 12,
+                  padding: '10px 12px',
                   borderRadius: 6,
                   background: '#eff6ff',
                   border: '1px solid #bfdbfe',
                 }}
               >
                 <div style={{
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: 700,
                   color: '#1d4ed8',
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
-                  marginBottom: 6,
+                  marginBottom: 4,
                 }}>
                   PCCP Strategy
                 </div>
-                <div style={{
-                  fontSize: 12.5,
-                  color: '#1e3a8a',
-                  lineHeight: 1.6,
-                }}>
+                <div style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.55 }}>
                   <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
                   {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
                 </div>
@@ -581,188 +602,97 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             )}
           </div>
 
-          {/* RIGHT: Next step callout */}
-          <div style={{
-            padding: '18px 20px',
-            background: 'rgba(255,255,255,0.72)',
-            borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.65)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}>
-            <div>
-              <div style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#6b7280',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 6,
-              }}>
-                Next Step
-              </div>
-              <div style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#111827',
-                lineHeight: 1.5,
-              }}>
-                {getPrimaryAction()}
-              </div>
+          {/* COL 3: Next step */}
+          <div>
+            <div style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 10,
+            }}>
+              Next Step
+            </div>
+            <div style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#111827',
+              lineHeight: 1.5,
+              marginBottom: supportingNextSteps.length > 0 ? 10 : 0,
+            }}>
+              {getPrimaryAction()}
             </div>
             {supportingNextSteps.length > 0 && (
-              <ul style={{
-                margin: 0,
-                paddingLeft: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-              }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {supportingNextSteps.map((step, index) => (
-                  <li
+                  <div
                     key={`supporting-next-step-${index}`}
                     style={{
                       fontSize: 12,
                       color: '#4b5563',
                       lineHeight: 1.5,
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 7,
                     }}
                   >
+                    <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 3, fontSize: 10 }}>▸</span>
                     <HelpTextWithLinks text={step} />
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-
-
-      {/* ─ OPEN ISSUES PANEL: Top 3 above fold, expandable detail ─ */}
+      {/* ─ BELOW HERO: Open issues (right) + Detailed review (left) side by side ─ */}
       <div style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        padding: '20px 24px',
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(280px, 1fr)',
+        gap: 16,
         marginBottom: 24,
+        alignItems: 'start',
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-          marginBottom: 14,
-        }}>
-          <div>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 2,
-            }}>
-              Open Issues
-            </div>
-            <div style={{
-              fontSize: 13,
-              color: '#6b7280',
-              lineHeight: 1.5,
-            }}>
-              {mergedBlockers.length > 0
-                ? `${mergedBlockers.length} issue${mergedBlockers.length === 1 ? '' : 's'} to resolve`
-                : 'No open issues'}
-            </div>
-          </div>
-          {remainingBlockerCount > 0 && (
-            <div style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#92400e',
-              padding: '4px 10px',
-              borderRadius: 999,
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-            }}>
-              +{remainingBlockerCount} below
-            </div>
-          )}
-        </div>
 
-        {mergedBlockers.length > 0 ? (
-          <div style={{
+        {/* ─ DETAILED SECTION: Expandable rationale, docs, authorities ─ */}
+        <details style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          overflow: 'hidden',
+        }}>
+          <summary style={{
+            listStyle: 'none',
+            cursor: 'pointer',
+            padding: '16px 20px',
             display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
           }}>
-            {topBlockers.map((item) => (
-              <IssueCard
-                key={item.id}
-                title={item.title}
-                actionLabel={item.actionLabel}
-                actionText={item.actionText}
-                kind={item.kind}
-                isCompact
-              />
-            ))}
-          </div>
-        ) : (
-          <div style={{
-            padding: '12px 14px',
-            borderRadius: 6,
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            fontSize: 13,
-            color: '#166534',
-            lineHeight: 1.6,
-          }}>
-            No unresolved issues identified in the current record.
-          </div>
-        )}
-      </div>
-
-      {/* ─ DETAILED SECTION: Expandable rationale, docs, authorities, blockers ─ */}
-      <details style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        marginBottom: 24,
-        overflow: 'hidden',
-      }}>
-        <summary style={{
-          listStyle: 'none',
-          cursor: 'pointer',
-          padding: '18px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}>
-          <div>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 2,
-            }}>
-              Detailed Review
+            <div>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 2,
+              }}>
+                Detailed Review
+              </div>
+              <div style={{
+                fontSize: 12.5,
+                color: '#6b7280',
+                lineHeight: 1.5,
+              }}>
+                Full rationale, documentation requirements, and supporting authorities.
+              </div>
             </div>
-            <div style={{
-              fontSize: 13,
-              color: '#6b7280',
-              lineHeight: 1.5,
-            }}>
-              Full rationale, all open issues, documentation requirements, and supporting authorities.
-            </div>
-          </div>
-          <Icon name="arrowDown" size={16} color="#9ca3af" />
-        </summary>
+            <Icon name="arrowDown" size={16} color="#9ca3af" />
+          </summary>
 
         <div style={{
           borderTop: '1px solid #e5e7eb',
@@ -771,24 +701,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           flexDirection: 'column',
           gap: 24,
         }}>
-          {/* All blockers if any remain below top 3 */}
-          {remainingBlockerCount > 0 && (
-            <div>
-              <SectionLabel>All Open Issues ({mergedBlockers.length})</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {mergedBlockers.map((item) => (
-                  <IssueCard
-                    key={`detail-${item.id}`}
-                    title={item.title}
-                    actionLabel={item.actionLabel}
-                    actionText={item.actionText}
-                    kind={item.kind}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Advisory / supporting evidence */}
           {advisoryItems.length > 0 && (
             <div>
@@ -1041,6 +953,74 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           )}
         </div>
       </details>
+
+        {/* ─ OPEN ISSUES PANEL: right column ─ */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '18px 20px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              Open Issues
+            </div>
+            {mergedBlockers.length > 0 && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#92400e',
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+              }}>
+                {mergedBlockers.length}
+              </span>
+            )}
+          </div>
+
+          {mergedBlockers.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {mergedBlockers.map((item) => (
+                <IssueCard
+                  key={item.id}
+                  title={item.title}
+                  actionLabel={item.actionLabel}
+                  actionText={item.actionText}
+                  kind={item.kind}
+                  isCompact
+                />
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 6,
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              fontSize: 12.5,
+              color: '#166534',
+              lineHeight: 1.6,
+            }}>
+              No unresolved issues in the current record.
+            </div>
+          )}
+        </div>
+
+      </div>{/* end 2-col grid */}
 
       {onAddNote && (
         <div style={{
