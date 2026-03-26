@@ -347,7 +347,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             marginBottom: 24,
           }}
         >
-          <Icon name="arrowLeft" size={14} /> Back to Report
+          <Icon name="arrowLeft" size={14} /> Back to Review
         </button>
         <div style={{
           padding: 32,
@@ -471,7 +471,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             marginBottom: 24,
           }}
         >
-          <Icon name="arrowLeft" size={14} /> Back to Report
+          <Icon name="arrowLeft" size={14} /> Back to Review
         </button>
 
         {/* Title Card */}
@@ -606,7 +606,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 color: 'var(--color-text-secondary)',
                 lineHeight: 1.55,
               }}>
-                <strong style={{ color: 'var(--color-success)' }}>Preparation workflow</strong> — Use this page to turn the report into an execution checklist. For the supporting document inventory and citations, refer back to the Review screen.
+                <strong style={{ color: 'var(--color-success)' }}>Preparation checklist</strong> — Use this page to turn the determination into an execution checklist. For supporting document inventory and citations, refer back to Final Review.
               </div>
             </div>
 
@@ -661,15 +661,6 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
                   <strong>Authorization ID:</strong> {answers.A1b as string || 'Not specified'}
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>Current route:</strong> {pathway}
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>Baseline:</strong> {(answers.A1c as string) || <span style={{ color: 'var(--color-warning)', fontStyle: 'italic' }}>Not specified</span>}
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>Change type:</strong> {answers.B2 as string || answers.B1 as string || 'Not specified'}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
                   <strong>PCCP status:</strong> {answers.A2 === Answer.Yes ? 'Authorized PCCP present' : answers.A2 === Answer.No ? 'No PCCP authorized' : 'Not specified'}

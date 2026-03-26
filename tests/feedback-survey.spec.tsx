@@ -106,7 +106,7 @@ describe('FeedbackSurvey', () => {
     expect(screen.getByText(/Thank you for your feedback/)).toBeInTheDocument();
   });
 
-  it('"Back to Report" calls onBack without corrupting state', async () => {
+  it('"Back to Review" calls onBack without corrupting state', async () => {
     render(<FeedbackSurvey onBack={onBack} />);
     await userEvent.click(screen.getByTestId('feedback-skip'));
     expect(onBack).toHaveBeenCalledTimes(1);
@@ -118,14 +118,14 @@ describe('FeedbackSurvey', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('"Return to Report" from thank-you calls onBack', async () => {
+  it('"Return to Review" from thank-you calls onBack', async () => {
     vi.spyOn(feedbackServiceModule.feedbackService, 'submit').mockResolvedValue({ ok: true });
     render(<FeedbackSurvey onBack={onBack} />);
     await userEvent.click(screen.getByTestId('feedback-submit'));
     await waitFor(() => {
       expect(screen.getByTestId('feedback-thankyou')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByText('Return to Report'));
+    await userEvent.click(screen.getByText('Return to Review'));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

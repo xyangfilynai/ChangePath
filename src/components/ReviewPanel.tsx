@@ -157,7 +157,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           border: '#fde68a',
           accent: '#d97706',
           icon: 'alertCircle',
-          statusLabel: 'Assessment Incomplete — Not Reliance-Ready',
+          statusLabel: 'Assessment Incomplete — More Input Required',
           confidence: 'LOW' as const,
         };
       default:
@@ -396,10 +396,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </span>
           <span title={
             config.confidence === 'HIGH'
-              ? 'No internal consistency issues detected. All pathway-critical questions answered without contradictions. This reflects internal consistency only — expert review is still required before treating as a regulatory conclusion.'
+              ? 'No internal consistency issues detected. All pathway-critical questions were answered without contradictions. This reflects internal consistency only; expert review is still required before treating this as a regulatory conclusion.'
               : config.confidence === 'MODERATE'
-                ? 'PRELIMINARY — consistency issues or unresolved uncertainty detected. Do not treat this as a final regulatory determination. Review the flagged items below and resolve before relying on this assessment.'
-                : 'ASSESSMENT INCOMPLETE — one or more critical questions remain unresolved. This output is not reliance-ready and does not constitute a regulatory conclusion. Expert review required.'
+                ? 'PRELIMINARY — consistency issues or unresolved uncertainty detected. Do not treat this as a final regulatory determination. Review and resolve the flagged items below before using this assessment.'
+                : 'ASSESSMENT INCOMPLETE — one or more critical questions remain unresolved. This output should not be used for regulatory decision-making. Expert review is required.'
           }>
             <ConfBadge level={config.confidence} />
           </span>
@@ -439,8 +439,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           maxWidth: 900,
         }}>
           {isIncomplete
-            ? 'Critical questions remain unresolved, so this output is not reliance-ready.'
-            : 'This hero summarizes the current routing, immediate next step, and any strategic follow-up that should be considered before the next submission is prepared.'}
+            ? 'Critical questions remain unresolved, so this output should not be used for regulatory decision-making.'
+            : 'This summary captures the current route, the immediate next step, and any strategic follow-up to consider before preparing the next package.'}
         </p>
 
         {/* Primary next action */}
@@ -556,7 +556,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}
           >
             <Icon name="printer" size={14} color="#fff" />
-            Print Report
+            Print Assessment Summary
           </button>
         </div>
       </div>
@@ -1307,7 +1307,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}>
               {consistencyIssues.length > 0
                 ? 'This assessment has unresolved items that require expert review. The preparation checklist is available but should not be treated as a final regulatory conclusion.'
-                : 'Open a step-by-step preparation workflow for the determined pathway.'}
+                : 'Open the preparation checklist for the determined pathway.'}
             </p>
           </div>
           <button

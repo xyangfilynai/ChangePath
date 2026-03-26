@@ -71,7 +71,7 @@ export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
   if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI Supplemental", icon: "cpu", description: "Review base model, prompt, RAG, guardrails, and GenAI-specific behavior changes that can alter clinical performance or controls." });
   if (ds.hasNonUSMarket) b.push({ id: "F", label: "Non-U.S. follow-up", shortLabel: "Jurisdictions", icon: "globe", description: "Flag jurisdiction-specific follow-up needs for authorized markets outside the U.S. primary analysis." });
   b.push({ id: "E", label: "Population impact check", shortLabel: "Bias & Equity", icon: "scale", description: "Check whether performance, bias controls, validation evidence, or affected populations require additional expert review." });
-  b.push({ id: "review", label: "Review & generate report", shortLabel: "Review", icon: "check", description: "Review the routing logic, evidence gaps, documentation needs, and expert-review notes before relying on the assessment." });
+  b.push({ id: "review", label: "Final review", shortLabel: "Review", icon: "check", description: "Review the routing logic, evidence gaps, documentation needs, and expert-review notes before relying on the assessment." });
   return b;
 };
 

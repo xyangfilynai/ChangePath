@@ -87,7 +87,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
           </p>
           <button onClick={onBack} style={btnSecondary}>
             <Icon name="arrowLeft" size={16} />
-            Return to Report
+            Return to Review
           </button>
         </div>
       </div>
@@ -106,7 +106,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
       <div style={{ marginBottom: 'var(--space-xl)' }}>
         <button onClick={onBack} style={{ ...btnGhost, marginBottom: 'var(--space-md)' }} data-testid="feedback-skip">
           <Icon name="arrowLeft" size={16} />
-          Back to Report
+          Back to Review
         </button>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 var(--space-sm)' }}>
           Share Your Feedback

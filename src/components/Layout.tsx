@@ -25,9 +25,6 @@ interface LayoutProps {
   caseSummary?: SummaryItem[];
   onReset?: () => void;
   onHome?: () => void;
-  onSave?: () => void;
-  onSaveAndNew?: () => void;
-  saveNotice?: string;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -47,9 +44,6 @@ export const Layout: React.FC<LayoutProps> = ({
   caseSummary = [],
   onReset,
   onHome,
-  onSave,
-  onSaveAndNew,
-  saveNotice,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -191,57 +185,6 @@ export const Layout: React.FC<LayoutProps> = ({
               <Icon name="home" size={14} />
               <span className="hide-mobile">Home</span>
             </button>
-          )}
-          {onSave && (
-            <button
-              onClick={onSave}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-xs)',
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: 'transparent',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-              title="Save assessment"
-            >
-              <Icon name="check" size={14} />
-              <span className="hide-mobile">Save</span>
-            </button>
-          )}
-          {onSaveAndNew && (
-            <button
-              onClick={onSaveAndNew}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-xs)',
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: 'transparent',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-              title="Save current assessment and start a new one"
-            >
-              <Icon name="fileText" size={14} />
-              <span className="hide-mobile">Save &amp; New</span>
-            </button>
-          )}
-          {saveNotice && (
-            <span style={{ fontSize: 11, color: 'var(--color-success)', fontWeight: 500 }}>
-              {saveNotice}
-            </span>
           )}
           <div style={{
             display: 'flex',
@@ -390,7 +333,7 @@ export const Layout: React.FC<LayoutProps> = ({
               const statusLabel = isReview
                 ? reviewReady
                   ? 'Ready for final review'
-                  : 'Use to inspect blockers and report output'
+                  : 'Use to inspect blockers and the final determination'
                 : missingRequired > 0
                   ? `${missingRequired} blocker${missingRequired === 1 ? '' : 's'} remaining`
                   : total > 0 && answered < total
@@ -537,7 +480,7 @@ export const Layout: React.FC<LayoutProps> = ({
               }}>
                 {reviewReady
                   ? 'All visible pathway-critical questions are answered. Review reasoning, evidence gaps, and documentation needs before relying on the result.'
-                  : 'Resolve remaining blockers and then review the report before relying on the pathway recommendation.'}
+                  : 'Resolve remaining blockers and then complete final review before relying on the pathway recommendation.'}
               </p>
             </div>
           </div>
@@ -620,7 +563,7 @@ export const Layout: React.FC<LayoutProps> = ({
                       },
                       {
                         label: 'Review status',
-                        value: reviewReady ? 'Reliance-ready inputs captured' : 'Outstanding blockers remain',
+                        value: reviewReady ? 'All required questions answered' : 'Required questions still open',
                         tone: reviewReady ? 'success' as const : 'warning' as const,
                       },
                     ].map((item) => {

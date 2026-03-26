@@ -100,7 +100,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             lineHeight: 1.6,
             maxWidth: 700,
           }}>
-            FDA-primary change-routing workspace for regulatory, ML, quality, and clinical reviewers. Capture the authorized baseline, classify the change, review pathway logic, and generate an internal assessment record with expert-review cues.
+            FDA-primary change-routing workspace for regulatory, ML, quality, and clinical reviewers. Capture the authorized baseline, classify the change, review pathway logic, and assemble a traceable internal assessment for expert review.
           </p>
         </div>
 
@@ -128,8 +128,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               border: '#a7f3d0',
             },
             {
-              title: 'Assessment record',
-              desc: 'Export a report or JSON artifact for internal change control and submission planning.',
+              title: 'Decision traceability',
+              desc: 'Capture the pathway basis, documentation cues, and expert-review context in one assessment.',
               icon: 'fileText',
               accent: '#475569',
               bg: '#f8fafc',
@@ -532,7 +532,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   margin: 0,
                   lineHeight: 1.55,
                 }}>
-                  Open a pre-filled example to inspect the workflow, reasoning, and report structure before using the tool on a live case.
+                  Open a pre-filled example to inspect the workflow, reasoning, and final review output before using the tool on a live case.
                 </p>
                 <p style={{
                   fontSize: 12,

@@ -38,7 +38,10 @@ describe('UI workflow', () => {
     expect(screen.getByText('Continue Working')).toBeInTheDocument();
     expect(screen.getByText('Start Assessment')).toBeInTheDocument();
     expect(screen.getByText('Primary workflow')).toBeInTheDocument();
+    expect(screen.getByText('Decision traceability')).toBeInTheDocument();
     expect(screen.queryByText('Assessment Workflow')).not.toBeInTheDocument();
+    expect(screen.queryByText('Assessment record')).not.toBeInTheDocument();
+    expect(screen.queryByText(/JSON artifact/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Decision support only — not a regulatory determination\./i)).toBeInTheDocument();
     expect(
       resumeButton.compareDocumentPosition(fullAssessmentButton) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -84,7 +87,7 @@ describe('UI workflow', () => {
       },
       {
         id: 'review',
-        label: 'Review & generate report',
+        label: 'Final review',
         shortLabel: 'Review',
         icon: 'check',
       },
@@ -143,7 +146,7 @@ describe('UI workflow', () => {
     );
 
     expect(screen.getByText('Authorization')).toBeInTheDocument();
-    expect(screen.getByText('Reliance-ready inputs captured')).toBeInTheDocument();
+    expect(screen.getByText('All required questions answered')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/working title/i)).not.toBeInTheDocument();
   });
 
@@ -195,6 +198,6 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
-    expect(screen.getByText('Print Report')).toBeInTheDocument();
+    expect(screen.getByText('Print Assessment Summary')).toBeInTheDocument();
   });
 });

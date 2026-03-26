@@ -76,9 +76,7 @@ export const App: React.FC = () => {
 
   // Assessment management state
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
-  const [currentAssessmentName, setCurrentAssessmentName] = useState<string>('');
   const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
-  const [saveNotice, setSaveNotice] = useState('');
 
   // Refresh saved assessments list
   const refreshSavedAssessments = useCallback(() => {
@@ -262,7 +260,6 @@ export const App: React.FC = () => {
     setAnswers({});
     setCurrentBlockIndex(0);
     setCurrentAssessmentId(null);
-    setCurrentAssessmentName('');
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(BLOCK_STORAGE_KEY);
@@ -351,31 +348,12 @@ export const App: React.FC = () => {
     }
   }, [currentBlockIndex, blocks.length, currentBlock, currentBlockComplete, currentQuestions, answers]);
 
-  // --- Save / Load Assessment ---
-
-  const handleSaveAssessment = useCallback(() => {
-    const name = currentAssessmentName || `Assessment — ${answers.A1 || 'New'} — ${new Date().toLocaleDateString()}`;
-    const saved = assessmentStore.save({
-      id: currentAssessmentId || undefined,
-      name,
-      answers,
-      blockIndex: currentBlockIndex,
-      lastPathway: determination.pathway,
-    });
-    setCurrentAssessmentId(saved.id);
-    setCurrentAssessmentName(saved.name);
-    refreshSavedAssessments();
-    setSaveNotice('Assessment saved');
-    setTimeout(() => setSaveNotice(''), 3000);
-  }, [currentAssessmentId, currentAssessmentName, answers, currentBlockIndex, determination.pathway, refreshSavedAssessments]);
-
   const handleLoadAssessment = useCallback((id: string) => {
     const assessment = assessmentStore.get(id);
     if (!assessment) return;
     setAnswers(assessment.answers);
     setCurrentBlockIndex(assessment.blockIndex);
     setCurrentAssessmentId(assessment.id);
-    setCurrentAssessmentName(assessment.name);
     setValidationErrors({});
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -418,32 +396,6 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Save current assessment, then start a fresh one
-  const handleSaveAndNew = useCallback(() => {
-    // Save current work
-    const name = currentAssessmentName || `Assessment — ${answers.A1 || 'New'} — ${new Date().toLocaleDateString()}`;
-    const saved = assessmentStore.save({
-      id: currentAssessmentId || undefined,
-      name,
-      answers,
-      blockIndex: currentBlockIndex,
-      lastPathway: determination.pathway,
-    });
-    setCurrentAssessmentId(null);
-    setCurrentAssessmentName('');
-    setAnswers({});
-    setCurrentBlockIndex(0);
-    setValidationErrors({});
-    refreshSavedAssessments();
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(BLOCK_STORAGE_KEY);
-    } catch { /* ignore */ }
-    setSaveNotice(`Saved "${saved.name}" — starting new assessment`);
-    setTimeout(() => setSaveNotice(''), 4000);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentAssessmentId, currentAssessmentName, answers, currentBlockIndex, determination.pathway, refreshSavedAssessments]);
-
   // --- Dashboard actions ---
 
   const handleQuickReview = useCallback(() => {
@@ -452,7 +404,6 @@ export const App: React.FC = () => {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
-    setCurrentAssessmentName('Sample Case — Quick Review');
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -462,7 +413,6 @@ export const App: React.FC = () => {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
-    setCurrentAssessmentName('');
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(BLOCK_STORAGE_KEY);
@@ -763,9 +713,6 @@ export const App: React.FC = () => {
       caseSummary={caseSummary.map(item => ({ ...item }))}
       onReset={handleReset}
       onHome={handleHome}
-      onSave={handleSaveAssessment}
-      onSaveAndNew={handleSaveAndNew}
-      saveNotice={saveNotice}
     >
       {renderBlockContent()}
 
@@ -812,8 +759,7 @@ export const App: React.FC = () => {
             {currentBlockIndex + 1} of {blocks.length}
           </span>
 
-          {/* Next button */}
-          {currentBlockIndex < blocks.length - 1 ? (
+          {currentBlockIndex < blocks.length - 1 && (
             <button
               onClick={handleNext}
               style={{
@@ -831,29 +777,8 @@ export const App: React.FC = () => {
                 transition: 'all var(--transition-fast)',
               }}
             >
-              {currentBlock?.id === 'review' ? 'Finish' : 'Continue'}
+              Continue
               <Icon name="arrow" size={16} color="#fff" />
-            </button>
-          ) : (
-            <button
-              onClick={() => window.print()}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                padding: 'var(--space-md) var(--space-lg)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-success)',
-                border: 'none',
-                color: '#fff',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              <Icon name="printer" size={16} color="#fff" />
-              Print Report
             </button>
           )}
         </div>
