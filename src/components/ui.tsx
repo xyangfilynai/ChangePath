@@ -322,8 +322,10 @@ export const GuidanceRef: React.FC<GuidanceRefProps> = ({
     return (
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{code}</span>
     );
+  const linkLabel = link.fullName || link.shortName || code;
+  const shortName = link.shortName || '';
   const section = code
-    .replace(link.shortName, '')
+    .replace(shortName, '')
     .replace(code.split(' ')[0], '')
     .trim();
   return (
@@ -340,9 +342,9 @@ export const GuidanceRef: React.FC<GuidanceRefProps> = ({
         lineHeight: 1.4,
         display: 'inline',
       }}
-      title={link.fullName + (section ? ` — ${section}` : '')}
+      title={linkLabel + (section ? ` — ${section}` : '')}
     >
-      {link.fullName}
+      {linkLabel}
       {showSection && section ? ` ${section}` : ''}
       <ExternalLinkIcon />
     </a>
@@ -426,11 +428,12 @@ export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({
     }
     const link = guidanceLinks[matchedPattern.code];
     if (link) {
+      const linkLabel = link.fullName || link.shortName || earliestMatch[0];
       segments.push({
         type: 'link',
-        value: link.fullName,
+        value: linkLabel,
         url: link.url,
-        fullName: link.fullName,
+        fullName: linkLabel,
       });
     } else {
       segments.push({ type: 'text', value: earliestMatch[0] });

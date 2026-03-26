@@ -92,7 +92,7 @@ describe('App Shell: SAMPLE_CASE', () => {
     const det = computeDetermination(SAMPLE_CASE);
     const hasPCCP = SAMPLE_CASE.A2 === 'Yes';
     const selectedChangeType = changeTaxonomy[SAMPLE_CASE.B1 as string]?.types
-      ?.find((t: any) => t.name === SAMPLE_CASE.B2);
+      ?.find((t) => t.name === SAMPLE_CASE.B2);
     const pccpEligibility = selectedChangeType?.pccp;
 
     // All four conditions from original showPCCPRecommendation must be true
@@ -110,8 +110,9 @@ describe('App Shell: SAMPLE_CASE', () => {
 
   it('SAMPLE_CASE change type is "CONDITIONAL" PCCP eligible', () => {
     const ct = changeTaxonomy['Training Data']?.types
-      ?.find((t: any) => t.name === 'Additional data \u2014 new clinical sites');
+      ?.find((t) => t.name === 'Additional data \u2014 new clinical sites');
     expect(ct).toBeDefined();
+    if (!ct) throw new Error('Expected sample change type to exist');
     expect(ct.pccp).toBe('CONDITIONAL');
   });
 });

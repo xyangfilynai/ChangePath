@@ -1,3 +1,3 @@
-export { REG_SOURCES, sourceCitations, guidanceLinks, findGuidanceLink, getSourceBadge, statusBadgeStyle, statusBadgeLabel } from './regulatory-sources';
+export { guidanceLinks, findGuidanceLink, getSourceBadge } from './regulatory-sources';
 export { ruleReasoningLibrary, questionReasoningLibrary } from './reasoning';
-export { Authority, Binding, PCCPElig, docRequirements } from './doc-requirements';
+export { docRequirements } from './doc-requirements';

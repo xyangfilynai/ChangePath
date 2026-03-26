@@ -1,4 +1,13 @@
-export const REG_SOURCES: Record<string, any> = {
+interface RegulatorySource {
+  title: string;
+  shortName?: string;
+  fullName?: string;
+  status: string;
+  jurisdiction: string;
+  url?: string;
+}
+
+const REG_SOURCES: Record<string, RegulatorySource> = {
   "21 CFR 807.81(a)(3)": { title: "Code of Federal Regulations — Premarket Notification: Criteria for Determining Significant Change", shortName: "21 CFR 807.81(a)(3)", fullName: "21 CFR 807.81(a)(3) — Criteria for New 510(k) Submission", status: "Regulation", jurisdiction: "US", url: "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-H/part-807/subpart-E/section-807.81" },
   "FDA-SW-510K-2017": { title: "FDA, \"Deciding When to Submit a 510(k) for a Software Change to an Existing Device\" (Final Guidance, Oct 2017)", shortName: "FDA SW Change Guidance", fullName: "Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Final Guidance, Oct 2017)", status: "Final Guidance", jurisdiction: "US", url: "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/deciding-when-submit-510k-software-change-existing-device" },
   "FDA-SW-510K-2017 Q1": { title: "Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017), Flowchart Question 1 — Cybersecurity Exemption", status: "Final Guidance", jurisdiction: "US" },
@@ -37,11 +46,11 @@ export const REG_SOURCES: Record<string, any> = {
   "FD&C 524B": { title: "Federal Food, Drug, and Cosmetic Act §524B — Ensuring Cybersecurity of Devices", shortName: "FD&C Act §524B", fullName: "Federal Food, Drug, and Cosmetic Act §524B — Ensuring Cybersecurity of Devices", status: "Statute", jurisdiction: "US", url: "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title21-section360n-2&num=0&edition=prelim" },
 };
 
-export const sourceCitations: Record<string, any> = Object.fromEntries(
+const sourceCitations = Object.fromEntries(
   Object.entries(REG_SOURCES).map(([k, v]) => [k, { full: v.title, status: v.status, jurisdiction: v.jurisdiction }])
 );
 
-export const guidanceLinks: Record<string, any> = Object.fromEntries(
+export const guidanceLinks = Object.fromEntries(
   Object.entries(REG_SOURCES).filter(([, v]) => v.url).map(([k, v]) => [k, { url: v.url, shortName: v.shortName, fullName: v.fullName }])
 );
 
@@ -103,28 +112,4 @@ export const getSourceBadge = (code: string | null | undefined) => {
   if (/PMA Supplement/i.test(c)) return { full: c, status: "Regulation", jurisdiction: "US" };
   if (/FDORA|FD&C Act|§\d{3}[A-Z]/.test(c)) return { full: c, status: "Statute", jurisdiction: "US" };
   return { full: c, status: "Unclassified", jurisdiction: "" };
-};
-
-export const statusBadgeStyle = (status: string | null | undefined) => {
-  const s = (status || "").toLowerCase();
-  if (s === "statute") return { bg: "#EDE9FE", color: "#6D28D9", border: "#C4B5FD" };
-  if (s === "regulation") return { bg: "#EFF6FF", color: "#2563EB", border: "#D0E3FF" };
-  if (s === "standard") return { bg: "#F0F0FF", color: "#6B5CE7", border: "#D8D5F0" };
-  if (s === "draft guidance") return { bg: "#FEF7E0", color: "#B8860B", border: "#F5E6B8" };
-  if (s === "best practice") return { bg: "#F8F6F1", color: "#64748B", border: "#E2DED5" };
-  if (s === "internal policy") return { bg: "#F1F0F8", color: "#7C6FA0", border: "#DDD8EE" };
-  if (s === "unclassified") return { bg: "#F9FAFB", color: "#9CA3AF", border: "#E5E7EB" };
-  return { bg: "#E7F5EE", color: "#1B7D56", border: "#C6E7D4" }; // Final Guidance (default)
-};
-
-export const statusBadgeLabel = (status: string | null | undefined) => {
-  const s = (status || "").toLowerCase();
-  if (s === "statute") return "STATUTE";
-  if (s === "regulation") return "REGULATION";
-  if (s === "standard") return "STANDARD";
-  if (s === "draft guidance") return "DRAFT GUIDANCE";
-  if (s === "best practice") return "BEST PRACTICE";
-  if (s === "internal policy") return "INTERNAL POLICY";
-  if (s === "unclassified") return "UNCLASSIFIED";
-  return "FINAL GUIDANCE";
 };

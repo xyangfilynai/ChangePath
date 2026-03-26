@@ -8,13 +8,12 @@ import {
   computeDerivedState,
   getBlocks,
   getQuestions,
+  type Answers,
 } from '../src/lib/assessment-engine';
 import { computeEvidenceGaps } from '../src/lib/evidence-gaps';
 import { formatArtifactAsText, generateAssessmentArtifact } from '../src/lib/report-generator';
 import { buildCaseSpecificReasoning } from '../src/lib/case-specific-reasoning';
 import { buildEvidenceGapInsightItems, buildExpertReviewItems } from '../src/lib/review-insights';
-
-type Answers = Record<string, any>;
 
 const base510k = (overrides: Answers = {}): Answers => ({
   A1: AuthPathway.FiveOneZeroK,

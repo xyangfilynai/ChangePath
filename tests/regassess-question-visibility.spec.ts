@@ -6,9 +6,8 @@ import {
   computeDerivedState,
   getBlocks,
   getQuestions,
+  type Answers,
 } from '../src/lib/assessment-engine';
-
-type Answers = Record<string, any>;
 
 const findQ = (blockId: string, answers: Answers, id: string) => {
   const ds = computeDerivedState(answers);

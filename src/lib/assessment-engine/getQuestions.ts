@@ -1,5 +1,5 @@
 import { Answer, AuthPathway, Answers } from './types';
-import { changeTaxonomy } from './changeTaxonomy';
+import { changeTaxonomy, type ChangeTypeDefinition } from './changeTaxonomy';
 
 /**
  * Derived-state shape expected by getQuestions / getBlocks.
@@ -30,13 +30,17 @@ export interface Question {
   disabled?: boolean;
   infoNote?: string | null;
   autoWarn?: string | null;
-  forcedValue?: any;
-  consequencePreview?: any;
+  forcedValue?: string | number | boolean | null;
+  consequencePreview?: string | {
+    yes?: string;
+    no?: string;
+    uncertain?: string;
+  } | null;
   mlguidance?: string;
   draftRef?: boolean;
   classificationGuidance?: string | null;
   boundaryNote?: string | null;
-  selectedTypeData?: any;
+  selectedTypeData?: ChangeTypeDefinition | null;
 }
 
 export interface Block {
@@ -108,12 +112,12 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
         pathwayCritical: true,
         help: "Select the category that best describes the change. This determines the available specific change types." },
       { id: "B2", q: "What is the specific type of change?", type: "single",
-        options: answers.B1 ? (changeTaxonomy[answers.B1]?.types?.map((t: any) => t.name) || []) : [],
+        options: answers.B1 ? (changeTaxonomy[answers.B1]?.types?.map((t) => t.name) || []) : [],
         dynamic: true, disabled: !answers.B1,
         help: answers.B1 ? "Select the specific change type within the selected category." : "Select a change category first.",
         classificationGuidance: answers.B1 ? changeTaxonomy[answers.B1]?.classificationGuidance : null,
         boundaryNote: answers.B1 ? changeTaxonomy[answers.B1]?.boundaryNote : null,
-        selectedTypeData: (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1]?.types?.find((t: any) => t.name === answers.B2) : null },
+        selectedTypeData: (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1]?.types?.find((t) => t.name === answers.B2) : null },
       { id: "B3", q: "Does this change affect the intended use or indications for use?", type: "yesnouncertain",
         critical: true, pathwayCritical: true,
         autoWarn: isCatIntendedUse ? "You selected 'Intended Use / Indications for Use' as the change category. This category frequently affects intended use — but you must explicitly confirm by comparing the proposed change against the authorized indications/intended-purpose statement word-by-word. Do not assume 'Yes' without that comparison." : null,

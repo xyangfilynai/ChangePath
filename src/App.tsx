@@ -187,7 +187,7 @@ export const App: React.FC = () => {
   }, [blocks, requiredAnsweredCounts, requiredCounts]);
 
   // Handle answer change with cascade clearing (matches original setAnswer logic)
-  const handleAnswerChange = useCallback((questionId: string, value: any) => {
+  const handleAnswerChange = useCallback((questionId: string, value: unknown) => {
     setAnswers(prev => {
       const next: Answers = { ...prev, [questionId]: value };
 
@@ -465,7 +465,6 @@ export const App: React.FC = () => {
     if (currentBlock.id === 'review') {
       return (
         <ReviewPanel
-          pathway={determination.pathway}
           determination={determination}
           answers={answers}
           blocks={blocks}
@@ -616,7 +615,7 @@ export const App: React.FC = () => {
         )}
 
         {blockId === 'P' && (() => {
-          const selType = (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1 as string]?.types?.find((t: any) => t.name === answers.B2) : null;
+          const selType = (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1 as string]?.types?.find((t) => t.name === answers.B2) : null;
           const pccpStatus = selType?.pccp;
           const pccpNote = selType?.pccpNote;
           if (!selType || !pccpStatus) return null;

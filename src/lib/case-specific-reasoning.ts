@@ -5,6 +5,7 @@ import {
   changeTaxonomy,
   type Answers,
   type Block,
+  type DeterminationResult,
   type Question,
 } from './assessment-engine';
 import { ruleReasoningLibrary } from './content';
@@ -244,7 +245,7 @@ const getRouteChangeConditionForQuestion = (
   }
 };
 
-export const getRuleKey = (determination: any): string | null => {
+export const getRuleKey = (determination: DeterminationResult): string | null => {
   if (determination.isIntendedUseChange) return 'SCREEN-01-Yes';
   if (determination.isIntendedUseUncertain) return 'SCREEN-01-Uncertain';
   if (determination.pathway === Pathway.PMASupplementRequired) return 'PMA-Supplement';
@@ -261,7 +262,7 @@ export const getRuleKey = (determination: any): string | null => {
 
 export function buildCaseSpecificReasoning(
   answers: Answers,
-  determination: any,
+  determination: DeterminationResult,
   blocks: Block[],
   getQuestionsForBlock: (blockId: string) => Question[],
 ): CaseSpecificReasoning {

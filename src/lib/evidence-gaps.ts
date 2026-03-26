@@ -3,7 +3,7 @@
  * Produces a structured checklist of what's missing before an assessment can be relied on.
  */
 
-import type { Answers } from './assessment-engine';
+import type { Answers, DeterminationResult } from './assessment-engine';
 import { Answer, AuthPathway } from './assessment-engine';
 import type { SourceClass } from './source-classification';
 
@@ -19,7 +19,7 @@ export interface EvidenceGap {
   remediation: string;
 }
 
-export function computeEvidenceGaps(answers: Answers, determination: any): EvidenceGap[] {
+export function computeEvidenceGaps(answers: Answers, determination: DeterminationResult): EvidenceGap[] {
   const gaps: EvidenceGap[] = [];
   const isPMA = answers.A1 === AuthPathway.PMA;
   const isDeNovo = answers.A1 === AuthPathway.DeNovo;

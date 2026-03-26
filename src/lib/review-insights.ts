@@ -1,4 +1,4 @@
-import { Answer, changeTaxonomy, type Answers } from './assessment-engine';
+import { Answer, changeTaxonomy, type Answers, type DeterminationResult } from './assessment-engine';
 import type { EvidenceGap, GapSeverity } from './evidence-gaps';
 
 export interface ReviewInsightItem {
@@ -29,17 +29,8 @@ const joinWithAnd = (items: string[]): string => {
   return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 };
 
-const truncate = (value: string | null | undefined, max = 180): string | null => {
-  if (!value) return null;
-  const compact = value.replace(/\s+/g, ' ').trim();
-  if (!compact) return null;
-  return compact.length <= max ? compact : `${compact.slice(0, max).trimEnd()}...`;
-};
-
 const getChangeLabel = (answers: Answers): string =>
   (answers.B2 as string) || (answers.B1 as string) || 'the reported change';
-
-const getCaseExcerpt = (answers: Answers): string | null => truncate(answers.B4 as string | undefined);
 
 const getAnswerLabel = (value: unknown): string => {
   if (value === undefined || value === null || value === '') return 'not answered';
@@ -73,7 +64,7 @@ const getSourceClassLabel = (sourceClass: string): string =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 
-const getRouteMeta = (determination: any): string =>
+const getRouteMeta = (determination: DeterminationResult): string =>
   determination?.pathway ? `Current route: ${determination.pathway}` : 'Current route pending';
 
 const significanceQuestionDetails: Record<string, { label: string; short: string }> = {
@@ -205,10 +196,8 @@ const defaultReviewInsight = (
   sourceRefs,
 });
 
-export function buildExpertReviewItems(answers: Answers, determination: any): ReviewInsightItem[] {
+export function buildExpertReviewItems(answers: Answers, determination: DeterminationResult): ReviewInsightItem[] {
   const changeLabel = getChangeLabel(answers);
-  const caseExcerpt = getCaseExcerpt(answers);
-  const changeContext = getSelectedChange(answers);
   const routeMeta = getRouteMeta(determination);
   const ruleIds: string[] = determination?.decisionTrace?.consistencyRules?.map((rule: { id: string }) => rule.id) || [];
   const sourceByRuleId: Record<string, string[]> = {
@@ -244,7 +233,7 @@ export function buildExpertReviewItems(answers: Answers, determination: any): Re
           id,
           title: getUncertainSignificanceTitle(answers, changeLabel),
           meta: `Internal conservative policy · ${routeMeta}`,
-          whyThisMatters: `${uncertainSummary} were answered Uncertain for ${changeLabel}. On the current record, RegAccess therefore keeps the case on the more conservative ${determination.pathway} path until those answers are resolved.${caseExcerpt ? ` Case excerpt: ${caseExcerpt}` : changeContext?.description ? ` Change context: ${changeContext.description}` : ''}`,
+          whyThisMatters: `${uncertainSummary} were answered Uncertain for ${changeLabel}. On the current record, RegAccess therefore keeps the case on the more conservative ${determination.pathway} path until those answers are resolved.`,
           actionLabel: 'Evidence needed to close this',
           actionText: getSignificanceEvidenceNeed(answers, changeLabel),
           sourceRefs: sourceByRuleId[id],
@@ -392,12 +381,11 @@ export function buildExpertReviewItems(answers: Answers, determination: any): Re
 
 export function buildEvidenceGapInsightItems(
   answers: Answers,
-  determination: any,
+  determination: DeterminationResult,
   gaps: EvidenceGap[],
 ): EvidenceGapInsightItem[] {
   const changeLabel = getChangeLabel(answers);
   const changeContext = getSelectedChange(answers);
-  const caseExcerpt = getCaseExcerpt(answers);
   const uncertainSignificance = describeSignificanceUncertainty(answers);
 
   return gaps.map((gap) => {
@@ -419,7 +407,7 @@ export function buildEvidenceGapInsightItems(
         return {
           ...defaultItem,
           title: `The data supporting ${changeLabel} is not yet shown to represent the cleared population`,
-          whyThisMatters: `E1 was answered ${getAnswerLabel(answers.E1)}, so the current record does not show whether the training, validation, or test data supporting ${changeLabel} represents the authorized patient population and operating conditions.${caseExcerpt ? ` Case excerpt: ${caseExcerpt}` : changeContext?.description ? ` Change context: ${changeContext.description}` : ''}`,
+          whyThisMatters: `E1 was answered ${getAnswerLabel(answers.E1)}, so the current record does not show whether the training, validation, or test data supporting ${changeLabel} represents the authorized patient population and operating conditions.`,
           actionText: getRepresentativenessNeed(answers, changeLabel),
         };
       case 'GAP-SUBGROUP':

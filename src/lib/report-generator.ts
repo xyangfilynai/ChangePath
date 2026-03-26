@@ -3,7 +3,7 @@
  * Produces audit-ready output with all required fields for regulatory defensibility.
  */
 
-import type { Answers, Block, Question } from './assessment-engine';
+import type { Answers, Block, DeterminationResult, Question } from './assessment-engine';
 import { Pathway } from './assessment-engine';
 import { docRequirements } from './content';
 import { getSourceBadge } from './content';
@@ -37,14 +37,6 @@ export interface AssessmentArtifact {
     counterConsiderations: string[];
     sources: string[];
   };
-  keyInputs: Array<{
-    id: string;
-    question: string;
-    answer: string;
-    isPathwayCritical: boolean;
-  }>;
-  assumptions: string[];
-  unresolvedQuestions: string[];
   expertReviewItems: ReviewInsightItem[];
   evidenceGaps: EvidenceGap[];
   evidenceGapItems: EvidenceGapInsightItem[];
@@ -67,7 +59,7 @@ const pathwayToDocKey: Record<string, string> = {
 
 export function generateAssessmentArtifact(
   answers: Answers,
-  determination: any,
+  determination: DeterminationResult,
   blocks: Block[],
   getQuestionsForBlock: (blockId: string) => Question[],
 ): AssessmentArtifact {
@@ -94,63 +86,6 @@ export function generateAssessmentArtifact(
     blocks,
     getQuestionsForBlock,
   );
-
-  // Key inputs — collect all pathway-critical answered questions
-  const keyInputs: AssessmentArtifact['keyInputs'] = [];
-  for (const block of blocks) {
-    if (block.id === 'review') continue;
-    const questions = getQuestionsForBlock(block.id);
-    for (const q of questions) {
-      if (q.sectionDivider || q.skip) continue;
-      const val = answers[q.id];
-      if (val === undefined || val === '' || val === null) continue;
-      keyInputs.push({
-        id: q.id,
-        question: q.q || q.label || q.id,
-        answer: Array.isArray(val) ? val.join(', ') : String(val),
-        isPathwayCritical: Boolean(q.pathwayCritical),
-      });
-    }
-  }
-
-  // Assumptions
-  const assumptions: string[] = [
-    'Assessment assumes all answers reflect the current state of the change as described.',
-    'Regulatory framework: U.S. FDA primary; non-U.S. jurisdictions via escalation cues only.',
-  ];
-  if (determination.isCyberOnly) {
-    assumptions.push('Assumed the cybersecurity change has zero functional impact on device performance (must be verified with appropriate analysis).');
-  }
-  if (determination.isBugFix) {
-    assumptions.push('Assumed the fix restores the device to a known, documented, cleared specification.');
-  }
-  if (determination.allSignificanceNo && !determination.isCyberOnly && !determination.isBugFix) {
-    assumptions.push('All significance questions were answered No — assumes each answer is supported by evidence, not just expectation.');
-  }
-  if (determination.pccpScopeVerified) {
-    assumptions.push('PCCP scope verification assumes all boundary conditions and acceptance criteria remain as authorized.');
-  }
-
-  // Unresolved questions
-  const unresolvedQuestions: string[] = [];
-  if (determination.isIntendedUseUncertain) {
-    unresolvedQuestions.push('Intended use impact cannot be determined — requires expert review or FDA Pre-Submission.');
-  }
-  if (determination.hasUncertainSignificance && !determination.isIntendedUseChange) {
-    unresolvedQuestions.push('One or more significance questions remain uncertain — treated conservatively as significant.');
-  }
-  if (determination.seUncertain) {
-    unresolvedQuestions.push('Substantial equivalence supportability is uncertain.');
-  }
-  if (determination.pccpIncomplete) {
-    unresolvedQuestions.push('PCCP scope verification is incomplete.');
-  }
-  if (determination.pmaIncomplete) {
-    unresolvedQuestions.push('PMA safety/effectiveness assessment is incomplete.');
-  }
-  if (determination.baselineIncomplete) {
-    unresolvedQuestions.push('Authorized baseline information is incomplete — assessment may be unreliable.');
-  }
 
   // Evidence gaps
   const evidenceGaps = computeEvidenceGaps(answers, determination);
@@ -224,9 +159,6 @@ export function generateAssessmentArtifact(
       counterConsiderations: caseReasoning.counterConsiderations,
       sources: caseReasoning.sources,
     },
-    keyInputs,
-    assumptions,
-    unresolvedQuestions,
     expertReviewItems,
     evidenceGaps,
     evidenceGapItems,

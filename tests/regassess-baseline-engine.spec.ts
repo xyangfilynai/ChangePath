@@ -16,9 +16,8 @@ import {
   Pathway,
   computeDetermination,
   computeDerivedState,
+  type Answers,
 } from '../src/lib/assessment-engine';
-
-type Answers = Record<string, any>;
 
 const base510k = (overrides: Answers = {}): Answers => ({
   A1: AuthPathway.FiveOneZeroK,
@@ -603,7 +602,7 @@ describe('GenAI consistency cross-checks', () => {
 
 describe('dead code removal (Finding #3)', () => {
   it('determination object does not contain consistencyBlock field', () => {
-    const det = computeDetermination(base510k()) as Record<string, any>;
+    const det = computeDetermination(base510k());
     expect('consistencyBlock' in det).toBe(false);
   });
 });

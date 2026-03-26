@@ -5,7 +5,7 @@ import { DashboardPage } from '../src/components/DashboardPage';
 import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
 import { ReviewPanel } from '../src/components/ReviewPanel';
-import { Answer, Pathway, computeDetermination, type Block, type Question } from '../src/lib/assessment-engine';
+import { Answer, computeDetermination, type Block, type Question } from '../src/lib/assessment-engine';
 
 describe('UI workflow', () => {
   it('prioritizes continuing existing work ahead of starting a new assessment', () => {
@@ -151,40 +151,30 @@ describe('UI workflow', () => {
   });
 
   it('surfaces PCCP recommendation in the review hero and removes export/save actions', () => {
+    const answers = {
+      A1: '510(k)',
+      A1b: 'K123456',
+      A1c: 'v4.2 cleared build',
+      A1d: 'Authorized IFU summary',
+      A2: 'No',
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B4: 'The submitted change description reports lower sensitivity on Canon scanners and higher false-positive rates in older patients with chronic lung disease.',
+      B3: 'No',
+      C1: 'No',
+      C2: 'No',
+      C3: 'Uncertain',
+      C4: 'No',
+      C5: 'No',
+      C6: 'Yes',
+      E1: 'Yes',
+      E2: 'Yes',
+    } as const;
+
     render(
       <ReviewPanel
-        pathway={Pathway.NewSubmission}
-        determination={{
-          pathway: Pathway.NewSubmission,
-          isNewSub: true,
-          isIncomplete: false,
-          isDocOnly: false,
-          isPCCPImpl: false,
-          consistencyIssues: [],
-          hasUncertainSignificance: true,
-          seUncertain: false,
-          cumulativeDriftUnresolved: false,
-          pccpRecommendation: { shouldRecommend: true },
-        }}
-        answers={{
-          A1: '510(k)',
-          A1b: 'K123456',
-          A1c: 'v4.2 cleared build',
-          A1d: 'Authorized IFU summary',
-          A2: 'No',
-          B1: 'Training Data',
-          B2: 'Additional data — new clinical sites',
-          B4: 'The submitted change description reports lower sensitivity on Canon scanners and higher false-positive rates in older patients with chronic lung disease.',
-          B3: 'No',
-          C1: 'No',
-          C2: 'No',
-          C3: 'Uncertain',
-          C4: 'No',
-          C5: 'No',
-          C6: 'Yes',
-          E1: 'Yes',
-          E2: 'Yes',
-        }}
+        determination={computeDetermination(answers)}
+        answers={answers}
         blocks={[]}
         getQuestionsForBlock={() => []}
         onEditBlock={() => {}}
@@ -230,7 +220,6 @@ describe('UI workflow', () => {
 
     render(
       <ReviewPanel
-        pathway={Pathway.NewSubmission}
         determination={computeDetermination(answers)}
         answers={answers}
         blocks={[]}

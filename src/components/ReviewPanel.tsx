@@ -7,7 +7,7 @@ import {
   AuthorityTag,
 } from './ui';
 import { Pathway } from '../lib/assessment-engine';
-import type { Answers, Block, Question } from '../lib/assessment-engine';
+import type { Answers, Block, DeterminationResult, Question } from '../lib/assessment-engine';
 import {
   docRequirements,
   findGuidanceLink,
@@ -24,8 +24,7 @@ import { classifySource } from '../lib/source-classification';
 import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
 
 interface ReviewPanelProps {
-  pathway: string;
-  determination: any;
+  determination: DeterminationResult;
   answers: Answers;
   blocks: Block[];
   getQuestionsForBlock: (blockId: string) => Question[];
@@ -81,7 +80,6 @@ const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
 };
 
 export const ReviewPanel: React.FC<ReviewPanelProps> = ({
-  pathway,
   determination,
   answers,
   blocks,
@@ -92,6 +90,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   onAddNote,
   onRemoveNote,
 }) => {
+  const pathway = determination.pathway;
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['reasoning'])
   );
@@ -195,7 +194,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const hasPCCP = answers.A2 === 'Yes';
   const isNewSub = determination.isNewSub;
   const selectedChangeType = (answers.B1 && answers.B2)
-    ? changeTaxonomy[answers.B1 as string]?.types?.find((t: any) => t.name === answers.B2)
+    ? changeTaxonomy[answers.B1 as string]?.types?.find((t) => t.name === answers.B2)
     : null;
   const pccpEligibility = selectedChangeType?.pccp;
   const showPCCPRecommendation = pccpRecommendation?.shouldRecommend && !hasPCCP && isNewSub

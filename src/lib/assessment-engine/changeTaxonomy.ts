@@ -10,7 +10,24 @@
  * CONDITIONAL = may be suitable depending on scope and risk; UNLIKELY = rarely suitable;
  * NO = outside PCCP scope per guidance; EXEMPT = cybersecurity exemption pathway.
  */
-export const changeTaxonomy: Record<string, any> = {
+export type PCCPEligibility = 'TYPICAL' | 'CONDITIONAL' | 'UNLIKELY' | 'NO' | 'EXEMPT';
+
+export interface ChangeTypeDefinition {
+  name: string;
+  desc: string;
+  example: string;
+  misclass: string | null;
+  pccp: PCCPEligibility;
+  pccpNote: string;
+}
+
+export interface ChangeCategoryDefinition {
+  types: ChangeTypeDefinition[];
+  classificationGuidance: string | null;
+  boundaryNote: string | null;
+}
+
+export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
   "Training Data": {
     types: [
       { name: "Additional data — same distribution", desc: "Adding more training data from existing sources matching current distribution.", example: "Adding 5,000 more chest X-rays from existing hospital partners using same equipment.", misclass: "Often confused with 'new clinical sites' when data comes from the same hospital system but a newly opened facility. If new facility = new equipment or protocols, classify under 'new clinical sites' instead.", pccp: "TYPICAL", pccpNote: "Define data quality criteria, acceptance thresholds, validation protocol." },

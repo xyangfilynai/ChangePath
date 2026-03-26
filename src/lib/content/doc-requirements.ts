@@ -1,25 +1,17 @@
-export const Authority = Object.freeze({
-  Statute: "statute",
-  Regulation: "regulation",
-  FinalGuidance: "final_guidance",
-  DraftGuidance: "draft_guidance",
-  Standard: "standard",
-  BestPractice: "best_practice",
-  InternalPolicy: "internal_policy",
-});
+interface DocumentRequirement {
+  doc: string;
+  source: string;
+}
 
-export const Binding = Object.freeze({
-  Mandatory: "mandatory",
-  Strong: "strong",
-  Recommended: "recommended",
-  Advisory: "advisory",
-});
+interface DocumentationRequirementSet {
+  required: DocumentRequirement[];
+  recommended: DocumentRequirement[];
+  orgSpecific: DocumentRequirement[];
+  basis: string;
+  scopeNote?: string;
+}
 
-export const PCCPElig = Object.freeze({
-  Typical: "TYPICAL", No: "NO", Conditional: "CONDITIONAL", Unlikely: "UNLIKELY", Exempt: "EXEMPT",
-});
-
-const _docModules: Record<string, any> = {
+const docModules: Record<string, DocumentRequirement[]> = {
   baseQMS: [
     { doc: "QMS change control record", source: "ISO 13485:2016 §7.3.9 (QMSR)" },
   ],
@@ -66,17 +58,17 @@ const _docModules: Record<string, any> = {
   ],
 };
 
-export const docRequirements: Record<string, any> = {
+export const docRequirements: Record<string, DocumentationRequirementSet> = {
   "Letter to File": {
     required: [
       { doc: "Letter to File with change description, rationale, and regulatory basis", source: "QMSR; internal change-control records" },
-      ..._docModules.riskAssessmentNoImpact,
-      ..._docModules.configMgmt,
-      ..._docModules.baseQMS,
-      ..._docModules.cyberDevice,
+      ...docModules.riskAssessmentNoImpact,
+      ...docModules.configMgmt,
+      ...docModules.baseQMS,
+      ...docModules.cyberDevice,
     ],
     recommended: [
-      ..._docModules.modelCardTransparencyRecommended,
+      ...docModules.modelCardTransparencyRecommended,
     ],
     orgSpecific: [
       { doc: "Performance comparison summary (pre/post change)", source: "Organization policy" },
@@ -86,13 +78,13 @@ export const docRequirements: Record<string, any> = {
   },
   "Implement Under Authorized PCCP": {
     required: [
-      ..._docModules.pccpDocs,
-      ..._docModules.baseQMS,
+      ...docModules.pccpDocs,
+      ...docModules.baseQMS,
       { doc: "Risk management file update", source: "ISO 14971:2019" },
-      ..._docModules.cyberDevice,
+      ...docModules.cyberDevice,
     ],
     recommended: [
-      ..._docModules.biasRecommended,
+      ...docModules.biasRecommended,
       { doc: "Post-deployment performance monitoring plan activation", source: "FDA-PCCP-2025 §VII" },
       { doc: "Subgroup analysis report (recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §V.B" },
       { doc: "Real-world performance monitoring plan (TPLC approach; recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §VI" },
@@ -108,18 +100,18 @@ export const docRequirements: Record<string, any> = {
       { doc: "Updated substantial equivalence argument (predicate comparison)", source: "21 CFR 807.87; 21 CFR 807.92" },
       { doc: "Updated device description", source: "21 CFR 807.87(e)" },
       { doc: "Performance testing report (pre/post change comparison)", source: "FDA-SW-510K-2017 Q4" },
-      ..._docModules.swDocs,
-      ..._docModules.riskAssessment,
+      ...docModules.swDocs,
+      ...docModules.riskAssessment,
       { doc: "Updated labeling", source: "21 CFR 807.87(e)" },
       { doc: "Submission package in required format (eSTAR for 510(k); De Novo Request format per FDA guidance)", source: "FDA eSTAR guidance; FDA De Novo guidance" },
-      ..._docModules.cyberDeviceFull,
+      ...docModules.cyberDeviceFull,
     ],
     recommended: [
-      ..._docModules.modelCardRecommended,
-      ..._docModules.biasRecommended,
+      ...docModules.modelCardRecommended,
+      ...docModules.biasRecommended,
       { doc: "Pre-Submission (Q-Sub) meeting with FDA", source: "FDA Q-Sub Guidance" },
       { doc: "Clinical evidence sufficiency assessment", source: "Best practice" },
-      ..._docModules.pccpFutureRecommended510k,
+      ...docModules.pccpFutureRecommended510k,
       { doc: "Real-world performance monitoring plan (recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §VI" },
     ],
     orgSpecific: [
@@ -133,17 +125,17 @@ export const docRequirements: Record<string, any> = {
       { doc: "PMA supplement type determination", source: "21 CFR 814.39(a)–(e)" },
       { doc: "Updated device description", source: "21 CFR 814.39" },
       { doc: "Clinical data (per supplement type requirements)", source: "21 CFR 814.39" },
-      ..._docModules.riskAssessment,
+      ...docModules.riskAssessment,
       { doc: "Performance testing report", source: "21 CFR 814.39" },
-      ..._docModules.swDocs,
+      ...docModules.swDocs,
       { doc: "Updated labeling", source: "21 CFR 814.39(c)" },
-      ..._docModules.cyberDeviceFull,
+      ...docModules.cyberDeviceFull,
     ],
     recommended: [
-      ..._docModules.modelCardRecommended,
-      ..._docModules.biasRecommended,
+      ...docModules.modelCardRecommended,
+      ...docModules.biasRecommended,
       { doc: "Pre-Submission (Q-Sub) meeting with FDA", source: "FDA Q-Sub Guidance" },
-      ..._docModules.pccpFutureRecommendedPMA,
+      ...docModules.pccpFutureRecommendedPMA,
       { doc: "Post-market surveillance plan update", source: "21 CFR 814.82" },
     ],
     orgSpecific: [
@@ -173,11 +165,11 @@ export const docRequirements: Record<string, any> = {
       { doc: "Letter to File with change description and rationale", source: "QMSR; internal change-control records" },
       { doc: "Risk assessment confirming no impact on safety or effectiveness", source: "ISO 14971:2019; 21 CFR 814.39(a)" },
       { doc: "PMA Annual Report entry", source: "21 CFR 814.84" },
-      ..._docModules.configMgmt,
-      ..._docModules.cyberDevice,
+      ...docModules.configMgmt,
+      ...docModules.cyberDevice,
     ],
     recommended: [
-      ..._docModules.modelCardTransparencyRecommended,
+      ...docModules.modelCardTransparencyRecommended,
     ],
     orgSpecific: [
       { doc: "Independent risk assessment review confirming no S&E impact", source: "Organization policy" },

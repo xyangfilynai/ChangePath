@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Icon } from './Icon';
-import { AuthPathway, Answer, type Answers } from '../lib/assessment-engine';
+import { AuthPathway, Answer, type Answers, type DeterminationResult } from '../lib/assessment-engine';
 
 interface HandoffPageProps {
-  determination: any;
+  determination: DeterminationResult;
   answers: Answers;
   onBack: () => void;
   onBackToAssessment: () => void;
@@ -17,7 +17,7 @@ interface ChecklistSection {
 }
 
 const getSections = (
-  determination: any,
+  determination: DeterminationResult,
   answers: Answers,
 ): ChecklistSection[] => {
   const isPMA = answers.A1 === AuthPathway.PMA;
@@ -245,7 +245,7 @@ const getSections = (
 };
 
 const getHandoffTitle = (
-  determination: any,
+  determination: DeterminationResult,
   answers: Answers,
 ): string => {
   const isPMA = answers.A1 === AuthPathway.PMA;
@@ -262,7 +262,7 @@ const getHandoffTitle = (
 };
 
 const getHandoffDesc = (
-  determination: any,
+  determination: DeterminationResult,
   answers: Answers,
 ): string => {
   const isPMA = answers.A1 === AuthPathway.PMA;
@@ -281,7 +281,7 @@ const getHandoffDesc = (
 };
 
 const getPreparationPackageLabel = (
-  determination: any,
+  determination: DeterminationResult,
   answers: Answers,
 ): string => {
   const isPMA = answers.A1 === AuthPathway.PMA;

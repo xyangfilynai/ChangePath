@@ -1,4 +1,13 @@
-export const ruleReasoningLibrary: Record<string, any> = {
+interface ReasoningEntry {
+  text: string;
+  verify: string;
+  counter: string;
+  source: string;
+  status?: string;
+  title?: string;
+}
+
+export const ruleReasoningLibrary: Record<string, ReasoningEntry> = {
   "SCREEN-01-Yes": {
     text: "This change affects what the device is for or who it's intended to serve. An intended use change overrides all downstream assessment questions. RegAccess does not route intended-use changes through routine PCCP implementation unless explicit FDA authorization for that exact scope has already been documented.",
     verify: "Pull the clearance letter and Indications for Use statement. Compare them word-by-word against the post-change device description. Look for any expansion of population, clinical context, or diagnostic scope — even subtle ones.",
@@ -103,7 +112,7 @@ export const ruleReasoningLibrary: Record<string, any> = {
   },
 };
 
-export const questionReasoningLibrary: Record<string, any> = {
+export const questionReasoningLibrary: Record<string, ReasoningEntry> = {
   C0_DN1: { title: "De Novo Device-Type Fit", text: "De Novo classifications establish a new regulatory category with specific special controls under 21 CFR Part 860 Subpart D. Before assessing whether a change is 'significant' under the 510(k)-based change framework, the threshold question is whether the modified device still fits within the established device type. If the device moves outside its device type or can no longer comply with the special controls, the significance framework does not apply — a different regulatory strategy is needed.", source: "21 CFR Part 860 Subpart D; De Novo classification order", status: "Regulation", counter: "Even if the device appears to still fit the device type, subtle changes (e.g., expanded input modalities, different clinical workflow) may affect special control compliance. Compare against each special control requirement individually.", verify: "Obtain the De Novo classification order and associated classification regulation. List each special control. For each, confirm the modified device can still comply. If any special control cannot be met, the device-type fit has failed." },
   B3: { title: "Why This Question Matters", text: "Intended use changes are the most consequential factor in the assessment. PCCPs are intended to be focused and bounded within the originally reviewed device scope, so RegAccess treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is already documented. Changes that alter the fundamental intended use or expand the indication to a new patient population typically require a new submission or supplement.", source: "21 CFR 807.81(a)(3); Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025) §V", status: "Final Guidance", counter: "Even if answered 'No': adding new output classes, expanding demographics beyond clearance, or broadened capability that extends effective clinical scope may constitute an intended use change.", verify: "Compare the clearance letter and Indications for Use statement word-by-word against the post-change device description." },
   C1: { title: "Cybersecurity Exemption", text: "Pure cybersecurity patches with verified zero performance impact do not require a new 510(k). This exemption applies ONLY when the change is solely to strengthen cybersecurity with no other effect on the software or device, supported by appropriate analysis/verification/validation.", source: "Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Q1 Cybersecurity Exemption; Cybersecurity in Medical Devices (Feb 2026) §V–VII", status: "Final Guidance", counter: "If the cybersecurity patch updates any ML framework dependency (PyTorch, TensorFlow, ONNX), floating-point behavior may change. If patch changes inference timing significantly, clinical workflow may be affected. Either condition exits the exemption.", verify: "Perform appropriate analysis demonstrating zero impact on device function. Internal best-practice heuristic: bitwise comparison of model outputs before/after patch. Note: bitwise comparison is more stringent than the regulatory standard — FDA requires appropriate analysis, not necessarily bitwise equivalence." },

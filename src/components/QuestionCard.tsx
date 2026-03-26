@@ -43,8 +43,8 @@ const NoteBox: React.FC<{
 
 interface QuestionCardProps {
   question: Question;
-  value: any;
-  onChange: (value: any) => void;
+  value: unknown;
+  onChange: (value: unknown) => void;
   index: number;
   hasValidationError?: boolean;
 }
@@ -57,13 +57,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   hasValidationError = false,
 }) => {
   const [showSupport, setShowSupport] = useState(false);
-  const [localText, setLocalText] = useState(value || '');
+  const [localText, setLocalText] = useState<string>(
+    typeof value === 'string' || typeof value === 'number' ? String(value) : '',
+  );
+  const consequencePreview =
+    typeof question.consequencePreview === 'object' && question.consequencePreview !== null
+      ? question.consequencePreview
+      : null;
+  const hasForcedValue =
+    question.forcedValue !== undefined
+    && question.forcedValue !== null
+    && question.forcedValue !== '';
 
   // Get question-specific reasoning from library
   const qReasoning = questionReasoningLibrary[question.id];
 
   useEffect(() => {
-    setLocalText(value == null ? '' : String(value));
+    setLocalText(typeof value === 'string' || typeof value === 'number' ? String(value) : '');
   }, [value]);
 
   // Section divider rendering
@@ -529,7 +539,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 Locked
               </span>
             )}
-            {question.forcedValue !== undefined && (
+            {hasForcedValue && (
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -592,7 +602,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {/* Forced value explanation — only show when forcedValue is a non-null, non-empty value */}
-      {question.forcedValue != null && question.forcedValue !== '' && (
+      {hasForcedValue && (
         <div style={{
           padding: 'var(--space-md)',
           borderRadius: 'var(--radius-md)',
@@ -616,7 +626,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {/* Input */}
-      <div style={{ marginBottom: hasSupportingContext || question.consequencePreview || question.selectedTypeData ? 'var(--space-md)' : 0 }}>
+      <div style={{ marginBottom: hasSupportingContext || Boolean(question.consequencePreview) || question.selectedTypeData ? 'var(--space-md)' : 0 }}>
         {renderInput()}
       </div>
 
@@ -645,24 +655,24 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </div>
           {typeof question.consequencePreview === 'string' ? (
             <HelpTextWithLinks text={question.consequencePreview} />
-          ) : typeof question.consequencePreview === 'object' ? (
+          ) : consequencePreview ? (
             <div>
-              {question.consequencePreview.yes && (
+              {consequencePreview.yes && (
                 <div style={{ marginBottom: 'var(--space-xs)' }}>
                   <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If Yes →</span>{' '}
-                  <HelpTextWithLinks text={question.consequencePreview.yes} />
+                  <HelpTextWithLinks text={consequencePreview.yes} />
                 </div>
               )}
-              {question.consequencePreview.no && (
+              {consequencePreview.no && (
                 <div style={{ marginBottom: 'var(--space-xs)' }}>
                   <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If No →</span>{' '}
-                  <HelpTextWithLinks text={question.consequencePreview.no} />
+                  <HelpTextWithLinks text={consequencePreview.no} />
                 </div>
               )}
-              {question.consequencePreview.uncertain && (
+              {consequencePreview.uncertain && (
                 <div>
                   <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>If Uncertain →</span>{' '}
-                  <HelpTextWithLinks text={question.consequencePreview.uncertain} />
+                  <HelpTextWithLinks text={consequencePreview.uncertain} />
                 </div>
               )}
             </div>
@@ -691,14 +701,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           }}>
             Change-Type Context
           </div>
-          {question.selectedTypeData.typicalPathway && (
-            <div style={{ marginBottom: 'var(--space-sm)' }}>
-              <strong>Typical Pathway:</strong> {question.selectedTypeData.typicalPathway}
+          <div style={{ marginBottom: question.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
+            <strong>Example:</strong> {question.selectedTypeData.example}
+          </div>
+          {question.selectedTypeData.misclass && (
+            <div style={{ marginBottom: question.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
+              <strong>Common Misclassification:</strong> <HelpTextWithLinks text={question.selectedTypeData.misclass} />
             </div>
           )}
-          {question.selectedTypeData.keyConsiderations && (
+          {question.selectedTypeData.pccpNote && (
             <div>
-              <strong>Key Considerations:</strong> {question.selectedTypeData.keyConsiderations}
+              <strong>PCCP Note:</strong> <HelpTextWithLinks text={question.selectedTypeData.pccpNote} />
             </div>
           )}
         </div>
