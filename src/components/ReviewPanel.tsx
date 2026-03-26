@@ -18,7 +18,128 @@ import {
   buildExpertReviewItems,
 } from '../lib/review-insights';
 import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
-import { buildAssessmentBasis, splitReportNarrative } from '../lib/report-basis';
+import { splitReportNarrative } from '../lib/report-basis';
+
+// ─ Small helper components ─
+
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#475569',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    marginBottom: 12,
+  }}>
+    {children}
+  </div>
+);
+
+const CompactBadge: React.FC<{ label: string; bg: string; border: string; text: string }> = ({
+  label,
+  bg,
+  border,
+  text,
+}) => (
+  <span style={{
+    fontSize: 10,
+    fontWeight: 700,
+    padding: '3px 8px',
+    borderRadius: 999,
+    background: bg,
+    color: text,
+    border: `1px solid ${border}`,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    whiteSpace: 'nowrap',
+  }}>
+    {label}
+  </span>
+);
+
+const IssueCard: React.FC<{
+  title: string;
+  actionLabel: string;
+  actionText: string;
+  kind: 'expert' | 'evidence';
+  isCompact?: boolean;
+}> = ({ title, actionLabel, actionText, kind, isCompact }) => {
+  const bgColor = kind === 'expert' ? '#fffcf2' : '#fff7ed';
+  const borderColor = kind === 'expert' ? '#fde7a7' : '#fed7aa';
+  const badgeBg = kind === 'expert' ? '#fef3c7' : '#ffedd5';
+  const badgeText = kind === 'expert' ? '#92400e' : '#9a3412';
+
+  return (
+    <div style={{
+      padding: isCompact ? '10px 12px' : '12px 14px',
+      borderRadius: 6,
+      background: bgColor,
+      border: `1px solid ${borderColor}`,
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 8,
+        flexWrap: 'wrap',
+        marginBottom: 6,
+      }}>
+        <div style={{
+          fontSize: isCompact ? 12 : 13,
+          fontWeight: 600,
+          color: '#111827',
+          lineHeight: 1.45,
+          flex: 1,
+          minWidth: 0,
+        }}>
+          <HelpTextWithLinks text={title} />
+        </div>
+        <span style={{
+          fontSize: 9,
+          fontWeight: 700,
+          color: badgeText,
+          background: badgeBg,
+          borderRadius: 999,
+          padding: '2px 7px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+        }}>
+          {kind === 'expert' ? 'Expert review' : 'Evidence'}
+        </span>
+      </div>
+      <div style={{
+        fontSize: isCompact ? 12 : 12.5,
+        color: '#4b5563',
+        lineHeight: 1.55,
+      }}>
+        <strong>{actionLabel}:</strong> <HelpTextWithLinks text={actionText} />
+      </div>
+    </div>
+  );
+};
+
+const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
+  const link = findGuidanceLink(code);
+  const sourceMeta = getSourceBadge(code);
+
+  if (link) {
+    return <GuidanceRef code={code} />;
+  }
+
+  return (
+    <span
+      style={{
+        fontSize: 12,
+        color: '#475569',
+        lineHeight: 1.5,
+      }}
+      title={sourceMeta.full}
+    >
+      {sourceMeta.full}
+    </span>
+  );
+};
 
 interface ReviewPanelProps {
   determination: DeterminationResult;
@@ -51,28 +172,6 @@ const normalizeTitle = (value: string): string =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
-  const link = findGuidanceLink(code);
-  const sourceMeta = getSourceBadge(code);
-
-  if (link) {
-    return <GuidanceRef code={code} />;
-  }
-
-  return (
-    <span
-      style={{
-        fontSize: 12,
-        color: '#475569',
-        lineHeight: 1.5,
-      }}
-      title={sourceMeta.full}
-    >
-      {sourceMeta.full}
-    </span>
-  );
-};
-
 export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   determination,
   answers,
@@ -104,10 +203,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const reportNarrative = useMemo(
     () => splitReportNarrative(caseReasoning?.narrative || []),
     [caseReasoning],
-  );
-  const assessmentBasis = useMemo(
-    () => buildAssessmentBasis(answers, determination),
-    [answers, determination],
   );
 
   const getPathwayConfig = () => {
@@ -264,8 +359,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     [evidenceGapItems],
   );
 
-  const topBlockers = mergedBlockers.slice(0, 3);
-  const remainingBlockerCount = Math.max(0, mergedBlockers.length - topBlockers.length);
+
 
   const snapshotItems = useMemo(() => ([
     {
@@ -307,10 +401,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       push(reportNarrative.headlineReason || caseReasoning.primaryReason);
     }
 
-    assessmentBasis.forEach(push);
-
     return items.slice(0, 3);
-  }, [assessmentBasis, caseReasoning, reportNarrative.headlineReason]);
+  }, [caseReasoning, reportNarrative.headlineReason]);
 
   const supportingNextSteps = useMemo(() => {
     if (mergedBlockers.length > 0) {
@@ -368,887 +460,347 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   return (
     <div className="animate-fade-in-up">
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        padding: '20px 24px',
-        marginBottom: 24,
-      }}>
-        <div style={{
-          fontSize: 12,
-          fontWeight: 700,
-          color: '#475569',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-          marginBottom: 14,
-        }}>
-          Case Snapshot
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 12,
-        }}>
-          {snapshotItems.map((item) => (
-            <div
-              key={item.label}
-              style={{
-                padding: '12px 14px',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-              }}
-            >
-              <div style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#64748b',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 6,
-              }}>
-                {item.label}
-              </div>
-              <div style={{
-                fontSize: 13,
-                color: '#0f172a',
-                lineHeight: 1.5,
-              }}>
-                {item.value}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      {/* ─ HERO BANNER: Compact route + next step ─ */}
       <div style={{
         background: config.bg,
         border: `1px solid ${config.border}`,
         borderRadius: 8,
-        padding: '28px 32px',
-        marginBottom: 24,
+        padding: '20px 24px',
+        marginBottom: 16,
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          flexWrap: 'wrap',
-          marginBottom: 12,
-        }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: config.accent,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            {config.statusLabel}
-          </span>
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            padding: '3px 8px',
-            borderRadius: 999,
-            background: relianceState.bg,
-            color: relianceState.text,
-            border: `1px solid ${relianceState.border}`,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}>
-            {relianceState.label}
-          </span>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.5fr) minmax(280px, 1fr)',
-          gap: 20,
-          alignItems: 'start',
-        }}>
-          <div>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 8,
-            }}>
-              Current Route
-            </div>
-            <h1 style={{
-              fontSize: 24,
-              fontWeight: 600,
-              color: '#111827',
-              margin: '0 0 12px',
-              lineHeight: 1.2,
-            }}>
-              {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
-            </h1>
-            <p style={{
-              fontSize: 13,
-              color: '#4b5563',
-              margin: '0 0 16px',
-              lineHeight: 1.65,
-              maxWidth: 760,
-            }}>
-              {relianceState.detail}
-            </p>
-
-            {whyThisRouteItems.length > 0 && (
-              <div>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#6b7280',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 8,
-                }}>
-                  Why This Route
-                </div>
-                <ul style={{
-                  margin: 0,
-                  paddingLeft: 18,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}>
-                  {whyThisRouteItems.map((item, index) => (
-                    <li
-                      key={`route-reason-${index}`}
-                      style={{
-                        fontSize: 13,
-                        color: '#1f2937',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      <HelpTextWithLinks text={item} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {pccpHeroSummary && (
-              <div
-                data-testid="pccp-recommendation"
-                style={{
-                  marginTop: 16,
-                  padding: '12px 14px',
-                  borderRadius: 6,
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                }}
-              >
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#1d4ed8',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 6,
-                }}>
-                  PCCP Strategy Note
-                </div>
-                <div style={{
-                  fontSize: 13,
-                  color: '#1e3a8a',
-                  lineHeight: 1.6,
-                }}>
-                  <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
-                  {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
-                </div>
-              </div>
-            )}
-          </div>
-
+        {/* Route + status */}
+        <div>
           <div style={{
-            padding: '16px 18px',
-            background: 'rgba(255,255,255,0.72)',
-            borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 10,
           }}>
-            <div style={{
+            <span style={{
               fontSize: 11,
               fontWeight: 700,
-              color: '#6b7280',
+              color: config.accent,
               textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 8,
+              letterSpacing: '0.05em',
             }}>
-              Next Step
-            </div>
-            <div style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#111827',
-              lineHeight: 1.55,
-              marginBottom: supportingNextSteps.length > 0 ? 12 : 0,
-            }}>
-              {getPrimaryAction()}
-            </div>
-            {supportingNextSteps.length > 0 && (
-              <ul style={{
-                margin: 0,
-                paddingLeft: 18,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-              }}>
-                {supportingNextSteps.map((step, index) => (
-                  <li
-                    key={`supporting-next-step-${index}`}
-                    style={{
-                      fontSize: 12.5,
-                      color: '#4b5563',
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    <HelpTextWithLinks text={step} />
-                  </li>
-                ))}
-              </ul>
-            )}
+              {config.statusLabel}
+            </span>
+            <CompactBadge
+              label={relianceState.label}
+              bg={relianceState.bg}
+              border={relianceState.border}
+              text={relianceState.text}
+            />
           </div>
+          <h1 style={{
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#111827',
+            margin: '0 0 6px',
+            lineHeight: 1.2,
+          }}>
+            {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
+          </h1>
+          <p style={{
+            fontSize: 13,
+            color: '#4b5563',
+            margin: 0,
+            lineHeight: 1.55,
+          }}>
+            {relianceState.detail}
+          </p>
         </div>
       </div>
 
+      {/* ─ TWO EQUAL COLUMNS: Why This Route + Open Issues ─ */}
       <div style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        padding: '20px 24px',
-        marginBottom: 24,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 16,
+        marginBottom: 16,
       }}>
+        {/* LEFT: Why This Route */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-          marginBottom: 14,
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '18px 20px',
         }}>
-          <div>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 4,
-            }}>
-              What Still Needs Resolution
-            </div>
-            <div style={{
-              fontSize: 13,
-              color: '#6b7280',
-              lineHeight: 1.55,
-            }}>
-              {mergedBlockers.length > 0
-                ? 'Highest-priority issues to resolve before acting on this route.'
-                : 'No open issues identified in the current record.'}
-            </div>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#475569',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            marginBottom: 12,
+          }}>
+            Why This Route
           </div>
-          {remainingBlockerCount > 0 && (
-            <div style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: '#92400e',
-              padding: '6px 10px',
-              borderRadius: 999,
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-            }}>
-              {remainingBlockerCount} more in the detailed review
+          {whyThisRouteItems.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {whyThisRouteItems.map((item, index) => (
+                <div
+                  key={`route-reason-${index}`}
+                  style={{
+                    fontSize: 13,
+                    color: '#374151',
+                    lineHeight: 1.55,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 2 }}>•</span>
+                  <span><HelpTextWithLinks text={item} /></span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: '#9ca3af', margin: 0, lineHeight: 1.55 }}>
+              No additional reasoning available.
+            </p>
+          )}
+
+          {pccpHeroSummary && (
+            <div
+              data-testid="pccp-recommendation"
+              style={{
+                marginTop: 14,
+                padding: '12px 14px',
+                borderRadius: 6,
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+              }}
+            >
+              <div style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#1d4ed8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 4,
+              }}>
+                PCCP Strategy
+              </div>
+              <div style={{ fontSize: 12.5, color: '#1e3a8a', lineHeight: 1.55 }}>
+                <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
+                {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
+              </div>
             </div>
           )}
         </div>
 
-        {mergedBlockers.length > 0 ? (
+        {/* RIGHT: Open Issues */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '18px 20px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              Open Issues
+            </div>
+            {mergedBlockers.length > 0 && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#92400e',
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+              }}>
+                {mergedBlockers.length}
+              </span>
+            )}
+          </div>
+
+          {mergedBlockers.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {mergedBlockers.map((item) => (
+                <IssueCard
+                  key={item.id}
+                  title={item.title}
+                  actionLabel={item.actionLabel}
+                  actionText={item.actionText}
+                  kind={item.kind}
+                  isCompact
+                />
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 6,
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              fontSize: 13,
+              color: '#166534',
+              lineHeight: 1.55,
+            }}>
+              No unresolved issues in the current record.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─ AUTHORITIES REFERENCES ─ */}
+      {caseReasoning.sources.length > 0 && (
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '18px 20px',
+          marginBottom: 24,
+        }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#475569',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            marginBottom: 12,
+          }}>
+            Authorities Relied On
+          </div>
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
+            gap: 6,
           }}>
-            {topBlockers.map((item) => (
-              <div key={item.id} style={{
-                padding: '12px 14px',
-                borderRadius: 6,
-                background: item.kind === 'expert' ? '#fffcf2' : '#fff7ed',
-                border: `1px solid ${item.kind === 'expert' ? '#fde7a7' : '#fed7aa'}`,
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                  marginBottom: 6,
-                }}>
-                  <div style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: '#111827',
-                    lineHeight: 1.45,
-                  }}>
-                    <HelpTextWithLinks text={item.title} />
-                  </div>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: item.kind === 'expert' ? '#92400e' : '#9a3412',
-                    background: item.kind === 'expert' ? '#fef3c7' : '#ffedd5',
-                    borderRadius: 999,
-                    padding: '2px 8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}>
-                    {item.kind === 'expert' ? 'Expert review' : 'Evidence needed'}
-                  </span>
-                </div>
-                <div style={{
-                  fontSize: 12.5,
-                  color: '#4b5563',
-                  lineHeight: 1.55,
-                }}>
-                  <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
-                </div>
+            {caseReasoning.sources.map((source) => (
+              <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ color: '#9ca3af', lineHeight: 1.4, flexShrink: 0 }}>•</span>
+                <EvidenceGapSourceRef code={source} />
               </div>
             ))}
           </div>
-        ) : (
-          <div style={{
-            padding: '14px 16px',
-            borderRadius: 6,
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            fontSize: 13,
-            color: '#166534',
-            lineHeight: 1.6,
-          }}>
-            No unresolved issues identified in the current record.
-          </div>
-        )}
-      </div>
-
-      <details style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        marginBottom: 24,
-        overflow: 'hidden',
-      }}>
-        <summary style={{
-          listStyle: 'none',
-          cursor: 'pointer',
-          padding: '18px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}>
-          <div>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 4,
-            }}>
-              Detailed Rationale
-            </div>
-            <div style={{
-              fontSize: 13,
-              color: '#6b7280',
-              lineHeight: 1.55,
-            }}>
-              Open issues, supporting rationale, verification focus, and source documents.
-            </div>
-          </div>
-          <Icon name="arrowDown" size={16} color="#9ca3af" />
-        </summary>
-        <div style={{
-          borderTop: '1px solid #e5e7eb',
-          padding: '20px 24px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 24,
-        }}>
-          {mergedBlockers.length > 0 && (
-            <div>
-              <div style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#475569',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 12,
-              }}>
-                All Open Issues
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {mergedBlockers.map((item) => (
-                  <div key={`detail-${item.id}`} style={{
-                    padding: '12px 14px',
-                    borderRadius: 6,
-                    background: item.kind === 'expert' ? '#fffcf2' : '#fffdf5',
-                    border: `1px solid ${item.kind === 'expert' ? '#fde7a7' : '#fef3c7'}`,
-                  }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#111827',
-                      lineHeight: 1.45,
-                      marginBottom: 4,
-                    }}>
-                      <HelpTextWithLinks text={item.title} />
-                    </div>
-                    <div style={{
-                      fontSize: 11,
-                      color: '#a16207',
-                      marginBottom: 8,
-                      lineHeight: 1.45,
-                    }}>
-                      {item.meta}
-                    </div>
-                    <div style={{
-                      fontSize: 12.5,
-                      color: '#4b5563',
-                      lineHeight: 1.6,
-                      marginBottom: 8,
-                    }}>
-                      <strong>Why it matters:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
-                    </div>
-                    <div style={{
-                      fontSize: 12.5,
-                      color: '#4b5563',
-                      lineHeight: 1.6,
-                    }}>
-                      <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
-                    </div>
-                    {item.sourceRefs.length > 0 && (
-                      <div style={{
-                        fontSize: 12,
-                        color: '#6b7280',
-                        lineHeight: 1.5,
-                        marginTop: 8,
-                        paddingTop: 8,
-                        borderTop: '1px solid #f3f4f6',
-                      }}>
-                        <strong>Source documents:</strong>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 4,
-                          marginTop: 4,
-                        }}>
-                          {item.sourceRefs.map((ref) => (
-                            <div key={`${item.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                              <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
-                              <EvidenceGapSourceRef code={ref} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {advisoryItems.length > 0 && (
-            <div>
-              <div style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#475569',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 12,
-              }}>
-                Additional Supporting Evidence
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {advisoryItems.map((item) => (
-                  <div key={`advisory-${item.id}`} style={{
-                    padding: '12px 14px',
-                    borderRadius: 6,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                  }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#111827',
-                      lineHeight: 1.45,
-                      marginBottom: 6,
-                    }}>
-                      <HelpTextWithLinks text={item.title} />
-                    </div>
-                    <div style={{
-                      fontSize: 12.5,
-                      color: '#4b5563',
-                      lineHeight: 1.6,
-                    }}>
-                      <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 12,
-            }}>
-              Full Rationale
-            </div>
-
-            {assessmentBasis.length > 0 && (
-              <div style={{
-                marginBottom: 16,
-                padding: '14px 16px',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-              }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 10,
-                }}>
-                  Assessment Basis
-                </div>
-                <ul style={{
-                  margin: 0,
-                  paddingLeft: 18,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}>
-                  {assessmentBasis.map((item, index) => (
-                    <li
-                      key={`basis-item-${index}`}
-                      style={{
-                        fontSize: 13,
-                        color: '#334155',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      <HelpTextWithLinks text={item} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {reportNarrative.supportingReasoning.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-                {reportNarrative.supportingReasoning.map((paragraph, index) => (
-                  <div
-                    key={`reasoning-paragraph-${index}`}
-                    style={{
-                      fontSize: 14,
-                      color: '#374151',
-                      lineHeight: 1.7,
-                    }}
-                  >
-                    <HelpTextWithLinks text={paragraph} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {caseReasoning.decisionPath.length > 0 && (
-              <div style={{
-                marginBottom: 16,
-                padding: '14px 16px',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-              }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 10,
-                }}>
-                  How This Route Was Reached
-                </div>
-                <ol style={{
-                  margin: 0,
-                  paddingLeft: 18,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}>
-                  {caseReasoning.decisionPath.map((step, index) => (
-                    <li
-                      key={`decision-step-${index}`}
-                      style={{
-                        fontSize: 13,
-                        color: '#334155',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      <HelpTextWithLinks text={step} />
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {(caseReasoning.verificationSteps.length > 0 || caseReasoning.counterConsiderations.length > 0) && (
-              <div style={{ display: 'grid', gap: 12 }}>
-                {caseReasoning.verificationSteps.length > 0 && (
-                  <div style={{
-                    padding: '14px 16px',
-                    background: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                  }}>
-                    <div style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#475569',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      marginBottom: 10,
-                    }}>
-                      {caseReasoning.verificationTitle || 'Verification Focus'}
-                    </div>
-                    <ul style={{
-                      margin: 0,
-                      paddingLeft: 18,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                    }}>
-                      {caseReasoning.verificationSteps.map((step, index) => (
-                        <li
-                          key={`verification-step-${index}`}
-                          style={{
-                            fontSize: 13,
-                            color: '#4b5563',
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          <HelpTextWithLinks text={step} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {caseReasoning.counterConsiderations.length > 0 && (
-                  <div style={{
-                    padding: '14px 16px',
-                    background: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                  }}>
-                    <div style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#475569',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      marginBottom: 10,
-                    }}>
-                      {caseReasoning.counterTitle || 'What Could Still Change This Conclusion'}
-                    </div>
-                    <ul style={{
-                      margin: 0,
-                      paddingLeft: 18,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                    }}>
-                      {caseReasoning.counterConsiderations.map((item, index) => (
-                        <li
-                          key={`counter-item-${index}`}
-                          style={{
-                            fontSize: 13,
-                            color: '#4b5563',
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          <HelpTextWithLinks text={item} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {caseReasoning.sources.length > 0 && (
-              <div style={{
-                marginTop: 16,
-                paddingTop: 12,
-                borderTop: '1px solid #f3f4f6',
-              }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 8,
-                }}>
-                  Authorities Relied On
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {caseReasoning.sources.map((source) => (
-                    <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                      <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
-                      <EvidenceGapSourceRef code={source} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
-      </details>
+      )}
 
       {onAddNote && (
         <div style={{
           background: '#ffffff',
           border: '1px solid #e5e7eb',
           borderRadius: 8,
-          padding: '20px 28px',
+          padding: '20px 24px',
           marginBottom: 24,
         }}>
-          <div style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: '#374151',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            marginBottom: 16,
-          }}>
-            Reviewer Notes
-          </div>
+          <SectionLabel>Reviewer Notes</SectionLabel>
 
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
-              Reviewer Notes
-            </div>
-            {reviewerNotes && reviewerNotes.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                {reviewerNotes.map((note) => (
-                  <div key={note.id} style={{
-                    padding: '10px 12px',
-                    background: '#f9fafb',
-                    borderRadius: 6,
-                    border: '1px solid #e5e7eb',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
-                        {note.author}
+          {reviewerNotes && reviewerNotes.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              {reviewerNotes.map((note) => (
+                <div key={note.id} style={{
+                  padding: '10px 12px',
+                  background: '#f9fafb',
+                  borderRadius: 6,
+                  border: '1px solid #e5e7eb',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                      {note.author}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                        {new Date(note.timestamp).toLocaleString()}
                       </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                          {new Date(note.timestamp).toLocaleString()}
-                        </span>
-                        {onRemoveNote && (
-                          <button
-                            onClick={() => onRemoveNote(note.id)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              padding: 2,
-                              color: '#9ca3af',
-                              fontSize: 14,
-                              lineHeight: 1,
-                            }}
-                            title="Remove note"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
-                      {note.text}
+                      {onRemoveNote && (
+                        <button
+                          onClick={() => onRemoveNote(note.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 2,
+                            color: '#9ca3af',
+                            fontSize: 14,
+                            lineHeight: 1,
+                          }}
+                          title="Remove note"
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                value={noteAuthor}
-                onChange={(e) => setNoteAuthor(e.target.value)}
-                placeholder="Your name"
-                style={{
-                  width: 140,
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  border: '1px solid #d1d5db',
-                  fontSize: 13,
-                  outline: 'none',
-                }}
-              />
-              <input
-                type="text"
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Add a review note..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && noteAuthor.trim() && noteText.trim()) {
-                    onAddNote(noteAuthor.trim(), noteText.trim());
-                    setNoteText('');
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  border: '1px solid #d1d5db',
-                  fontSize: 13,
-                  outline: 'none',
-                }}
-              />
-              <button
-                onClick={() => {
-                  if (noteAuthor.trim() && noteText.trim()) {
-                    onAddNote(noteAuthor.trim(), noteText.trim());
-                    setNoteText('');
-                  }
-                }}
-                disabled={!noteAuthor.trim() || !noteText.trim()}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 6,
-                  background: noteAuthor.trim() && noteText.trim() ? '#111827' : '#e5e7eb',
-                  border: 'none',
-                  color: noteAuthor.trim() && noteText.trim() ? '#fff' : '#9ca3af',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: noteAuthor.trim() && noteText.trim() ? 'pointer' : 'default',
-                }}
-              >
-                Add
-              </button>
+                  <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+                    {note.text}
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              value={noteAuthor}
+              onChange={(e) => setNoteAuthor(e.target.value)}
+              placeholder="Your name"
+              style={{
+                width: 140,
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                fontSize: 13,
+                outline: 'none',
+              }}
+            />
+            <input
+              type="text"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Add a review note..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && noteAuthor.trim() && noteText.trim()) {
+                  onAddNote(noteAuthor.trim(), noteText.trim());
+                  setNoteText('');
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                fontSize: 13,
+                outline: 'none',
+              }}
+            />
+            <button
+              onClick={() => {
+                if (noteAuthor.trim() && noteText.trim()) {
+                  onAddNote(noteAuthor.trim(), noteText.trim());
+                  setNoteText('');
+                }
+              }}
+              disabled={!noteAuthor.trim() || !noteText.trim()}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 6,
+                background: noteAuthor.trim() && noteText.trim() ? '#111827' : '#e5e7eb',
+                border: 'none',
+                color: noteAuthor.trim() && noteText.trim() ? '#fff' : '#9ca3af',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: noteAuthor.trim() && noteText.trim() ? 'pointer' : 'default',
+              }}
+            >
+              Add
+            </button>
           </div>
         </div>
       )}
