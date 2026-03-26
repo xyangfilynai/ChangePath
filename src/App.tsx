@@ -9,14 +9,14 @@ import { Icon } from './components/Icon';
 import { SAMPLE_CASE } from './sampleCase';
 import {
   getBlocks,
-  getQuestions,
+  getBlockFields,
   computeDerivedState,
   computeDetermination,
   changeTaxonomy,
   Answer,
   isAnsweredValue,
   type Answers,
-  type Question,
+  type AssessmentField,
 } from './lib/assessment-engine';
 import {
   assessmentStore,
@@ -122,9 +122,9 @@ export const App: React.FC = () => {
   // Get blocks based on current answers
   const blocks = useMemo(() => getBlocks(answers, derivedState), [answers, derivedState]);
 
-  // Get questions for current block
-  const getQuestionsForBlock = useCallback((blockId: string): Question[] => {
-    return getQuestions(blockId, answers, derivedState);
+  // Fields shown for the current block (assessment items + section dividers)
+  const getFieldsForBlock = useCallback((blockId: string): AssessmentField[] => {
+    return getBlockFields(blockId, answers, derivedState);
   }, [answers, derivedState]);
 
   useEffect(() => {
@@ -134,12 +134,12 @@ export const App: React.FC = () => {
   }, [blocks.length, currentBlockIndex]);
 
   const currentBlock = blocks[currentBlockIndex];
-  const currentQuestions = currentBlock ? getQuestionsForBlock(currentBlock.id) : [];
+  const currentBlockFields = currentBlock ? getFieldsForBlock(currentBlock.id) : [];
 
   // Compute determination
   const determination = useMemo(() => computeDetermination(answers), [answers]);
 
-  // Calculate answered and total question counts per block in a single pass
+  // Calculate answered and total field counts per block in a single pass
   const {
     answeredCounts,
     totalCounts,
@@ -167,8 +167,8 @@ export const App: React.FC = () => {
         requiredTotal[block.id] = 0;
         return;
       }
-      const questions = getQuestionsForBlock(block.id);
-      const visible = questions.filter(q => !q.sectionDivider && !q.skip);
+      const blockFields = getFieldsForBlock(block.id);
+      const visible = blockFields.filter(q => !q.sectionDivider && !q.skip);
       const required = visible.filter(q => q.pathwayCritical);
       total[block.id] = visible.length;
       answered[block.id] = visible.filter(q => isAnsweredValue(answers[q.id])).length;
@@ -190,7 +190,7 @@ export const App: React.FC = () => {
       overallRequiredAnswered: overallRequiredAnsweredCount,
       overallRequiredTotal: overallRequiredTotalCount,
     };
-  }, [blocks, answers, getQuestionsForBlock]);
+  }, [blocks, answers, getFieldsForBlock]);
 
   // Track completed blocks
   const completedBlocks = useMemo(() => {
@@ -204,12 +204,12 @@ export const App: React.FC = () => {
   }, [blocks, requiredAnsweredCounts, requiredCounts]);
 
   // Handle answer change with cascade clearing (matches original setAnswer logic)
-  const handleAnswerChange = useCallback((questionId: string, value: unknown) => {
+  const handleAnswerChange = useCallback((fieldId: string, value: unknown) => {
     setAnswers(prev => {
-      const next: Answers = { ...prev, [questionId]: value };
+      const next: Answers = { ...prev, [fieldId]: value };
 
       // A1 change -> clear all downstream blocks, including any legacy hidden answers.
-      if (questionId === 'A1' && prev.A1 !== value) {
+      if (fieldId === 'A1' && prev.A1 !== value) {
         Object.keys(prev).filter(k =>
           k.startsWith('B') || k.startsWith('C') || k.startsWith('P') ||
           k.startsWith('D') || k.startsWith('E') || k.startsWith('F')
@@ -217,7 +217,7 @@ export const App: React.FC = () => {
       }
 
       // B1 change -> clear B2 + all downstream blocks, including any legacy hidden answers.
-      if (questionId === 'B1' && prev.B1 !== value) {
+      if (fieldId === 'B1' && prev.B1 !== value) {
         next.B2 = undefined;
         Object.keys(prev).filter(k =>
           k.startsWith('C') || k.startsWith('P') ||
@@ -227,7 +227,7 @@ export const App: React.FC = () => {
 
       // B1 change away from "Intended Use / Indications for Use" -> clear B3
       if (
-        questionId === 'B1' &&
+        fieldId === 'B1' &&
         prev.B1 === 'Intended Use / Indications for Use' &&
         value !== 'Intended Use / Indications for Use'
       ) {
@@ -268,17 +268,17 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Check if current block has required questions answered
+  // Check if current block has required pathway fields answered
   const currentBlockComplete = useMemo(() => {
     if (!currentBlock || currentBlock.id === 'review') return true;
-    const questions = currentQuestions;
-    const requiredQuestions = questions.filter(q =>
+    const fields = currentBlockFields;
+    const requiredPathwayFields = fields.filter(q =>
       !q.sectionDivider && !q.skip && q.pathwayCritical
     );
-    return requiredQuestions.every(q => isAnsweredValue(answers[q.id]));
-  }, [currentBlock, currentQuestions, answers]);
+    return requiredPathwayFields.every(q => isAnsweredValue(answers[q.id]));
+  }, [currentBlock, currentBlockFields, answers]);
 
-  // Validation state for highlighting missing required fields
+  // Validation state for highlighting incomplete required fields
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
 
   const currentMissingRequired = useMemo(() => {
@@ -293,27 +293,27 @@ export const App: React.FC = () => {
     return [
       {
         label: 'Authorization',
-        value: answers.A1 ? String(answers.A1) : 'Missing',
+        value: answers.A1 ? String(answers.A1) : 'Not provided',
         tone: answers.A1 ? 'default' : 'warning',
       },
       {
         label: 'Authorization ID',
-        value: answers.A1b ? String(answers.A1b) : 'Missing',
+        value: answers.A1b ? String(answers.A1b) : 'Not provided',
         tone: authIdMissing ? 'warning' : 'default',
       },
       {
         label: 'Authorized baseline',
-        value: answers.A1c ? String(answers.A1c) : 'Missing',
+        value: answers.A1c ? String(answers.A1c) : 'Not provided',
         tone: baselineMissing ? 'warning' : 'default',
       },
       {
         label: 'Change',
-        value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not yet classified',
+        value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not classified',
         tone: answers.B2 || answers.B1 ? 'info' : 'default',
       },
       {
         label: 'PCCP',
-        value: answers.A2 === Answer.Yes ? 'Authorized PCCP present' : answers.A2 === Answer.No ? 'No PCCP authorized' : 'Not yet specified',
+        value: answers.A2 === Answer.Yes ? 'Authorized PCCP on file' : answers.A2 === Answer.No ? 'No authorized PCCP' : 'Not specified',
         tone: answers.A2 === Answer.Yes ? 'success' : 'default',
       },
     ];
@@ -332,7 +332,7 @@ export const App: React.FC = () => {
     if (currentBlockIndex < blocks.length - 1) {
       if (currentBlock && currentBlock.id !== 'review' && !currentBlockComplete) {
         const errors: Record<string, boolean> = {};
-        currentQuestions
+        currentBlockFields
           .filter(q => !q.sectionDivider && !q.skip && q.pathwayCritical)
           .forEach(q => {
             if (!isAnsweredValue(answers[q.id])) {
@@ -345,7 +345,7 @@ export const App: React.FC = () => {
       setCurrentBlockIndex(currentBlockIndex + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentBlockIndex, blocks.length, currentBlock, currentBlockComplete, currentQuestions, answers]);
+  }, [currentBlockIndex, blocks.length, currentBlock, currentBlockComplete, currentBlockFields, answers]);
 
   const handleLoadAssessment = useCallback((id: string) => {
     const assessment = assessmentStore.get(id);
@@ -481,7 +481,7 @@ export const App: React.FC = () => {
           determination={determination}
           answers={answers}
           blocks={blocks}
-          getQuestionsForBlock={getQuestionsForBlock}
+          getFieldsForBlock={getFieldsForBlock}
           onHandoff={() => setScreen('handoff')}
           reviewerNotes={currentReviewerNotes}
           onAddNote={currentAssessmentId ? handleAddNote : undefined}
@@ -490,7 +490,7 @@ export const App: React.FC = () => {
       );
     }
 
-    // Question blocks with contextual banners
+    // Assessment blocks (fields) with contextual banners
     const blockId = currentBlock.id;
 
     return (
@@ -501,10 +501,10 @@ export const App: React.FC = () => {
             <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-                {currentMissingRequired} required item{currentMissingRequired === 1 ? '' : 's'} still open in this section
+                {currentMissingRequired} required field{currentMissingRequired === 1 ? '' : 's'} incomplete in this section
               </span>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                Answer the questions marked <strong>Required</strong> to finalize the pathway logic. Optional fields can still improve review quality and documentation quality.
+                Complete items marked <strong>Required</strong> to continue. Optional fields add context for review and records.
               </div>
             </div>
           </div>
@@ -515,13 +515,15 @@ export const App: React.FC = () => {
             <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-                Intended use change detected
+                Intended use or indications change indicated
               </span>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                A new submission is generally required.{' '}
+                This pattern typically requires a new marketing submission.{' '}
                 {derivedState.isPMA
-                  ? 'PMA supplement required.'
-                  : `New ${derivedState.isDeNovo ? '510(k) or De Novo request' : '510(k)'} required.`}
+                  ? 'Expect a PMA supplement unless a different reporting pathway applies.'
+                  : derivedState.isDeNovo
+                    ? 'Expect a 510(k) or De Novo submission, depending on device-type fit and strategy.'
+                    : 'Expect a new 510(k) unless another pathway applies.'}
               </div>
             </div>
           </div>
@@ -532,11 +534,11 @@ export const App: React.FC = () => {
             <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-                Intended use uncertain — routing conservatively
+                Intended use impact uncertain — conservative pathway selection
               </span>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                Conservatively routed to new submission. Complete the questions below for your change control record.{' '}
-                <strong>A Pre-Submission (Q-Sub) is strongly recommended.</strong>
+                This tool applies conservative pathway selection when intended-use impact is uncertain. Complete the remaining fields for your internal record.{' '}
+                <strong>Consider an FDA Pre-Submission (Q-Sub) or equivalent expert review before relying on a documentation-only pathway.</strong>
               </div>
             </div>
           </div>
@@ -549,10 +551,10 @@ export const App: React.FC = () => {
               <Icon name="alertCircle" size={15} color="var(--color-danger)" style={{ marginTop: 1 }} />
               <div>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-danger)' }}>
-                  De Novo device-type fit concern
+                  De Novo device-type fit unresolved
                 </span>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                  The modified device may no longer fit within the De Novo classification. An FDA Pre-Submission (Q-Sub) is strongly recommended.
+                  The modified device may not remain within the De Novo device type and special controls. Consider an FDA Pre-Submission (Q-Sub) or senior RA review before treating any documentation-only pathway as sufficient.
                 </div>
               </div>
             </div>
@@ -567,7 +569,7 @@ export const App: React.FC = () => {
               color: 'var(--color-text-secondary)',
               lineHeight: 1.55,
             }}>
-              <strong>De Novo advisory:</strong> {"For software changes, FDA's 510(k) change guidances are relevant to De Novo-authorized existing devices. For material or borderline changes, an FDA Pre-Submission is recommended."}
+              <strong>De Novo note:</strong> {"For software changes, FDA 510(k) software change guidance is often applied by analogy to De Novo-authorized devices; confirm device-type fit and special controls. For borderline cases, consider a Pre-Submission (Q-Sub)."}
             </div>
           )
         )}
@@ -585,7 +587,7 @@ export const App: React.FC = () => {
             color: 'var(--color-text-secondary)',
             lineHeight: 1.55,
           }}>
-            {'"Uncertain" answers are conservatively treated as significant. Complete remaining questions for documentation.'}
+            {'Answers of "Uncertain" are treated as significant for pathway determination. Complete the remaining fields and document the rationale in your change record.'}
           </div>
         )}
 
@@ -619,12 +621,12 @@ export const App: React.FC = () => {
                   fontWeight: 600,
                   color: isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)',
                 }}>
-                  Future PCCP planning fit for {`"${answers.B2 as string}"`}:{' '}
-                  {pccpStatus === 'TYPICAL' ? 'Generally suitable if explicitly pre-authorized and bounded'
-                    : pccpStatus === 'EXEMPT' ? 'PCCP is usually not the key mechanism when this change truly remains documentation-only'
-                    : pccpStatus === 'CONDITIONAL' ? 'Potentially suitable, but only if scope, data, and boundaries are explicitly authorized'
-                    : pccpStatus === 'UNLIKELY' ? 'Rarely suitable for future PCCP coverage'
-                    : 'Generally outside PCCP scope per current FDA framework'}
+                  PCCP suitability (change type only) for {`"${answers.B2 as string}"`}:{' '}
+                  {pccpStatus === 'TYPICAL' ? 'Often compatible with PCCP if the change is pre-described, bounded, and validated prospectively'
+                    : pccpStatus === 'EXEMPT' ? 'PCCP is typically not the primary mechanism for documentation-only cybersecurity or restore-to-spec pathways'
+                    : pccpStatus === 'CONDITIONAL' ? 'May fit a PCCP only if scope, acceptance criteria, and boundaries are explicitly authorized'
+                    : pccpStatus === 'UNLIKELY' ? 'Unlikely to fit a PCCP without a new authorization scope'
+                    : 'Outside typical PCCP scope under current FDA PCCP policy for this change pattern'}
                 </span>
                 {pccpNote && (
                   <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
@@ -636,14 +638,14 @@ export const App: React.FC = () => {
           );
         })()}
 
-        {currentQuestions.map((question, index) => (
+        {currentBlockFields.map((field, index) => (
           <QuestionCard
-            key={question.id}
-            question={question}
-            value={answers[question.id]}
-            onChange={(value) => handleAnswerChange(question.id, value)}
+            key={field.id}
+            field={field}
+            value={answers[field.id]}
+            onChange={(value) => handleAnswerChange(field.id, value)}
             index={index}
-            hasValidationError={Boolean(validationErrors[question.id])}
+            hasValidationError={Boolean(validationErrors[field.id])}
           />
         ))}
       </div>
@@ -755,7 +757,7 @@ export const App: React.FC = () => {
             fontSize: 13,
             color: 'var(--color-text-secondary)',
           }}>
-            Complete the required questions in this section to continue.
+            Complete all required fields in this section to continue.
           </span>
         </div>
       )}

@@ -5,7 +5,7 @@ import {
   HelpTextWithLinks,
 } from './ui';
 import { Answer, Pathway } from '../lib/assessment-engine';
-import type { Answers, Block, DeterminationResult, Question } from '../lib/assessment-engine';
+import type { Answers, Block, DeterminationResult, AssessmentField } from '../lib/assessment-engine';
 import {
   findGuidanceLink,
   getSourceBadge,
@@ -105,7 +105,7 @@ const IssueCard: React.FC<{
           whiteSpace: 'nowrap',
           flexShrink: 0,
         }}>
-          {kind === 'expert' ? 'Expert review' : 'Evidence'}
+          {kind === 'expert' ? 'Expert review' : 'Evidence gap'}
         </span>
       </div>
       <div style={{
@@ -145,7 +145,7 @@ interface ReviewPanelProps {
   determination: DeterminationResult;
   answers: Answers;
   blocks: Block[];
-  getQuestionsForBlock: (blockId: string) => Question[];
+  getFieldsForBlock: (blockId: string) => AssessmentField[];
   onHandoff?: () => void;
   reviewerNotes?: ReviewerNote[];
   onAddNote?: (author: string, text: string) => void;
@@ -174,7 +174,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   determination,
   answers,
   blocks,
-  getQuestionsForBlock,
+  getFieldsForBlock,
   onHandoff,
   reviewerNotes,
   onAddNote,
@@ -195,8 +195,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     [answers, determination, evidenceGaps],
   );
   const caseReasoning = useMemo(
-    () => buildCaseSpecificReasoning(answers, determination, blocks, getQuestionsForBlock),
-    [answers, determination, blocks, getQuestionsForBlock],
+    () => buildCaseSpecificReasoning(answers, determination, blocks, getFieldsForBlock),
+    [answers, determination, blocks, getFieldsForBlock],
   );
   const reportNarrative = useMemo(
     () => splitReportNarrative(caseReasoning?.narrative || []),
@@ -213,14 +213,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: hasIssues ? '#fffbeb' : '#f0fdf4',
           border: hasIssues ? '#fde68a' : '#bbf7d0',
           accent: hasIssues ? '#d97706' : '#16a34a',
-          statusLabel: 'Documentation-only route',
+          statusLabel: 'Documentation-only pathway',
         };
       case Pathway.ImplementPCCP:
         return {
           bg: '#eff6ff',
           border: '#bfdbfe',
           accent: '#2563eb',
-          statusLabel: 'Authorized PCCP route',
+          statusLabel: 'Authorized PCCP pathway',
         };
       case Pathway.NewSubmission:
       case Pathway.PMASupplementRequired:
@@ -228,7 +228,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: '#fef2f2',
           border: '#fecaca',
           accent: '#dc2626',
-          statusLabel: 'Submission route',
+          statusLabel: 'Submission pathway',
         };
       case Pathway.AssessmentIncomplete:
         return {
@@ -242,7 +242,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: '#f9fafb',
           border: '#e5e7eb',
           accent: '#6b7280',
-          statusLabel: 'Route summary',
+          statusLabel: 'Pathway summary',
         };
     }
   };
@@ -267,43 +267,43 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   const pccpHeroSummary = showPCCPRecommendation ? {
     heading: pccpEligibility === 'TYPICAL'
-      ? 'PCCP application recommended in the upcoming submission'
-      : 'PCCP application may be worth requesting in the upcoming submission',
+      ? 'Consider a PCCP in the next marketing submission'
+      : 'Evaluate PCCP feasibility in the next marketing submission',
     summary: pccpEligibility === 'TYPICAL'
-      ? 'This change type is generally suitable for future PCCP authorization. Because this assessment already routes to a new submission and no PCCP is currently authorized, this submission is the right time to seek pre-authorization for similar future changes within explicit bounds.'
-      : 'This change type can sometimes be authorized in a PCCP, but only when future modifications can be tightly bounded and prospectively validated. Because this assessment already routes to a new submission and no PCCP is currently authorized, this submission is the right opportunity to evaluate that option.',
+      ? 'For this change pattern, PCCP is often a reasonable mechanism when modifications are pre-described, bounded, and validated prospectively. This assessment already maps to a new submission and no authorized PCCP is on file, so the next submission is a practical point to request PCCP coverage if scope and evidence support it.'
+      : 'PCCP may apply only when future changes are tightly bounded and supported by prospective validation. This assessment maps to a new submission with no authorized PCCP on file; use the next submission to assess whether PCCP is viable for your program, subject to RA judgment and any FDA interaction.',
     detail: selectedChangeType?.pccpNote || null,
   } : null;
 
   const getPrimaryAction = () => {
     if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
-      return 'Document rationale and file in device history record';
+      return 'Document rationale and file per QMS (e.g., device history record)';
     }
     if (pathway === Pathway.ImplementPCCP) {
-      return 'Execute PCCP validation protocol before implementation';
+      return 'Complete PCCP validation per the authorized protocol before implementation';
     }
     if (pathway === Pathway.NewSubmission) {
-      return 'Prepare 510(k) or De Novo submission with updated device description';
+      return 'Prepare 510(k) or De Novo materials, including an updated device description, per your strategy';
     }
     if (pathway === Pathway.PMASupplementRequired) {
-      return 'Determine supplement type and prepare submission package';
+      return 'Confirm supplement type and assemble the submission package per 21 CFR 814.39 and applicable FDA policy';
     }
     if (determination.isIntendedUseUncertain) {
-      return 'Resolve intended use uncertainty through senior RA/clinical expert review or an FDA Pre-Submission (Q-Sub) before re-running this assessment';
+      return 'Resolve intended-use uncertainty through senior RA/clinical review or an FDA Pre-Submission (Q-Sub), then update this assessment';
     }
     if (determination.pmaIncomplete) {
-      return 'Complete the PMA safety/effectiveness, labeling, and manufacturing questions before the determination can be finalized';
+      return 'Complete PMA safety/effectiveness, labeling, and manufacturing fields before treating the determination as final';
     }
     if (determination.pccpIncomplete) {
-      return 'Complete the PCCP scope review to determine whether this change can be implemented under the authorized PCCP';
+      return 'Complete PCCP scope review to confirm whether implementation is supported under the authorized PCCP';
     }
     if (determination.hasUncertainSignificance) {
-      return "Resolve the unresolved risk and performance questions using validation evidence and RA/clinical review so each answer can be closed as 'Yes' or 'No'";
+      return "Close risk and performance fields with evidence and RA/clinical review so each U.S. significance response is 'Yes' or 'No' where possible";
     }
     if (determination.seUncertain) {
-      return 'Resolve whether substantial equivalence still holds on the full cumulative record, then confirm whether a different regulatory path is needed';
+      return 'Reassess substantial equivalence on the full cumulative record, then confirm whether a different regulatory pathway is needed';
     }
-    return 'Complete remaining assessment questions to finalize the determination';
+    return 'Complete remaining assessment fields before treating the determination as final';
   };
 
   const mergedBlockers = useMemo(() => {
@@ -353,7 +353,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   }, [evidenceGapItems, expertReviewItems]);
 
 
-  const whyThisRouteItems = useMemo(() => {
+  const whyThisPathwayItems = useMemo(() => {
     const items: string[] = [];
     const push = (value: string | null | undefined) => {
       if (!value) return;
@@ -382,10 +382,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     if (!isIncomplete && onHandoff) {
       items.push(
         determination.isPCCPImpl
-          ? 'Open the preparation checklist and complete the PCCP implementation package.'
+          ? 'Open the preparation checklist and complete the PCCP implementation record per your authorized plan.'
           : determination.isDocOnly
-            ? 'Open the preparation checklist and assemble the documentation package.'
-            : 'Open the preparation checklist and start assembling the submission package.',
+            ? 'Open the preparation checklist and assemble the documentation package per QMS.'
+            : 'Open the preparation checklist and begin the submission package per your strategy.',
       );
     }
     caseReasoning.verificationSteps.forEach((step) => {
@@ -400,7 +400,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     if (isIncomplete) {
       return {
         label: 'Not ready yet',
-        detail: 'Critical questions are still unanswered or unresolved, so the route cannot be finalized yet.',
+        detail: 'Required or threshold items are still open, so the pathway should not be treated as final.',
         bg: '#fff7ed',
         border: '#fdba74',
         text: '#9a3412',
@@ -411,7 +411,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       const blockerCount = mergedBlockers.length > 0 ? mergedBlockers.length : criticalGaps.length;
       return {
         label: 'Open issues remain',
-        detail: `${blockerCount} open issue${blockerCount === 1 ? '' : 's'} still need resolution before this route should be used as the basis for action.`,
+        detail: `${blockerCount} open issue${blockerCount === 1 ? '' : 's'} remain. Resolve them before using this pathway as the basis for action.`,
         bg: '#fffbeb',
         border: '#fde68a',
         text: '#92400e',
@@ -420,7 +420,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
     return {
       label: 'Ready to proceed',
-      detail: 'No unresolved issues are surfaced in the current record, so the route is ready for the next workflow step, subject to normal expert review.',
+      detail: 'No open issues are listed for this record. Proceed only after your standard expert review and QMS steps.',
       bg: '#f0fdf4',
       border: '#bbf7d0',
       text: '#166534',
@@ -429,7 +429,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   return (
     <div className="animate-fade-in-up">
-      {/* ─ HERO BANNER: Compact route + next step ─ */}
+      {/* ─ HERO BANNER: Compact pathway + next step ─ */}
       <div style={{
         background: config.bg,
         border: `1px solid ${config.border}`,
@@ -437,7 +437,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         padding: '20px 24px',
         marginBottom: 16,
       }}>
-        {/* Route + status */}
+        {/* Pathway + status */}
         <div>
           <div style={{
             display: 'flex',
@@ -481,14 +481,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       </div>
 
-      {/* ─ TWO EQUAL COLUMNS: Why This Route + Open Issues ─ */}
+      {/* ─ TWO EQUAL COLUMNS: Why this pathway + Open Issues ─ */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 16,
         marginBottom: 16,
       }}>
-        {/* LEFT: Why This Route */}
+        {/* LEFT: Why this pathway */}
         <div style={{
           background: '#ffffff',
           border: '1px solid #e5e7eb',
@@ -503,13 +503,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             letterSpacing: '0.04em',
             marginBottom: 12,
           }}>
-            Why This Route
+            Why this pathway
           </div>
-          {whyThisRouteItems.length > 0 ? (
+          {whyThisPathwayItems.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {whyThisRouteItems.map((item, index) => (
+              {whyThisPathwayItems.map((item, index) => (
                 <div
-                  key={`route-reason-${index}`}
+                  key={`pathway-reason-${index}`}
                   style={{
                     fontSize: 13,
                     color: '#374151',
@@ -526,7 +526,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             </div>
           ) : (
             <p style={{ fontSize: 13, color: '#9ca3af', margin: 0, lineHeight: 1.55 }}>
-              No additional reasoning available.
+              No additional rationale is available for this record.
             </p>
           )}
 
@@ -549,11 +549,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 letterSpacing: '0.04em',
                 marginBottom: 4,
               }}>
-                PCCP Strategy
+                PCCP planning note
               </div>
               <div style={{ fontSize: 12.5, color: '#1e3a8a', lineHeight: 1.55 }}>
                 <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
-                {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
+                {pccpHeroSummary.detail ? ` Preconditions: ${pccpHeroSummary.detail}` : ''}
               </div>
             </div>
           )}
@@ -620,7 +620,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               color: '#166534',
               lineHeight: 1.55,
             }}>
-              No unresolved issues in the current record.
+              No open issues listed for this record.
             </div>
           )}
         </div>
@@ -643,7 +643,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             letterSpacing: '0.04em',
             marginBottom: 12,
           }}>
-            Authorities Relied On
+            Sources cited
           </div>
           <div style={{
             display: 'flex',
@@ -733,7 +733,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               type="text"
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
-              placeholder="Add a review note..."
+              placeholder="Add a reviewer note..."
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && noteAuthor.trim() && noteText.trim()) {
                   onAddNote(noteAuthor.trim(), noteText.trim());
@@ -826,8 +826,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               margin: '0 0 var(--space-xs)',
             }}>
               {consistencyIssues.length > 0
-                ? 'Open issues remain before this route should be used'
-                : 'Ready to prepare documentation?'}
+                ? 'Open issues remain — review before execution'
+                : 'Open preparation checklist?'}
             </h4>
             <p style={{
               fontSize: 13,
@@ -836,8 +836,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               margin: 0,
             }}>
               {consistencyIssues.length > 0
-                ? 'This assessment still contains unresolved issues that need expert review. The preparation checklist is available, but the route should not be treated as final until those issues are closed.'
-                : 'Open the preparation checklist for this route.'}
+                ? 'Unresolved items still appear in this assessment. You may open the checklist, but do not treat the pathway as final until those items are closed.'
+                : 'Open the pathway-specific preparation checklist.'}
             </p>
           </div>
           <button

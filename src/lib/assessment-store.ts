@@ -78,7 +78,7 @@ export const assessmentStore = {
           versionNumber: existing.versions.length + 1,
           answers: existing.answers,
           timestamp: existing.updatedAt,
-          note: `Auto-saved before update`,
+          note: 'Snapshot saved before update',
         };
         all[idx] = {
           ...existing,

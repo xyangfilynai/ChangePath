@@ -1,6 +1,6 @@
 /**
  * Evidence-gap computation engine.
- * Produces a structured checklist of what's missing before an assessment can be relied on.
+ * Produces a structured checklist of open items before an assessment can be relied on.
  */
 
 import type { Answers, DeterminationResult } from './assessment-engine';
@@ -29,7 +29,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (!answers.A1) {
     gaps.push({
       id: 'GAP-A1',
-      category: 'Device Profile',
+      category: 'Device profile',
       description: 'Authorization pathway not specified',
       severity: 'critical',
       sourceClass: 'Regulation',
@@ -41,8 +41,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (!answers.A1b || !answers.A1c || !answers.A1d) {
     gaps.push({
       id: 'GAP-BASELINE',
-      category: 'Device Profile',
-      description: 'Authorized baseline incomplete — missing authorization identifier, baseline version, or authorized IFU statement',
+      category: 'Device profile',
+      description: 'Authorized baseline incomplete — authorization identifier, baseline version, or authorized IFU statement not provided',
       severity: 'critical',
       sourceClass: 'Final guidance',
       source: 'FDA-SW-510K-2017; FDA-PCCP-2025 §V',
@@ -66,7 +66,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
 
   if (!answers.B3 && answers.B1) {
     gaps.push({
-      id: 'GAP-IFU-MISSING',
+      id: 'GAP-IFU-INCOMPLETE',
       category: 'Intended Use',
       description: 'Intended use impact not assessed',
       severity: 'critical',
@@ -81,8 +81,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (answers.B3 === Answer.No && !isPMA) {
     const sigAnswers = [answers.C3, answers.C4, answers.C5, answers.C6];
     const hasYesOrUncertain = sigAnswers.some(a => a === Answer.Yes || a === Answer.Uncertain);
-    // C3-C6 have cascading skip logic: if an earlier question is Yes, later ones are skipped.
-    // Only check "all answered" for questions that are actually visible (not skipped by cascade).
+    // C3-C6 have cascading skip logic: if an earlier field is Yes, later ones are skipped.
+    // Only check "all answered" for fields that are actually visible (not skipped by cascade).
     const c3Answered = [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C3);
     const c4Visible = answers.C3 !== Answer.Yes;
     const c5Visible = c4Visible && answers.C4 !== Answer.Yes;
@@ -96,11 +96,11 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       gaps.push({
         id: 'GAP-SIG-INCOMPLETE',
         category: 'Regulatory Significance',
-        description: 'Not all significance questions have been answered',
+        description: 'Not all significance fields (C3–C6) have been answered',
         severity: 'critical',
         sourceClass: 'Final guidance',
         source: 'FDA-SW-510K-2017 Q3-Q4',
-        remediation: 'Complete all four significance questions (C3–C6) to produce a reliable pathway determination.',
+        remediation: 'Complete all four significance fields (C3–C6) to produce a reliable pathway determination.',
       });
     }
 
@@ -122,7 +122,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (answers.E1 === Answer.No || answers.E1 === Answer.Uncertain) {
     gaps.push({
       id: 'GAP-TRAINING-REPR',
-      category: 'Bias & Equity',
+      category: 'Bias and equity',
       description: 'Training, validation, or test data may not adequately represent the intended patient population',
       severity: 'important',
       sourceClass: 'Draft guidance',
@@ -134,8 +134,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (answers.E2 === Answer.No) {
     gaps.push({
       id: 'GAP-SUBGROUP',
-      category: 'Bias & Equity',
-      description: 'Subgroup performance evidence is missing or incomplete for relevant demographic groups',
+      category: 'Bias and equity',
+      description: 'Subgroup performance evidence is not provided or is incomplete for relevant demographic groups',
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B',
@@ -146,7 +146,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (answers.E3 === Answer.Yes || answers.E3 === Answer.Uncertain) {
     gaps.push({
       id: 'GAP-POPULATION-SCOPE',
-      category: 'Bias & Equity',
+      category: 'Bias and equity',
       description: 'New demographic populations may have been introduced relative to the authorized baseline',
       severity: 'important',
       sourceClass: 'Regulation',
@@ -158,7 +158,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (answers.E4 === Answer.No) {
     gaps.push({
       id: 'GAP-BIAS-ASSESSMENT-UPDATE',
-      category: 'Bias & Equity',
+      category: 'Bias and equity',
       description: 'Bias assessment from the original submission has not been updated for the current change',
       severity: 'important',
       sourceClass: 'Draft guidance',
@@ -170,7 +170,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (answers.E5 === Answer.Yes || answers.E5 === Answer.Uncertain) {
     gaps.push({
       id: 'GAP-BIAS-MITIGATION',
-      category: 'Bias & Equity',
+      category: 'Bias and equity',
       description: 'A bias mitigation strategy may have been changed, weakened, or removed',
       severity: 'important',
       sourceClass: 'Draft guidance',
@@ -215,7 +215,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'critical',
       sourceClass: 'Final guidance',
       source: 'FDA-PCCP-2025 §V–VI',
-      remediation: 'Complete PCCP scope verification questions (P1–P5). Verify change type, boundaries, validation protocol, monitoring, and cumulative impact.',
+      remediation: 'Complete PCCP scope verification fields (P1–P5). Verify change type, boundaries, validation protocol, monitoring, and cumulative impact.',
     });
   }
 
@@ -299,22 +299,22 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
   if (isPMA && determination.pmaIncomplete) {
     gaps.push({
       id: 'GAP-PMA-INCOMPLETE',
-      category: 'PMA Assessment',
+      category: 'PMA assessment',
       description: 'PMA safety/effectiveness assessment incomplete',
       severity: 'critical',
       sourceClass: 'Regulation',
       source: '21 CFR 814.39',
-      remediation: 'Complete the PMA-specific questions (C_PMA1–C_PMA3) to determine whether a supplement is required.',
+      remediation: 'Complete the PMA-specific fields (C_PMA1–C_PMA3) to determine whether a supplement is required.',
     });
   }
 
-  // --- Uncertain significance (conservative routing) ---
+  // --- Uncertain significance (conservative pathway policy) ---
 
   if (determination.hasUncertainSignificance) {
     gaps.push({
       id: 'GAP-SIG-UNCERTAIN',
       category: 'Regulatory Significance',
-      description: 'One or more significance questions answered "Uncertain" — conservatively treated as significant',
+      description: 'One or more significance fields answered "Uncertain" — conservatively treated as significant',
       severity: 'important',
       sourceClass: 'Internal conservative policy',
       source: 'FDA-SW-510K-2017 Q3-Q4',

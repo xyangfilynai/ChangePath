@@ -28,7 +28,7 @@ interface DeterminationFacts {
   cumulativeEscalation: boolean;
   seNotSupportable: boolean;
   seUncertain: boolean;
-  needsCumulativeSEQuestion: boolean;
+  needsCumulativeSEField: boolean;
   cumulativeDriftUnresolved: boolean;
   significanceIncomplete: boolean;
   hasGenAIGuardrailChange: boolean;
@@ -47,7 +47,7 @@ interface DeterminationFacts {
   pmaLabelingChange: boolean;
   pmaManufacturingChange: boolean;
   isSignificant: boolean;
-  pmaQuestionsAnswered: boolean;
+  pmaThresholdFieldsAnswered: boolean;
   pmaIncomplete: boolean;
   pmaRequiresSupplement: boolean;
   p3Applicable: boolean;
@@ -219,7 +219,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     isNonPMA && hasChangesSinceLastSub && (ans.C10 === Answer.Yes || ans.C10 === Answer.Uncertain);
   const seNotSupportable = isNonPMA && hasChangesSinceLastSub && ans.C11 === Answer.No;
   const seUncertain = isNonPMA && hasChangesSinceLastSub && ans.C11 === Answer.Uncertain;
-  const needsCumulativeSEQuestion =
+  const needsCumulativeSEField =
     isNonPMA &&
     hasChangesSinceLastSub &&
     is510k &&
@@ -246,7 +246,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     ((!baseSignificant && !allSignificanceNo) ||
       deNovoDeviceTypeFitUncertain ||
       seUncertain ||
-      needsCumulativeSEQuestion ||
+      needsCumulativeSEField ||
       cumulativeDriftUnresolved);
 
   const hasGenAIGuardrailChange = ans.D4 === Answer.Yes;
@@ -270,12 +270,12 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
   const pmaSafetyEffectivenessUncertain = ans.C_PMA1 === Answer.Uncertain;
   const pmaLabelingChange = ans.C_PMA2 === Answer.Yes;
   const pmaManufacturingChange = ans.C_PMA3 === Answer.Yes;
-  const pmaQuestionsAnswered =
+  const pmaThresholdFieldsAnswered =
     isPMA &&
     !isIntendedUseChange &&
     !isIntendedUseUncertain &&
     [Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C_PMA1);
-  const pmaIncomplete = isPMA && !isIntendedUseChange && !isIntendedUseUncertain && !pmaQuestionsAnswered;
+  const pmaIncomplete = isPMA && !isIntendedUseChange && !isIntendedUseUncertain && !pmaThresholdFieldsAnswered;
   const pmaRequiresSupplement =
     isPMA &&
     (isIntendedUseChange || ans.C_PMA1 === Answer.Yes || ans.C_PMA1 === Answer.Uncertain);
@@ -333,7 +333,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     cumulativeEscalation,
     seNotSupportable,
     seUncertain,
-    needsCumulativeSEQuestion,
+    needsCumulativeSEField,
     cumulativeDriftUnresolved,
     significanceIncomplete,
     hasGenAIGuardrailChange,
@@ -352,7 +352,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     pmaLabelingChange,
     pmaManufacturingChange,
     isSignificant,
-    pmaQuestionsAnswered,
+    pmaThresholdFieldsAnswered,
     pmaIncomplete,
     pmaRequiresSupplement,
     p3Applicable,
@@ -370,42 +370,42 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
     description: 'GenAI guardrail changes should not bypass the non-PMA risk-control significance screen.',
     when: all(eq('isNonPMA', true), eq('hasGenAIGuardrailChange', true), eq('c5No', true)),
     message:
-      'A GenAI guardrail / safety filter change was marked YES, but the risk-control significance question was marked NO. Reassess C5 before relying on the determination.',
+      'A GenAI guardrail / safety filter change was marked YES, but the risk-control significance field (C5) was marked NO. Reassess C5 before relying on the determination.',
   },
   {
     id: 'pma-genai-guardrail-cpma1-conflict',
     description: 'GenAI guardrail changes for PMA devices should not bypass the safety/effectiveness screen.',
     when: all(eq('isPMA', true), eq('hasGenAIGuardrailChange', true), eq('pmaSafetyEffectivenessNo', true)),
     message:
-      'A GenAI guardrail / safety filter change was marked YES, but the PMA safety/effectiveness question was marked NO. Guardrail changes directly affect risk controls — reassess C_PMA1 before relying on the determination.',
+      'A GenAI guardrail / safety filter change was marked YES, but the PMA safety/effectiveness field (C_PMA1) was marked NO. Guardrail changes directly affect risk controls — reassess C_PMA1 before relying on the determination.',
   },
   {
     id: 'nonpma-foundation-model-all-significance-no',
-    description: 'Foundation-model changes should not look non-significant across every U.S. significance question.',
+    description: 'Foundation-model changes should not look non-significant across every U.S. significance field.',
     when: all(eq('isNonPMA', true), eq('hasFoundationModelChange', true), eq('allUSSignificanceAnswersNo', true)),
     message:
-      'A foundation/base model change was marked non-significant across all U.S. significance questions. This is unusual and should be re-reviewed against performance, risk, and intended-use baselines.',
+      'A foundation/base model change was marked non-significant across all U.S. significance fields (C3–C6). This is unusual and should be re-reviewed against performance, risk, and intended-use baselines.',
   },
   {
     id: 'pma-foundation-model-cpma1-conflict',
     description: 'Foundation-model changes for PMA devices should not bypass the safety/effectiveness screen.',
     when: all(eq('isPMA', true), eq('hasFoundationModelChange', true), eq('pmaSafetyEffectivenessNo', true)),
     message:
-      'A foundation/base model change was reported, but the PMA safety/effectiveness question was marked NO. Base model swaps almost always affect safety or effectiveness — reassess C_PMA1 before relying on the determination.',
+      'A foundation/base model change was reported, but the PMA safety/effectiveness field (C_PMA1) was marked NO. Base model swaps typically affect safety or effectiveness — reassess C_PMA1 before relying on the determination.',
   },
   {
     id: 'nonpma-prompt-rag-all-significance-no',
     description: 'Prompt or RAG changes should be reconciled against the non-PMA significance screens.',
     when: all(eq('isNonPMA', true), eq('hasPromptOrRAGChange', true), eq('allUSSignificanceAnswersNo', true)),
     message:
-      'A prompt or RAG knowledge-base change was marked non-significant across all U.S. significance questions. Confirm the clinical behavior, risk-control, and performance rationale before closing as Letter to File.',
+      'A prompt or RAG knowledge-base change was marked non-significant across all U.S. significance fields (C3–C6). Confirm the clinical behavior, risk-control, and performance rationale before closing as Letter to File.',
   },
   {
     id: 'pma-prompt-rag-cpma1-conflict',
     description: 'Prompt or RAG changes for PMA devices should be reconciled against the safety/effectiveness screen.',
     when: all(eq('isPMA', true), eq('hasPromptOrRAGChange', true), eq('pmaSafetyEffectivenessNo', true)),
     message:
-      'A prompt or RAG knowledge-base change was reported, but the PMA safety/effectiveness question was marked NO. Prompt and RAG changes can alter clinical behavior — reassess C_PMA1 before relying on the determination.',
+      'A prompt or RAG knowledge-base change was reported, but the PMA safety/effectiveness field (C_PMA1) was marked NO. Prompt and RAG changes can alter clinical behavior — reassess C_PMA1 before relying on the determination.',
   },
   {
     id: 'demographic-expansion-with-b3-no',
@@ -426,14 +426,14 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
     description: 'Failed De Novo device-type fit should override a non-significant significance branch.',
     when: all(eq('deNovoDeviceTypeFitFailed', true), eq('allSignificanceNo', true)),
     message:
-      'The modified device may no longer fit the De Novo device type / special controls, but all U.S. significance questions were marked non-significant. The device-type fit concern takes priority — an FDA Pre-Submission is strongly recommended before closing as Letter to File.',
+      'The modified device may no longer fit the De Novo device type / special controls, but all U.S. significance fields were marked non-significant. Device-type fit takes priority — consider an FDA Pre-Submission before treating Letter to File as sufficient.',
   },
   {
     id: 'denovo-fit-uncertain',
     description: 'Uncertain De Novo device-type fit requires explicit escalation.',
     when: eq('deNovoDeviceTypeFitUncertain', true),
     message:
-      'The modified device’s continued fit with the De Novo device type / special controls is uncertain. Resolve this with expert review or an FDA Pre-Submission before relying on a non-submission pathway.',
+      'The modified device’s continued fit with the De Novo device type / special controls is uncertain. Resolve this with expert review or an FDA Pre-Submission before relying on a documentation-only pathway.',
   },
   {
     id: 'intended-use-uncertain',
@@ -468,14 +468,14 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
     description: 'Monitoring-threshold changes for PMA devices should not bypass the safety/effectiveness screen.',
     when: all(eq('isPMA', true), eq('monitoringThresholdChange', true), eq('pmaSafetyEffectivenessNo', true)),
     message:
-      'A monitoring threshold change was reported, but the PMA safety/effectiveness question was marked NO. If the change weakens monitoring sensitivity, it may affect safety or effectiveness. Reassess C_PMA1.',
+      'A monitoring threshold change was reported, but the PMA safety/effectiveness field (C_PMA1) was marked NO. If the change weakens monitoring sensitivity, it may affect safety or effectiveness. Reassess C_PMA1.',
   },
   {
     id: 'baseline-incomplete',
-    description: 'Missing baseline fields always undermine determination reliability.',
+    description: 'Incomplete baseline fields undermine determination reliability.',
     when: eq('baselineIncomplete', true),
     message:
-      "One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'",
+      "One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are not provided. The determination may be unreliable without a defined authorized baseline for comparison. Flagged for expert judgment.",
   },
   {
     id: 'nonpma-unresolved-significance-uncertainty-policy',
@@ -487,14 +487,14 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
       eq('isIntendedUseUncertain', false),
     ),
     message:
-      "One or more significance questions were answered 'Uncertain.' RegAccess's internal conservative policy treats unresolved significance uncertainty as requiring a submission — this is NOT a direct regulatory requirement but a risk-based escalation rule. Resolve the uncertainty through additional evidence, expert review, or FDA Pre-Submission before treating the pathway as final.",
+      "One or more significance fields were answered 'Uncertain.' RegAccess applies an internal conservative policy that treats unresolved significance uncertainty as requiring a marketing submission — this is not a direct regulatory requirement but a risk-based escalation. Resolve the uncertainty through evidence, expert review, or FDA Pre-Submission before treating the pathway as final.",
   },
   {
     id: 'pma-unresolved-safety-effectiveness-uncertainty-policy',
     description: 'Unresolved PMA safety/effectiveness uncertainty triggers the internal conservative-policy warning.',
     when: all(eq('isPMA', true), eq('pmaSafetyEffectivenessUncertain', true)),
     message:
-      "The PMA safety/effectiveness question was answered 'Uncertain.' RegAccess's internal conservative policy treats unresolved PMA uncertainty as requiring a supplement — this is NOT a direct regulatory mandate but a risk-based escalation. Resolve the uncertainty before treating the pathway as final.",
+      "The PMA safety/effectiveness field was answered 'Uncertain.' RegAccess applies an internal conservative policy that treats unresolved PMA uncertainty as requiring a supplement — not a direct regulatory mandate. Resolve the uncertainty before treating the pathway as final.",
   },
   {
     id: 'pma-labeling-change-with-cpma1-no',
@@ -515,27 +515,27 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
     description: 'Bias-mitigation changes should not bypass the non-PMA risk-control significance screen.',
     when: all(eq('isNonPMA', true), eq('biasMitigationChanged', true), eq('c5No', true)),
     message:
-      'A bias mitigation strategy was changed or removed, but the risk-control significance question was marked NO. If the mitigation functions as a safety or performance control, reassess C5.',
+      'A bias mitigation strategy was changed or removed, but the risk-control significance field (C5) was marked NO. If the mitigation functions as a safety or performance control, reassess C5.',
   },
   {
     id: 'pma-bias-mitigation-cpma1-conflict',
     description: 'Bias-mitigation changes for PMA devices should not bypass the safety/effectiveness screen.',
     when: all(eq('isPMA', true), eq('biasMitigationChanged', true), eq('pmaSafetyEffectivenessNo', true)),
     message:
-      'A bias mitigation strategy was changed or removed, but the PMA safety/effectiveness question was marked NO. If the mitigation affects safety, effectiveness, or clinically relevant performance across populations, reassess C_PMA1.',
+      'A bias mitigation strategy was changed or removed, but the PMA safety/effectiveness field (C_PMA1) was marked NO. If the mitigation affects safety, effectiveness, or clinically relevant performance across populations, reassess C_PMA1.',
   },
 ];
 
 const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   {
     id: 'pma-intended-use-change-baseline-incomplete',
-    description: 'A PMA intended-use change cannot be routed to a supplement until the authorized baseline is complete.',
+    description: 'A PMA intended-use change cannot map to a supplement pathway until the authorized baseline is complete.',
     when: all(eq('isPMA', true), eq('isIntendedUseChange', true), eq('baselineIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
   },
   {
     id: 'pma-intended-use-change',
-    description: 'A PMA intended-use change routes to PMA Supplement Required.',
+    description: 'A PMA intended-use change maps to PMA Supplement Required.',
     when: all(eq('isPMA', true), eq('isIntendedUseChange', true)),
     outcome: Pathway.PMASupplementRequired,
   },
@@ -547,12 +547,12 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'pma-baseline-incomplete',
-    description: 'A PMA case with missing authorized-baseline fields remains incomplete.',
+    description: 'A PMA case with incomplete authorized-baseline fields remains incomplete.',
     when: all(eq('isPMA', true), eq('baselineIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
   },
   {
-    id: 'pma-safety-effectiveness-question-incomplete',
+    id: 'pma-safety-effectiveness-field-incomplete',
     description: 'A PMA case without the core safety/effectiveness answer remains incomplete.',
     when: all(eq('isPMA', true), eq('pmaIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
@@ -571,7 +571,7 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'pma-supplement-required',
-    description: 'A PMA change affecting safety/effectiveness routes to PMA Supplement Required.',
+    description: 'A PMA change affecting safety/effectiveness maps to PMA Supplement Required.',
     when: all(eq('isPMA', true), eq('pmaRequiresSupplement', true)),
     outcome: Pathway.PMASupplementRequired,
   },
@@ -583,13 +583,13 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-intended-use-change-baseline-incomplete',
-    description: 'A non-PMA intended-use change cannot be routed to a new submission until the authorized baseline is complete.',
+    description: 'A non-PMA intended-use change cannot map to a new submission pathway until the authorized baseline is complete.',
     when: all(eq('isNonPMA', true), eq('isIntendedUseChange', true), eq('baselineIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
   },
   {
     id: 'nonpma-intended-use-change',
-    description: 'A non-PMA intended-use change routes to New Submission Required.',
+    description: 'A non-PMA intended-use change maps to New Submission Required.',
     when: all(eq('isNonPMA', true), eq('isIntendedUseChange', true)),
     outcome: Pathway.NewSubmission,
   },
@@ -601,7 +601,7 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-baseline-incomplete',
-    description: 'A non-PMA case with missing authorized-baseline fields remains incomplete.',
+    description: 'A non-PMA case with incomplete authorized-baseline fields remains incomplete.',
     when: all(eq('isNonPMA', true), eq('baselineIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
   },
@@ -613,13 +613,13 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-cybersecurity-exemption',
-    description: 'A qualifying cybersecurity-only change routes to Letter to File.',
+    description: 'A qualifying cybersecurity-only change maps to Letter to File.',
     when: all(eq('isNonPMA', true), eq('isCyberOnly', true)),
     outcome: Pathway.LetterToFile,
   },
   {
     id: 'nonpma-restore-to-spec-exemption',
-    description: 'A qualifying restore-to-specification change routes to Letter to File.',
+    description: 'A qualifying restore-to-specification change maps to Letter to File.',
     when: all(eq('isNonPMA', true), eq('isBugFix', true)),
     outcome: Pathway.LetterToFile,
   },
@@ -643,19 +643,19 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-significant-new-submission',
-    description: 'A significant non-PMA change without an authorized PCCP path routes to New Submission Required.',
+    description: 'A significant non-PMA change without an authorized PCCP pathway maps to New Submission Required.',
     when: all(eq('isNonPMA', true), eq('isSignificant', true)),
     outcome: Pathway.NewSubmission,
   },
   {
     id: 'nonpma-all-significance-no',
-    description: 'A fully evaluated non-significant non-PMA change routes to Letter to File.',
+    description: 'A fully evaluated non-significant non-PMA change maps to Letter to File.',
     when: all(eq('isNonPMA', true), eq('allSignificanceNo', true)),
     outcome: Pathway.LetterToFile,
   },
   {
     id: 'fallback-assessment-incomplete',
-    description: 'Fallback route when no other declarative pathway rule is satisfied.',
+    description: 'Fallback pathway when no other declarative rule is satisfied.',
     when: all(),
     outcome: Pathway.AssessmentIncomplete,
   },
@@ -672,7 +672,7 @@ interface PCCPRecommendationContext {
 const pccpRecommendationRules: DeclarativeRule<PCCPRecommendationContext, PCCPRecommendation | null>[] = [
   {
     id: 'suppress-pccp-recommendation',
-    description: 'Do not recommend PCCP when one already exists or the current route is not a new-submission path.',
+    description: 'Do not recommend PCCP when one already exists or the current pathway is not a new-submission path.',
     when: anyOf(
       eq('hasPCCP', true),
       eq('isDocOnly', true),
@@ -684,7 +684,7 @@ const pccpRecommendationRules: DeclarativeRule<PCCPRecommendationContext, PCCPRe
   },
   {
     id: 'recommend-pccp-for-next-submission',
-    description: 'Recommend evaluating PCCP in the upcoming submission when no PCCP is authorized and the case already routes to a new submission.',
+    description: 'Recommend evaluating PCCP in the upcoming submission when no PCCP is authorized and the case already maps to a new submission.',
     when: all(),
     outcome: { shouldRecommend: true },
   },
@@ -709,7 +709,7 @@ export const computeDetermination = (ans: Answers): DeterminationResult => {
   const isNewSub = pathway === Pathway.NewSubmission || pathway === Pathway.PMASupplementRequired;
   const isIncomplete = pathway === Pathway.AssessmentIncomplete;
 
-  // Step 4: Apply declarative recommendation rules that depend on the final route.
+  // Step 4: Apply declarative recommendation rules that depend on the final pathway.
   const recommendationContext: PCCPRecommendationContext = {
     hasPCCP: facts.hasPCCP,
     isDocOnly,

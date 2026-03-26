@@ -17,15 +17,15 @@ describe('FeedbackSurvey', () => {
     onBack.mockReset();
   });
 
-  it('renders the survey form with all always-visible questions', () => {
+  it('renders the survey form with all always-visible fields', () => {
     render(<FeedbackSurvey onBack={onBack} />);
-    expect(screen.getByText('Share Your Feedback')).toBeInTheDocument();
-    expect(screen.getByText(/Did the assessment reach the conclusion/)).toBeInTheDocument();
-    expect(screen.getByText(/reasoning you would push back on/)).toBeInTheDocument();
-    expect(screen.getByText(/improve your confidence/)).toBeInTheDocument();
-    expect(screen.getByText(/How would you use RegAccess/)).toBeInTheDocument();
-    expect(screen.getByText(/most helpful — or least helpful/)).toBeInTheDocument();
-    expect(screen.getByText(/Would you be interested/)).toBeInTheDocument();
+    expect(screen.getByText('Assessment feedback')).toBeInTheDocument();
+    expect(screen.getByText(/determined pathway match your expectation/i)).toBeInTheDocument();
+    expect(screen.getByText(/challenge or refine/i)).toBeInTheDocument();
+    expect(screen.getByText(/increase your confidence/i)).toBeInTheDocument();
+    expect(screen.getByText(/How would you use RegAccess/i)).toBeInTheDocument();
+    expect(screen.getByText(/most and least helpful/i)).toBeInTheDocument();
+    expect(screen.getByText(/Follow-up interest/i)).toBeInTheDocument();
   });
 
   it('does not show Q1b initially', () => {
@@ -35,21 +35,21 @@ describe('FeedbackSurvey', () => {
 
   it('shows Q1b when "Partly" is selected', async () => {
     render(<FeedbackSurvey onBack={onBack} />);
-    const radio = screen.getByLabelText(/Partly — I see the direction/);
+    const radio = screen.getByLabelText(/Partly — I would qualify/);
     await userEvent.click(radio);
     expect(screen.getByTestId('q1b-section')).toBeInTheDocument();
   });
 
   it('shows Q1b when "No, I would have reached a different conclusion" is selected', async () => {
     render(<FeedbackSurvey onBack={onBack} />);
-    const radio = screen.getByLabelText(/No, I would have reached a different conclusion/);
+    const radio = screen.getByLabelText(/No — I would reach a different conclusion/);
     await userEvent.click(radio);
     expect(screen.getByTestId('q1b-section')).toBeInTheDocument();
   });
 
   it('does not show Q1b for "Yes" or "Mostly"', async () => {
     render(<FeedbackSurvey onBack={onBack} />);
-    await userEvent.click(screen.getByLabelText(/Yes — exactly/));
+    await userEvent.click(screen.getByLabelText(/Yes — matches my conclusion/));
     expect(screen.queryByTestId('q1b-section')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByLabelText(/Mostly — minor/));
@@ -91,7 +91,7 @@ describe('FeedbackSurvey', () => {
   it('shows Q7/Q8 when "Not at this time" plus another option are selected', async () => {
     render(<FeedbackSurvey onBack={onBack} />);
     await userEvent.click(screen.getByLabelText(/Not at this time/));
-    await userEvent.click(screen.getByLabelText(/Participating in a longer pilot/));
+    await userEvent.click(screen.getByLabelText(/A longer pilot/));
     expect(screen.getByTestId('q7-section')).toBeInTheDocument();
     expect(screen.getByTestId('q8-section')).toBeInTheDocument();
   });
@@ -103,7 +103,7 @@ describe('FeedbackSurvey', () => {
     await waitFor(() => {
       expect(screen.getByTestId('feedback-thankyou')).toBeInTheDocument();
     });
-    expect(screen.getByText(/Thank you for your feedback/)).toBeInTheDocument();
+    expect(screen.getByText(/Feedback received/)).toBeInTheDocument();
   });
 
   it('"Back to Review" calls onBack without corrupting state', async () => {
@@ -118,14 +118,14 @@ describe('FeedbackSurvey', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('"Return to Review" from thank-you calls onBack', async () => {
+  it('"Back to final review" from thank-you calls onBack', async () => {
     vi.spyOn(feedbackServiceModule.feedbackService, 'submit').mockResolvedValue({ ok: true });
     render(<FeedbackSurvey onBack={onBack} />);
     await userEvent.click(screen.getByTestId('feedback-submit'));
     await waitFor(() => {
       expect(screen.getByTestId('feedback-thankyou')).toBeInTheDocument();
     });
-    await userEvent.click(screen.getByText('Return to Review'));
+    await userEvent.click(screen.getByText('Back to final review'));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

@@ -257,7 +257,7 @@ interface ReviewPanelProps {
   determination: DeterminationResult;
   answers: Answers;
   blocks: Block[];
-  getQuestionsForBlock: (blockId: string) => Question[];
+  getFieldsForBlock: (blockId: string) => AssessmentField[];
   onEditBlock: (blockIndex: number) => void;  // ← REMOVE
   onFeedback?: () => void;                    // ← REMOVE
   onHandoff?: () => void;
@@ -271,7 +271,7 @@ interface ReviewPanelProps {
   determination: DeterminationResult;
   answers: Answers;
   blocks: Block[];
-  getQuestionsForBlock: (blockId: string) => Question[];
+  getFieldsForBlock: (blockId: string) => AssessmentField[];
   onHandoff?: () => void;
   reviewerNotes?: ReviewerNote[];
   onAddNote?: (author: string, text: string) => void;
@@ -293,7 +293,7 @@ interface ReviewPanelProps {
 
 ### Property 2: Assessment engine output stability
 
-*For any* `Answers` object, the outputs of `computeDetermination`, `computeDerivedState`, `getBlocks`, and `getQuestions` must be identical before and after all cleanup changes — verified by the full existing test suite passing without modification to any engine file.
+*For any* `Answers` object, the outputs of `computeDetermination`, `computeDerivedState`, `getBlocks`, and `getBlockFields` must be identical before and after all cleanup changes — verified by the full existing test suite passing without modification to any engine file.
 
 **Validates: Requirements 14.1, 14.2**
 

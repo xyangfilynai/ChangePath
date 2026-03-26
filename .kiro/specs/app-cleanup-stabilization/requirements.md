@@ -11,7 +11,7 @@ The work is organized into five categories: dead code removal, duplication elimi
 ## Glossary
 
 - **App**: The RegAccess React SPA (`src/App.tsx` and all files it imports).
-- **Assessment_Engine**: The pure-logic module at `src/lib/assessment-engine/` (types, computeDetermination, computeDerivedState, getQuestions, getBlocks, changeTaxonomy).
+- **Assessment_Engine**: The pure-logic module at `src/lib/assessment-engine/` (types, computeDetermination, computeDerivedState, getBlockFields, getBlocks, changeTaxonomy).
 - **Dead_Code**: Any export, import, variable, function, component, file, or branch that is provably unreachable or unreferenced in the current build and test surface.
 - **Regression**: Any change in observable behavior — UI output, determination logic, test results, or build output — that was not present before the cleanup.
 - **Safe_Removal**: Deletion of code confirmed unused by exhaustive import/reference search across `src/`, `tests/`, `vite.config.ts`, `vitest.config.ts`, and `package.json`.
@@ -185,7 +185,7 @@ The work is organized into five categories: dead code removal, duplication elimi
 #### Acceptance Criteria
 
 1. THE `computeDetermination` function SHALL produce identical output for all inputs before and after cleanup, verified by the existing test suite in `tests/regassess-baseline-engine.spec.ts`.
-2. THE `computeDerivedState`, `getQuestions`, `getBlocks`, and `changeTaxonomy` functions SHALL produce identical output for all inputs before and after cleanup, verified by `tests/regassess-question-visibility.spec.ts` and `tests/app-shell.spec.ts`.
+2. THE `computeDerivedState`, `getBlockFields`, `getBlocks`, and `changeTaxonomy` functions SHALL produce identical output for all inputs before and after cleanup, verified by `tests/regassess-question-visibility.spec.ts` and `tests/app-shell.spec.ts`.
 3. WHEN any file in `src/lib/assessment-engine/` is modified, THE Cleanup_Process SHALL run the full test suite and confirm zero failures before proceeding.
 4. THE Cleanup_Process SHALL NOT rewrite, reorder, or restructure the declarative rule arrays in `computeDetermination.ts` unless the change is a provably behavior-neutral formatting fix.
 

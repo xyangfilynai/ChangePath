@@ -5,7 +5,7 @@ import { DashboardPage } from '../src/components/DashboardPage';
 import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
 import { ReviewPanel } from '../src/components/ReviewPanel';
-import { Answer, computeDetermination, type Block, type Question } from '../src/lib/assessment-engine';
+import { Answer, computeDetermination, type Block, type AssessmentField } from '../src/lib/assessment-engine';
 
 describe('UI workflow', () => {
   it('prioritizes continuing existing work ahead of starting a new assessment', () => {
@@ -35,10 +35,10 @@ describe('UI workflow', () => {
     const resumeButton = screen.getByTestId('resume-btn');
     const fullAssessmentButton = screen.getByTestId('full-assessment-btn');
 
-    expect(screen.getByText('Continue Working')).toBeInTheDocument();
-    expect(screen.getByText('Start Assessment')).toBeInTheDocument();
-    expect(screen.getByText('Primary workflow')).toBeInTheDocument();
-    expect(screen.getByText('Decision traceability')).toBeInTheDocument();
+    expect(screen.getByText('Resume or open')).toBeInTheDocument();
+    expect(screen.getByText('New assessment')).toBeInTheDocument();
+    expect(screen.getByText('Default path')).toBeInTheDocument();
+    expect(screen.getByText('Traceability')).toBeInTheDocument();
     expect(screen.queryByText('Assessment Workflow')).not.toBeInTheDocument();
     expect(screen.queryByText('Assessment record')).not.toBeInTheDocument();
     expect(screen.queryByText(/JSON artifact/i)).not.toBeInTheDocument();
@@ -48,8 +48,8 @@ describe('UI workflow', () => {
     ).toBeTruthy();
   });
 
-  it('keeps supporting question context collapsed until the user asks for it', () => {
-    const question: Question = {
+  it('keeps supporting field context collapsed until the user asks for it', () => {
+    const field: AssessmentField = {
       id: 'UX_TEST',
       q: 'Does the proposed change remain inside the validated operating range?',
       type: 'yesnouncertain',
@@ -60,7 +60,7 @@ describe('UI workflow', () => {
 
     render(
       <QuestionCard
-        question={question}
+        field={field}
         value={undefined}
         onChange={() => {}}
         index={0}
@@ -70,7 +70,7 @@ describe('UI workflow', () => {
     expect(screen.getByRole('button', { name: Answer.Yes })).toBeInTheDocument();
     expect(screen.queryByText(/comparison anchor/i)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /why this question matters and what to verify/i }));
+    fireEvent.click(screen.getByRole('button', { name: /rationale and verification notes/i }));
 
     expect(screen.getByText(/comparison anchor/i)).toBeInTheDocument();
     expect(screen.getByText(/validated data envelope/i)).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe('UI workflow', () => {
       {
         id: 'A',
         label: 'What device are we assessing?',
-        shortLabel: 'Device Profile',
+        shortLabel: 'Device profile',
         icon: 'shield',
         description: 'Anchor the assessment to the authorized device and baseline.',
       },
@@ -110,14 +110,14 @@ describe('UI workflow', () => {
         caseSummary={[
           { label: 'Authorization', value: '510(k)' },
           { label: 'Authorized baseline', value: 'v4.2 cleared build' },
-          { label: 'PCCP', value: 'No PCCP authorized', tone: 'warning' },
+          { label: 'PCCP', value: 'No authorized PCCP', tone: 'warning' },
         ]}
       >
         <div>Assessment body</div>
       </Layout>
     );
 
-    expect(screen.getByText('Required completion')).toBeInTheDocument();
+    expect(screen.getByText('Required fields')).toBeInTheDocument();
     expect(screen.getAllByText('2/4').length).toBeGreaterThan(0);
     expect(screen.queryByText('Authorization')).not.toBeInTheDocument();
 
@@ -138,7 +138,7 @@ describe('UI workflow', () => {
         caseSummary={[
           { label: 'Authorization', value: '510(k)' },
           { label: 'Authorized baseline', value: 'v4.2 cleared build' },
-          { label: 'PCCP', value: 'No PCCP authorized', tone: 'warning' },
+          { label: 'PCCP', value: 'No authorized PCCP', tone: 'warning' },
         ]}
       >
         <div>Assessment body</div>
@@ -146,7 +146,7 @@ describe('UI workflow', () => {
     );
 
     expect(screen.getByText('Authorization')).toBeInTheDocument();
-    expect(screen.getByText('All required questions answered')).toBeInTheDocument();
+    expect(screen.getByText('All required fields complete')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/working title/i)).not.toBeInTheDocument();
   });
 
@@ -176,13 +176,13 @@ describe('UI workflow', () => {
         determination={computeDetermination(answers)}
         answers={answers}
         blocks={[]}
-        getQuestionsForBlock={() => []}
+        getFieldsForBlock={() => []}
       />
     );
 
-    expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
-    expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
-    expect(screen.getByText('Why This Route')).toBeInTheDocument();
+    expect(screen.getByText(/Consider a PCCP|Evaluate PCCP/i)).toBeInTheDocument();
+    expect(screen.getByText(/next submission to assess whether PCCP is viable/i)).toBeInTheDocument();
+    expect(screen.getByText('Why this pathway')).toBeInTheDocument();
     expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.getAllByText(/New or modified cause of harm: Uncertain/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
@@ -218,7 +218,7 @@ describe('UI workflow', () => {
         determination={computeDetermination(answers)}
         answers={answers}
         blocks={[]}
-        getQuestionsForBlock={() => []}
+        getFieldsForBlock={() => []}
       />
     );
 
@@ -229,7 +229,7 @@ describe('UI workflow', () => {
     expect(
       screen.getAllByText(/creates a new or modified cause of harm/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('Why This Route')).toBeInTheDocument();
+    expect(screen.getByText('Why this pathway')).toBeInTheDocument();
     expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.queryByText('Package Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Documentation Requirements')).not.toBeInTheDocument();

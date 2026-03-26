@@ -4,7 +4,7 @@ import {
   computeDetermination,
   computeDerivedState,
   getBlocks,
-  getQuestions,
+  getBlockFields,
   changeTaxonomy,
 } from '../src/lib/assessment-engine';
 
@@ -54,28 +54,28 @@ describe('App Shell: SAMPLE_CASE', () => {
     expect(det.pccpRecommendation!.shouldRecommend).toBe(true);
   });
 
-  it('SAMPLE_CASE produces blocks and questions without errors', () => {
+  it('SAMPLE_CASE produces blocks and assessment fields without errors', () => {
     const ds = computeDerivedState(SAMPLE_CASE);
     const blocks = getBlocks(SAMPLE_CASE, ds);
     expect(blocks.length).toBeGreaterThan(0);
 
-    // Every block should produce questions without throwing
+    // Every block should produce field definitions without throwing
     for (const block of blocks) {
       if (block.id === 'review') continue;
-      const questions = getQuestions(block.id, SAMPLE_CASE, ds);
-      expect(questions.length).toBeGreaterThan(0);
+      const fields = getBlockFields(block.id, SAMPLE_CASE, ds);
+      expect(fields.length).toBeGreaterThan(0);
     }
   });
 
-  it('SAMPLE_CASE has answers for all visible pathwayCritical questions', () => {
+  it('SAMPLE_CASE has answers for all visible pathwayCritical fields', () => {
     const ds = computeDerivedState(SAMPLE_CASE);
     const blocks = getBlocks(SAMPLE_CASE, ds);
     const unanswered: string[] = [];
 
     for (const block of blocks) {
       if (block.id === 'review') continue;
-      const questions = getQuestions(block.id, SAMPLE_CASE, ds);
-      for (const q of questions) {
+      const fields = getBlockFields(block.id, SAMPLE_CASE, ds);
+      for (const q of fields) {
         if (q.sectionDivider || q.skip || !q.pathwayCritical) continue;
         if (SAMPLE_CASE[q.id] === undefined || SAMPLE_CASE[q.id] === '') {
           unanswered.push(q.id);

@@ -2,7 +2,7 @@ import { Answer, AuthPathway, Answers } from './types';
 import { changeTaxonomy, type ChangeTypeDefinition } from './changeTaxonomy';
 
 /**
- * Derived-state shape expected by getQuestions / getBlocks.
+ * Derived-state shape expected by getBlockFields / getBlocks.
  * Matches the return type of computeDerivedState.
  */
 export interface DerivedState {
@@ -13,7 +13,7 @@ export interface DerivedState {
   isDeNovo: boolean;
 }
 
-export interface Question {
+export interface AssessmentField {
   id: string;
   q?: string;
   type?: string;
@@ -56,37 +56,37 @@ export interface Block {
  */
 export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
   const b: Block[] = [
-    { id: "A", label: "What device are we assessing?", shortLabel: "Device Profile", icon: "shield", description: "Anchor the assessment to the authorized device, baseline, intended use, and change-control context before any change analysis." },
-    { id: "B", label: "What changed?", shortLabel: "Change Classification", icon: "layers", description: "Describe the modification precisely so downstream pathway logic evaluates the right change category and intended use impact." },
-    { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory Significance", icon: "alert", description: "Assess whether the change affects safety, effectiveness, substantial equivalence, or submission obligations." },
+    { id: "A", label: "What device are we assessing?", shortLabel: "Device profile", icon: "shield", description: "Record the authorized device, baseline, intended use, and change-control context before significance analysis." },
+    { id: "B", label: "What changed?", shortLabel: "Change classification", icon: "layers", description: "Describe the modification so downstream logic uses the correct change category and intended-use assessment." },
+    { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory significance", icon: "alert", description: "Assess effects on safety, effectiveness, substantial equivalence, and reporting or submission obligations." },
   ];
-  if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP Scope", icon: "checkCircle", description: "Verify whether the proposed change remains inside the authorized PCCP boundaries, validation plan, and cumulative limits." });
-  if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI Supplemental", icon: "cpu", description: "Review base model, prompt, RAG, guardrails, and GenAI-specific behavior changes that can alter clinical performance or controls." });
-  b.push({ id: "E", label: "Population impact check", shortLabel: "Bias & Equity", icon: "scale", description: "Check whether performance, bias controls, validation evidence, or affected populations require additional expert review." });
-  b.push({ id: "review", label: "Final review", shortLabel: "Review", icon: "check", description: "Review the routing logic, evidence gaps, documentation needs, and expert-review notes before relying on the assessment." });
+  if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP scope", icon: "checkCircle", description: "Confirm the change stays within authorized PCCP boundaries, the validation protocol, and cumulative limits." });
+  if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI supplemental", icon: "cpu", description: "Review base model, prompts, RAG, guardrails, and other GenAI changes that may affect clinical performance or controls." });
+  b.push({ id: "E", label: "Population impact check", shortLabel: "Bias and equity", icon: "scale", description: "Assess population fit, subgroup performance, bias controls, and whether added expert review is warranted." });
+  b.push({ id: "review", label: "Final review", shortLabel: "Review", icon: "check", description: "Review the determination pathway, evidence gaps, documentation cues, and notes before relying on the output." });
   return b;
 };
 
 /**
- * Pure extraction of getQuestions from regassess_v11.html lines 1237–1510.
- * Signature: getQuestions(blockId, answers, derivedState)
+ * Pure extraction of block field definitions from regassess_v11.html lines 1237–1510.
+ * Signature: getBlockFields(blockId, answers, derivedState)
  *
  * The original was a closure over component state; this version takes
  * answers and derivedState as explicit parameters instead.
  */
-export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState): Question[] => {
+export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedState): AssessmentField[] => {
   const { hasGenAI, isCatIntendedUse, isPMA } = ds;
 
   switch (blockId) {
     case "A": return [
-      { id: "A_SEC1", sectionDivider: true, label: "Required for pathway accuracy", sublabel: "These fields directly determine the regulatory pathway and decision logic.", icon: "shield" },
+      { id: "A_SEC1", sectionDivider: true, label: "Required for pathway selection", sublabel: "These fields drive pathway logic and should match your authorization record.", icon: "shield" },
       { id: "A1", q: "What is the current regulatory authorization pathway?", type: "single",
         options: ["510(k)", "De Novo", "PMA"],
         pathwayCritical: true,
         help: "The existing regulatory basis determines which change assessment framework applies. For software changes to De Novo-authorized devices that remain subject to 510(k) requirements, FDA's 510(k) change guidances are relevant; continued fit with the De Novo device type and special controls should also be checked." },
       { id: "A1b", q: "What is the current U.S. authorization identifier (e.g., K#, DEN#, P#)?", type: "text",
         pathwayCritical: true,
-        help: "Anchors the assessment to a specific authorization record. Without this, the determination may not be reliable." },
+        help: "Ties the assessment to a specific authorization record. Without it, outputs are harder to defend." },
       { id: "A1c", q: "What is the authorized baseline being used for comparison (e.g., cleared/approved version, released build, or design baseline)?", type: "text",
         pathwayCritical: true,
         help: "Regulatory reviewers compare the proposed change to a defined authorized baseline, not just the latest marketed build." },
@@ -95,7 +95,7 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
         help: "Required for the intended use comparison. Compare the proposed change against this exact statement." },
       { id: "A2", q: "Does the device have an FDA-authorized Predetermined Change Control Plan (PCCP)?", type: "yesno",
         pathwayCritical: true,
-        help: "An authorized PCCP allows pre-approved modifications without a new submission — but only for changes within the PCCP's scope. Per FDORA §515C and FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025)." },
+        help: "An authorized PCCP can allow defined modifications without a new submission when implementation stays within the authorized scope, boundaries, and protocols. See FDORA §515C and FDA PCCP final guidance (Dec 2024, reissued Aug 2025)." },
       { id: "A6", q: "What type of AI/ML technology does the device use?", type: "multi",
         options: ["Traditional ML (e.g., random forest, SVM)", "Deep Learning (e.g., CNN, RNN)", "Transformer / Attention-Based", "LLM / Foundation Model", "Generative AI", "Ensemble / Multi-Model", "Federated Learning"],
         pathwayCritical: true,
@@ -124,7 +124,7 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
         forcedValue: null,
         consequencePreview: null,
         mlguidance: "Pull up the clearance letter and Indications for Use statement. Compare word-by-word: does the change expand the patient population, clinical setting, anatomical region, severity scope, or diagnostic capability? For GenAI: does expanded prompting ability or RAG content broaden effective clinical scope even if the stated IFU hasn't changed?",
-        help: "The most consequential question in the assessment. Compare the proposed change against the exact authorized indications for use / intended purpose, labeling claims, population, clinical context, and outputs. PCCPs are intended to be focused and bounded within the originally reviewed device scope; RegAccess therefore treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented." },
+        help: "The most consequential field in the assessment. Compare the proposed change against the exact authorized indications for use / intended purpose, labeling claims, population, clinical context, and outputs. PCCPs are intended to be focused and bounded within the originally reviewed device scope; RegAccess therefore treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented." },
       { id: "B4", q: "Describe the change in detail.", type: "text",
         help: "Provide a clear description: what is changing, the scope, data sources affected, and components modified. This becomes part of your assessment record." },
     ];
@@ -145,7 +145,7 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
           { id: "C_PMA4", q: "What type of PMA supplement is anticipated?", type: "single",
             skip: answers.B3 !== Answer.Yes && answers.C_PMA1 !== Answer.Yes && answers.C_PMA1 !== Answer.Uncertain,
             options: ["Panel-Track Supplement (major change / typically substantial clinical evidence)", "180-Day Supplement (§814.39(a) — change affecting safety/effectiveness not requiring panel-track)", "Real-Time Supplement (minor change reviewed in real time; see FDA Real-Time PMA Supplements guidance)", "Special PMA Supplement — Changes Being Effected (§814.39(d) — certain safety-enhancing labeling or manufacturing changes)", "30-Day PMA Supplement (§814.39(e) — only when FDA has specifically advised this alternate submission)", "30-Day Notice (§814.39(f) — qualifying manufacturing procedure/method changes only)"],
-            help: "Supplement type depends on the nature and scope of the change:\n• Panel-Track: Major changes, often including new indications for use or other changes typically needing substantial clinical evidence.\n• 180-Day: Changes affecting safety or effectiveness that do not fit a more specific alternative.\n• Real-Time: Certain minor changes that FDA agrees to review through the real-time process.\n• Special — Changes Being Effected: Certain safety-enhancing labeling or manufacturing changes under §814.39(d).\n• 30-Day PMA Supplement: An alternate submission under §814.39(e), only when FDA has specifically advised that this route is permitted.\n• 30-Day Notice: Certain manufacturing procedure or method changes under §814.39(f). If the notice is not adequate, FDA may require a 135-day PMA supplement.\nMinor changes that do not affect safety or effectiveness may instead be reportable in the PMA annual/periodic report under §814.39(b) and §814.84." },
+            help: "Supplement type depends on the nature and scope of the change:\n• Panel-Track: Major changes, often including new indications for use or other changes typically needing substantial clinical evidence.\n• 180-Day: Changes affecting safety or effectiveness that do not fit a more specific alternative.\n• Real-Time: Certain minor changes that FDA agrees to review through the real-time process.\n• Special — Changes Being Effected: Certain safety-enhancing labeling or manufacturing changes under §814.39(d).\n• 30-Day PMA Supplement: An alternate submission under §814.39(e), only when FDA has specifically advised that this pathway is permitted.\n• 30-Day Notice: Certain manufacturing procedure or method changes under §814.39(f). If the notice is not adequate, FDA may require a 135-day PMA supplement.\nMinor changes that do not affect safety or effectiveness may instead be reportable in the PMA annual/periodic report under §814.39(b) and §814.84." },
         ];
       }
 
@@ -155,7 +155,7 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
           help: "Before assessing significance under the 510(k)-based change framework, first confirm the modified device still falls within the device type established by the De Novo authorization. If the device no longer fits the device type or special controls, a 510(k) to a different predicate or a new De Novo request may be required instead." },
         { id: "C0_DN2", q: "Can the modified device comply with all special controls specified in the De Novo classification order?", type: "yesnouncertain",
           skip: answers.A1 !== AuthPathway.DeNovo || answers.B3 === Answer.Yes || answers.C0_DN1 === Answer.Yes,
-          help: "Special controls are the regulatory basis for the De Novo classification. If the modified device cannot comply with one or more special controls, the modification may require a different regulatory strategy. An FDA Pre-Submission (Q-Sub) is strongly recommended." },
+          help: "Special controls are the regulatory basis for the De Novo classification. If the modified device cannot comply with one or more special controls, the modification may require a different regulatory strategy. Consider an FDA Pre-Submission (Q-Sub)." },
         { id: "C1", q: "Is this change solely to strengthen cybersecurity with no impact on device function or performance?", type: "yesnouncertain",
           skip: answers.B3 === Answer.Yes, pathwayCritical: true,
           help: "Pure cybersecurity patches with verified zero performance impact do not require a new 510(k). Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 1 — Cybersecurity Exemption. FDA requires the change to be 'solely to strengthen cybersecurity' with no other impact, supported by appropriate analysis/verification/validation. This exemption requires affirmative demonstration — if uncertain, select 'Uncertain' and the assessment will continue to the full significance evaluation. Note: Cybersecurity in Medical Devices: Quality Management System Considerations and Content of Premarket Submissions Guidance (Feb 2026), Section VII addresses §524B requirements for cyber devices." },
@@ -164,17 +164,17 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
           help: "Bug fixes restoring the original cleared specifications do not require a new 510(k). Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 2 — Restore-to-Specification Exemption. This exemption requires affirmative demonstration — if uncertain whether the change restores to a known cleared state, select 'Uncertain' and the assessment will continue to the full significance evaluation." },
         { id: "C3", q: "Does this change introduce a new or modified risk of harm with potential for patient injury?", type: "yesnouncertain",
           skip: answers.B3 === Answer.Yes || answers.C1 === Answer.Yes || answers.C2 === Answer.Yes, pathwayCritical: true,
-          infoNote: (answers.C3 === Answer.Yes || answers.C3 === Answer.Uncertain) ? "Because this question was answered 'Yes' or 'Uncertain,' the remaining significance sub-questions (C4–C6) are not shown — the pathway determination is already triggered. However, for a complete regulatory record (Letter to File or submission), you should still evaluate and document all applicable risk dimensions (new hazardous situations, risk control impacts, and clinical performance effects) outside RegAccess." : null,
+          infoNote: (answers.C3 === Answer.Yes || answers.C3 === Answer.Uncertain) ? "Because this field was answered 'Yes' or 'Uncertain,' the remaining significance sub-fields (C4–C6) are not shown — the pathway determination is already triggered. However, for a complete regulatory record (Letter to File or submission), you should still evaluate and document all applicable risk dimensions (new hazardous situations, risk control impacts, and clinical performance effects) outside RegAccess." : null,
           mlguidance: "Could this change cause the model to miss diagnoses it previously caught? Run your existing test set through both versions — if the change creates a new clinically relevant error pattern, worsens a known failure mode, or leaves patient-harm risk unresolved, answer 'Yes' or 'Uncertain.'",
-          help: "Review your risk management file (ISO 14971 §7). A new or modified cause of a hazardous situation with significant unmitigated harm requires a new submission. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 3 — risk assessment. Note: FDA's guidance presents Q3 as a single question. RegAccess decomposes it into three sub-questions (C3, C4, C5) for granularity. When documenting for regulatory purposes, map all three back to Q3. This sub-question addresses new or modified causes of harm." },
+          help: "Review your risk management file (ISO 14971 §7). A new or modified cause of a hazardous situation with significant unmitigated harm requires a new submission. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 3 — risk assessment. Note: FDA groups these risk topics under Flowchart Question 3 as one flowchart step. RegAccess decomposes that step into three sub-fields (C3, C4, C5) for granularity. When documenting for regulatory purposes, map all three back to Q3. This sub-field addresses new or modified causes of harm." },
         { id: "C4", q: "Does this change create an entirely new hazardous situation not present in the current risk analysis?", type: "yesnouncertain",
           skip: answers.B3 === Answer.Yes || answers.C1 === Answer.Yes || answers.C2 === Answer.Yes || answers.C3 === Answer.Yes, pathwayCritical: true,
           mlguidance: "Review your risk management file for the current hazard list. Does this change create a failure mode NOT already documented? For architecture changes: new model families have different failure modes (e.g., transformers hallucinate differently than CNNs). For GenAI: check for novel hazard categories like fabricated clinical recommendations.",
-          help: "Distinct from the Cause of Harm question: this asks whether the change introduces an entirely new type of risk scenario. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 3 — risk assessment. Note: FDA's guidance presents Q3 as a single question; RegAccess decomposes it into sub-questions (C3, C4, C5) for granularity. When documenting for regulatory purposes, map all three back to Q3. This sub-question addresses new hazardous situations." },
+          help: "Distinct from the Cause of Harm field: this asks whether the change introduces an entirely new type of risk scenario. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 3 — risk assessment. Note: FDA groups these topics under Flowchart Question 3 as one flowchart step; RegAccess decomposes that step into sub-fields (C3, C4, C5) for granularity. When documenting for regulatory purposes, map all three back to Q3. This sub-field addresses new hazardous situations." },
         { id: "C5", q: "Does this change create or necessitate a change to a risk control measure for a hazardous situation with significant harm potential?", type: "yesnouncertain",
           skip: answers.B3 === Answer.Yes || answers.C1 === Answer.Yes || answers.C2 === Answer.Yes || answers.C3 === Answer.Yes || answers.C4 === Answer.Yes, pathwayCritical: true,
           mlguidance: "Check your risk control matrix. If this change modifies guardrails, safety filters, confidence thresholds, human-in-the-loop overrides, or output constraints, those are risk controls. Also check: does the change weaken monitoring or anomaly detection that served as a risk mitigation?",
-          help: "If the change modifies, weakens, or removes an existing risk control, it may trigger regulatory significance. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 3 — risk assessment. Note: FDA's guidance presents Q3 as a single question; RegAccess decomposes it into sub-questions (C3, C4, C5) for granularity. When documenting for regulatory purposes, map all three back to Q3. This sub-question addresses risk control impact." },
+          help: "If the change modifies, weakens, or removes an existing risk control, it may trigger regulatory significance. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 3 — risk assessment. Note: FDA groups these topics under Flowchart Question 3 as one flowchart step; RegAccess decomposes that step into sub-fields (C3, C4, C5) for granularity. When documenting for regulatory purposes, map all three back to Q3. This sub-field addresses risk control impact." },
         { id: "C6", q: "Could this change significantly affect clinical functionality or performance specifications?", type: "yesnouncertain",
           skip: answers.B3 === Answer.Yes || answers.C1 === Answer.Yes || answers.C2 === Answer.Yes || answers.C3 === Answer.Yes || answers.C4 === Answer.Yes || answers.C5 === Answer.Yes, pathwayCritical: true,
           mlguidance: "Compare performance metrics before and after on your holdout test set. If sensitivity, specificity, or any key metric changes beyond the predefined acceptance range, answer 'Yes.'",
@@ -210,7 +210,7 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
         mlguidance: "Evidence to gather: model version identifiers (before/after), upstream release notes, embedding dimension changes, tokenizer changes. Run your full evaluation suite on the new base model BEFORE fine-tuning to measure baseline drift. Document upstream provider's change log if available.",
         help: "A base model swap is one of the highest-risk generative-AI changes. It should trigger a rigorous intended-use, risk, and performance reassessment, and many such changes will require a new submission unless they are appropriately bounded and authorized (for example, under an authorized PCCP)." },
       { id: "D2", q: "Are system instructions, reasoning templates, or other controlled prompt/configuration elements being modified?", type: "yesno",
-        help: "For generative AI medical devices, prompt configurations function as part of the device design specification under general design control principles. FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section VI discusses describing modifications in the PCCP, which logically extends to prompt/configuration elements. Version control and validation of these elements is strongly recommended best practice for maintaining PCCP eligibility and design traceability." },
+        help: "For generative AI medical devices, prompt configurations function as part of the device design specification under general design control principles. FDA PCCP final guidance (Dec 2024, reissued Aug 2025), Section VI discusses describing modifications in the PCCP, which logically extends to prompt/configuration elements. Version control and validation of these elements is advisable for PCCP eligibility and design traceability; confirm current FDA expectations." },
       { id: "D3", q: "Is the retrieval-augmented generation (RAG) knowledge base or retrieval system changing?", type: "yesno",
         help: "Changes to the RAG knowledge base affect what information the model can access and reference for clinical decisions." },
       { id: "D4", q: "Are safety guardrails, content filters, or output constraints being modified?", type: "yesno",
@@ -219,7 +219,7 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
       { id: "D5", q: "Has hallucination testing been performed on the modified system?", type: "yesno",
         draftRef: true,
         mlguidance: "Evidence expected: a structured hallucination test suite with domain-specific queries, factual accuracy scoring, and comparison against a reference corpus. Document hallucination rate (before/after), types of hallucinations observed, and whether any are clinically dangerous.",
-        help: "Hallucination testing is a critical best practice for generative AI medical devices. While not explicitly mandated by FDA as a named requirement, it is strongly recommended for demonstrating safety. A 'No' will generate a risk flag as a testing gap." },
+        help: "Hallucination testing is important best practice for generative AI medical devices. While not explicitly mandated by FDA as a named requirement, consider it for demonstrating safety. A 'No' will generate a risk flag as a testing gap." },
     ];
 
     case "E": return [

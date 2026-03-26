@@ -7,7 +7,7 @@ import {
   computeDetermination,
   computeDerivedState,
   getBlocks,
-  getQuestions,
+  getBlockFields,
   type Answers,
 } from '../src/lib/assessment-engine';
 import { computeEvidenceGaps } from '../src/lib/evidence-gaps';
@@ -45,7 +45,7 @@ describe('Evidence-gap credibility fixes', () => {
     expect(gaps.some(g => g.id === 'GAP-SUBGROUP')).toBe(false);
   });
 
-  it('flags representativeness and subgroup gaps when E1/E2 show missing equity evidence', () => {
+  it('flags representativeness and subgroup gaps when E1/E2 show incomplete equity evidence', () => {
     const answers = base510k({
       E1: Answer.No,
       E2: Answer.No,
@@ -58,13 +58,13 @@ describe('Evidence-gap credibility fixes', () => {
   });
 });
 
-describe('PCCP question sequencing credibility fixes', () => {
+describe('PCCP field sequencing credibility fixes', () => {
   const findQ = (answers: Answers, id: string) => {
     const ds = computeDerivedState(answers);
-    return getQuestions('P', answers, ds).find(q => q.id === id);
+    return getBlockFields('P', answers, ds).find(q => q.id === id);
   };
 
-  it('keeps downstream PCCP questions hidden until modification-boundary fit is answered Yes', () => {
+  it('keeps downstream PCCP fields hidden until modification-boundary fit is answered Yes', () => {
     const base = base510k({ A2: Answer.Yes, P1: Answer.Yes });
 
     expect(findQ(base, 'P3')?.skip).toBe(true);
@@ -83,7 +83,7 @@ describe('Authority/source classification credibility fixes', () => {
       answers,
       determination,
       blocks,
-      (blockId: string) => getQuestions(blockId, answers, ds),
+      (blockId: string) => getBlockFields(blockId, answers, ds),
     );
 
     expect(artifact.outcome.pathway).toBe(Pathway.LetterToFile);
@@ -123,7 +123,7 @@ describe('Case-specific reasoning credibility fixes', () => {
       answers,
       determination,
       blocks,
-      (blockId: string) => getQuestions(blockId, answers, ds),
+      (blockId: string) => getBlockFields(blockId, answers, ds),
     );
 
     expect(reasoning.primaryReason).toContain('Additional data — new clinical sites');
@@ -133,7 +133,7 @@ describe('Case-specific reasoning credibility fixes', () => {
     expect(reasoning.narrative.some((paragraph) => paragraph.includes('Canon scanners'))).toBe(true);
   });
 
-  it('makes verification and route-change sections case-specific instead of generic', () => {
+  it('makes verification and pathway-change sections case-specific instead of generic', () => {
     const answers = base510k({
       B1: 'Model Architecture',
       B2: 'Layer addition / removal',
@@ -152,11 +152,11 @@ describe('Case-specific reasoning credibility fixes', () => {
       answers,
       determination,
       blocks,
-      (blockId: string) => getQuestions(blockId, answers, ds),
+      (blockId: string) => getBlockFields(blockId, answers, ds),
     );
 
-    expect(reasoning.verificationTitle).toBe('What supports this route');
-    expect(reasoning.counterTitle).toBe('What would change this route');
+    expect(reasoning.verificationTitle).toBe('What supports this pathway');
+    expect(reasoning.counterTitle).toBe('What would change this pathway');
     expect(reasoning.verificationSteps.some((step) => step.includes('which layers were added or removed'))).toBe(true);
     expect(reasoning.verificationSteps.some((step) => step.includes('materially changes a risk control tied to significant harm'))).toBe(true);
     expect(
@@ -166,7 +166,7 @@ describe('Case-specific reasoning credibility fixes', () => {
 });
 
 describe('Review insight specificity fixes', () => {
-  it('turns unresolved significance review items into question-specific expert actions', () => {
+  it('turns unresolved significance review items into field-specific expert actions', () => {
     const answers = base510k({
       B1: 'Model Architecture',
       B2: 'Layer addition / removal',
@@ -184,7 +184,7 @@ describe('Review insight specificity fixes', () => {
 
     expect(item).toBeDefined();
     expect(item?.title).toContain('materially alters a risk control tied to significant harm');
-    expect(item?.meta).toContain('Current route: New Submission Required');
+    expect(item?.meta).toContain('Current pathway: New Submission Required');
     expect(item?.actionText).toContain('threshold, guardrail, override, monitoring rule, or mitigation');
   });
 
@@ -242,7 +242,7 @@ describe('Review insight specificity fixes', () => {
       answers,
       determination,
       blocks,
-      (blockId: string) => getQuestions(blockId, answers, ds),
+      (blockId: string) => getBlockFields(blockId, answers, ds),
     );
     const text = formatArtifactAsText(artifact);
 

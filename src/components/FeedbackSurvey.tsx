@@ -79,14 +79,14 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             <Icon name="checkCircle" size={28} color="#fff" />
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 var(--space-sm)' }}>
-            Thank you for your feedback
+            Feedback received
           </h2>
           <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: '0 0 var(--space-lg)' }}>
-            Your input helps us improve the assessment experience. We'll review your responses carefully.
+            Thank you. Your responses inform product and methodology improvements.
           </p>
           <button onClick={onBack} style={btnSecondary}>
             <Icon name="arrowLeft" size={16} />
-            Return to Review
+            Back to final review
           </button>
         </div>
       </div>
@@ -105,21 +105,20 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
       <div style={{ marginBottom: 'var(--space-xl)' }}>
         <button onClick={onBack} style={{ ...btnGhost, marginBottom: 'var(--space-md)' }} data-testid="feedback-skip">
           <Icon name="arrowLeft" size={16} />
-          Back to Review
+          Back to final review
         </button>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 var(--space-sm)' }}>
-          Share Your Feedback
+          Assessment feedback
         </h1>
         <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
-          Help us understand how well this assessment matched your expectations and how we can improve.
-          All fields are optional — share as much or as little as you'd like.
+          Optional survey on conclusion fit, rationale, and workflow. All fields are optional.
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Q1 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>Did the assessment reach the conclusion you expected?</legend>
+          <legend style={legendStyle}>Did the determined pathway match your expectation?</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {Q1_OPTIONS.map(option => (
               <label key={option} style={radioLabel}>
@@ -140,11 +139,11 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         {/* Q1b — conditional */}
         {showQ1b && (
           <fieldset style={fieldsetStyle} data-testid="q1b-section">
-            <legend style={legendStyle}>How would you qualify it differently?</legend>
+            <legend style={legendStyle}>How would you state the conclusion differently?</legend>
             <textarea
               value={form.q1b_qualify}
               onChange={e => update('q1b_qualify', e.target.value)}
-              placeholder="Describe how your conclusion differs..."
+              placeholder="Describe the difference in conclusion or pathway..."
               style={textareaStyle}
               rows={3}
             />
@@ -153,11 +152,11 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q2 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>Is there anything in the reasoning you would push back on?</legend>
+          <legend style={legendStyle}>What in the rationale would you challenge or refine?</legend>
           <textarea
             value={form.q2_pushback}
             onChange={e => update('q2_pushback', e.target.value)}
-            placeholder="Any reasoning you'd challenge or refine..."
+            placeholder="Specific steps, sources, or assumptions..."
             style={textareaStyle}
             rows={3}
           />
@@ -165,11 +164,11 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q3 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>What additional information or features would improve your confidence in the assessment?</legend>
+          <legend style={legendStyle}>What would increase your confidence in this tool&apos;s output?</legend>
           <textarea
             value={form.q3_confidence}
             onChange={e => update('q3_confidence', e.target.value)}
-            placeholder="Citations, comparisons, additional context..."
+            placeholder="Citations, comparators, data fields, workflow changes..."
             style={textareaStyle}
             rows={3}
           />
@@ -177,7 +176,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q4 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>How would you use RegAccess?</legend>
+          <legend style={legendStyle}>How would you use RegAccess? (select all that apply)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {Q4_OPTIONS.map(option => (
               <label key={option} style={radioLabel}>
@@ -196,11 +195,11 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         {/* Q4b — conditional */}
         {showQ4b && (
           <fieldset style={fieldsetStyle} data-testid="q4b-section">
-            <legend style={legendStyle}>Please describe your use case</legend>
+            <legend style={legendStyle}>Describe the &quot;Other&quot; use case</legend>
             <textarea
               value={form.q4b_other}
               onChange={e => update('q4b_other', e.target.value)}
-              placeholder="Describe how you'd use RegAccess..."
+              placeholder="Brief use-case description..."
               style={textareaStyle}
               rows={2}
             />
@@ -209,11 +208,11 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q5 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>What was most helpful — or least helpful — about this experience?</legend>
+          <legend style={legendStyle}>What was most and least helpful about this session?</legend>
           <textarea
             value={form.q5_helpful}
             onChange={e => update('q5_helpful', e.target.value)}
-            placeholder="Share what stood out, positively or negatively..."
+            placeholder="Workflow, clarity, gaps in context, etc."
             style={textareaStyle}
             rows={3}
           />
@@ -221,7 +220,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q6 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>Would you be interested in any of the following?</legend>
+          <legend style={legendStyle}>Follow-up interest (select all that apply)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {Q6_OPTIONS.map(option => (
               <label key={option} style={radioLabel}>
@@ -240,9 +239,9 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         {/* Q7 — conditional contact info */}
         {showQ7 && (
           <fieldset style={fieldsetStyle} data-testid="q7-section">
-            <legend style={legendStyle}>Contact Information</legend>
+            <legend style={legendStyle}>Contact information</legend>
             <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '0 0 var(--space-md)', lineHeight: 1.5 }}>
-              So we can follow up on the interests you selected above.
+              Used only if follow-up is requested above.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               <label style={inputLabel}>
@@ -282,11 +281,11 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         {/* Q8 — conditional referral */}
         {showQ8 && (
           <fieldset style={fieldsetStyle} data-testid="q8-section">
-            <legend style={legendStyle}>Know someone who might benefit from RegAccess?</legend>
+            <legend style={legendStyle}>Referral (optional)</legend>
             <textarea
               value={form.q8_referral}
               onChange={e => update('q8_referral', e.target.value)}
-              placeholder="Name, email, or any context that would help us reach out..."
+              placeholder="Name, email, or context (with consent to share)..."
               style={textareaStyle}
               rows={2}
             />
@@ -315,7 +314,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             }}
             data-testid="feedback-submit"
           >
-            {state === 'submitting' ? 'Submitting...' : 'Submit Feedback'}
+            {state === 'submitting' ? 'Submitting…' : 'Submit feedback'}
           </button>
         </div>
 
@@ -329,7 +328,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             fontSize: 13,
             color: 'var(--color-danger)',
           }}>
-            Something went wrong. Please try again.
+            Submission failed. Try again.
           </div>
         )}
       </form>

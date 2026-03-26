@@ -122,7 +122,7 @@ export const Layout: React.FC<LayoutProps> = ({
               background: 'transparent',
             }}
             className="mobile-menu-btn"
-            aria-label="Toggle navigation"
+            aria-label="Open or close navigation"
           >
             <Icon name={sidebarOpen ? 'x' : 'menu'} size={20} />
           </button>
@@ -165,7 +165,7 @@ export const Layout: React.FC<LayoutProps> = ({
             background: 'var(--color-bg-card)',
             border: '1px solid var(--color-border)',
           }}>
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Required completion</span>
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Required fields</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
               {overallRequiredAnswered}/{overallRequiredTotal || 0}
             </span>
@@ -187,7 +187,7 @@ export const Layout: React.FC<LayoutProps> = ({
           {onReset && (
             <button
               onClick={() => {
-                if (window.confirm('Are you sure you want to reset all answers and start over? This cannot be undone.')) {
+                if (window.confirm('Reset all answers and return to the dashboard? This cannot be undone.')) {
                   onReset();
                 }
               }}
@@ -248,7 +248,7 @@ export const Layout: React.FC<LayoutProps> = ({
               marginBottom: 'var(--space-sm)',
             }}>
               <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
-                Assessment Readiness
+                Required-field completion
               </span>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
                 {progress}%
@@ -280,7 +280,7 @@ export const Layout: React.FC<LayoutProps> = ({
               fontSize: 11,
               color: 'var(--color-text-muted)',
             }}>
-              <span>{overallRequiredAnswered}/{overallRequiredTotal || 0} required answered</span>
+              <span>{overallRequiredAnswered}/{overallRequiredTotal || 0} required complete</span>
               <span>{overallAnswered}/{overallTotal || 0} total responses</span>
             </div>
           </div>
@@ -303,11 +303,11 @@ export const Layout: React.FC<LayoutProps> = ({
               const statusLabel = isReview
                 ? reviewReady
                   ? 'Ready for final review'
-                  : 'Use to inspect blockers and the final determination'
+                  : 'Review pathway, gaps, and notes before reliance'
                 : missingRequired > 0
-                  ? `${missingRequired} blocker${missingRequired === 1 ? '' : 's'} remaining`
+                  ? `${missingRequired} required field${missingRequired === 1 ? '' : 's'} open`
                   : total > 0 && answered < total
-                    ? 'Required complete; optional context available'
+                    ? 'Required complete; optional fields remain'
                     : 'Complete';
               const indicatorBg = isCompleted
                 ? 'var(--color-success)'
@@ -439,7 +439,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   fontWeight: 600,
                   color: reviewReady ? 'var(--color-success)' : 'var(--color-warning)',
                 }}>
-                  {reviewReady ? 'Ready For Review' : 'Expert Review Needed'}
+                  {reviewReady ? 'Ready for review' : 'Expert review needed'}
                 </span>
               </div>
               <p style={{
@@ -449,8 +449,8 @@ export const Layout: React.FC<LayoutProps> = ({
                 margin: 0,
               }}>
                 {reviewReady
-                  ? 'All visible pathway-critical questions are answered. Review reasoning, evidence gaps, and documentation needs before relying on the result.'
-                  : 'Resolve remaining blockers and then complete final review before relying on the pathway recommendation.'}
+                  ? 'All visible pathway-critical fields are answered. Review reasoning, evidence gaps, and documentation needs before relying on the output.'
+                  : 'Complete remaining required fields, then perform final review before relying on the determined pathway.'}
               </p>
             </div>
           </div>
@@ -522,7 +522,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   }}>
                     {[
                       {
-                        label: 'Required completion',
+                        label: 'Required fields',
                         value: `${overallRequiredAnswered}/${overallRequiredTotal || 0}`,
                         tone: 'default' as const,
                       },
@@ -533,7 +533,7 @@ export const Layout: React.FC<LayoutProps> = ({
                       },
                       {
                         label: 'Review status',
-                        value: reviewReady ? 'All required questions answered' : 'Required questions still open',
+                        value: reviewReady ? 'All required fields complete' : 'Required fields still open',
                         tone: reviewReady ? 'success' as const : 'warning' as const,
                       },
                     ].map((item) => {

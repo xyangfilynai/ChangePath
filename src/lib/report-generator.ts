@@ -3,7 +3,7 @@
  * Produces audit-ready output with all required fields for regulatory defensibility.
  */
 
-import type { Answers, Block, DeterminationResult, Question } from './assessment-engine';
+import type { Answers, Block, DeterminationResult, AssessmentField } from './assessment-engine';
 import { Pathway } from './assessment-engine';
 import { docRequirements } from './content';
 import { getSourceBadge } from './content';
@@ -18,7 +18,7 @@ export interface AssessmentArtifact {
   meta: {
     generatedAt: string;
     toolVersion: string;
-    assessmentStatus: 'Preliminary' | 'Complete — Pending Review' | 'Incomplete — Expert Review Required';
+    assessmentStatus: 'Preliminary' | 'Complete — pending review' | 'Incomplete — expert review required';
   };
   outcome: {
     pathway: string;
@@ -55,7 +55,7 @@ export function generateAssessmentArtifact(
   answers: Answers,
   determination: DeterminationResult,
   blocks: Block[],
-  getQuestionsForBlock: (blockId: string) => Question[],
+  getFieldsForBlock: (blockId: string) => AssessmentField[],
 ): AssessmentArtifact {
   const isIncomplete = determination.isIncomplete;
   const hasConsistencyIssues = (determination.consistencyIssues?.length || 0) > 0;
@@ -69,16 +69,16 @@ export function generateAssessmentArtifact(
 
   // Assessment status
   const assessmentStatus: AssessmentArtifact['meta']['assessmentStatus'] = isIncomplete
-    ? 'Incomplete — Expert Review Required'
+    ? 'Incomplete — expert review required'
     : hasConsistencyIssues
       ? 'Preliminary'
-      : 'Complete — Pending Review';
+      : 'Complete — pending review';
 
   const caseReasoning = buildCaseSpecificReasoning(
     answers,
     determination,
     blocks,
-    getQuestionsForBlock,
+    getFieldsForBlock,
   );
   const reportNarrative = splitReportNarrative(caseReasoning.narrative);
   const assessmentBasis = buildAssessmentBasis(answers, determination);
@@ -91,31 +91,31 @@ export function generateAssessmentArtifact(
   // Next actions
   const nextActions: string[] = [];
   if (isIncomplete) {
-    nextActions.push('Resolve all unresolved questions before relying on this assessment.');
+    nextActions.push('Resolve open required and threshold items before relying on this assessment.');
     if (determination.isIntendedUseUncertain) {
-      nextActions.push('Schedule FDA Pre-Submission (Q-Sub) or senior RA/clinical expert review to resolve intended use uncertainty.');
+      nextActions.push('Schedule FDA Pre-Submission (Q-Sub) or senior RA/clinical review to resolve intended-use uncertainty.');
     }
     if (determination.hasUncertainSignificance) {
-      nextActions.push('Gather additional evidence to convert uncertain significance answers to definitive Yes or No.');
+      nextActions.push('Gather evidence to resolve uncertain significance answers to Yes or No where feasible.');
     }
   } else {
     if (determination.isDocOnly) {
-      nextActions.push('Prepare Letter to File / documentation package per documentation requirements below.');
-      nextActions.push('File in device history record.');
+      nextActions.push('Prepare Letter to File / documentation package per the documentation list below.');
+      nextActions.push('File per QMS (e.g., device history record).');
     }
     if (determination.isPCCPImpl) {
-      nextActions.push('Execute the PCCP validation protocol in full — all acceptance criteria must pass before implementation.');
-      nextActions.push('Activate monitoring plan and update labeling if required.');
+      nextActions.push('Execute the authorized PCCP validation protocol; meet all acceptance criteria before implementation.');
+      nextActions.push('Activate the monitoring plan and update labeling when the PCCP or labeling requires it.');
     }
     if (determination.isNewSub) {
-      nextActions.push('Prepare submission package per documentation requirements below.');
-      nextActions.push('Consider Pre-Submission meeting with FDA if borderline.');
+      nextActions.push('Prepare the submission package per the documentation list below.');
+      nextActions.push('Consider a Pre-Submission (Q-Sub) when the case is borderline or novel.');
     }
   }
   if (hasConsistencyIssues) {
-    nextActions.push('Review and resolve all consistency issues flagged below before finalizing.');
+    nextActions.push('Review and close consistency items flagged below before treating the record as final.');
   }
-  nextActions.push('Have qualified regulatory and clinical professionals review this assessment before action.');
+  nextActions.push('Have qualified regulatory and clinical reviewers assess this record before action.');
 
   // Documentation requirements with source classes
   const docs = docRequirements[determination.pathway] || null;
@@ -138,7 +138,7 @@ export function generateAssessmentArtifact(
     },
     outcome: {
       pathway: determination.pathway,
-      statusLabel: isIncomplete ? 'Assessment Incomplete — Expert Review Required' : determination.pathway,
+      statusLabel: isIncomplete ? 'Assessment incomplete — expert review required' : determination.pathway,
       isIncomplete,
       isDocOnly: determination.isDocOnly,
       confidenceLevel,
@@ -228,7 +228,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   }
   if (artifact.rationale.sources.length > 0) {
     lines.push('');
-    lines.push('Authorities Relied On:');
+    lines.push('Sources cited:');
     artifact.rationale.sources.forEach((source, i) => lines.push(`  ${i + 1}. ${formatSourceRef(source)}`));
     lines.push('');
   }
@@ -284,16 +284,16 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   }
   if (artifact.documentationRequirements.recommended.length > 0) {
     lines.push('');
-    lines.push('Additional recommended materials are available in the route-specific preparation checklist.');
+    lines.push('Additional recommended materials are available in the pathway-specific preparation checklist.');
   }
   lines.push('');
 
   lines.push(hr);
   lines.push('DISCLAIMER');
   lines.push(hr);
-  lines.push('Decision support only — not a final regulatory conclusion.');
-  lines.push('RegAccess supports internal change-control planning and submission strategy discussions.');
-  lines.push('All outputs require review by qualified regulatory and clinical professionals before action.');
+  lines.push('Decision support only — not a regulatory determination.');
+  lines.push('RegAccess supports internal change-control planning and submission strategy discussion.');
+  lines.push('Review outputs with qualified regulatory and clinical expertise before action.');
   lines.push('');
 
   return lines.join('\n');

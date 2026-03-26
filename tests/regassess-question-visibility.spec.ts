@@ -5,13 +5,13 @@ import {
   AuthPathway,
   computeDerivedState,
   getBlocks,
-  getQuestions,
+  getBlockFields,
   type Answers,
 } from '../src/lib/assessment-engine';
 
 const findQ = (blockId: string, answers: Answers, id: string) => {
   const ds = computeDerivedState(answers);
-  return getQuestions(blockId, answers, ds).find(q => q.id === id);
+  return getBlockFields(blockId, answers, ds).find(q => q.id === id);
 };
 
 const isVisible = (blockId: string, answers: Answers, id: string) => {
@@ -53,7 +53,7 @@ const basePMA = (overrides: Answers = {}): Answers => ({
   ...overrides,
 });
 
-describe('De Novo-only question visibility', () => {
+describe('De Novo-only field visibility', () => {
   it('C0_DN1 is hidden unless A1 === "De Novo" and B3 !== Yes', () => {
     expect(isHidden('C', base510k(), 'C0_DN1')).toBe(true);
     expect(isVisible('C', baseDeNovo(), 'C0_DN1')).toBe(true);
@@ -69,7 +69,7 @@ describe('De Novo-only question visibility', () => {
   });
 });
 
-describe('PCCP question visibility', () => {
+describe('PCCP field visibility', () => {
   it('P block only appears when PCCP is active and B3 is not Yes/Uncertain', () => {
     expect(blockIds(base510k())).not.toContain('P');
     expect(blockIds(base510k({ A2: Answer.Yes }))).toContain('P');
@@ -107,7 +107,7 @@ describe('PCCP question visibility', () => {
   });
 });
 
-describe('Cumulative drift question visibility', () => {
+describe('Cumulative drift field visibility', () => {
   it('C10 is hidden when A8 is empty or zero', () => {
     expect(isHidden('C', base510k(), 'C10')).toBe(true);
     expect(isHidden('C', base510k({ A8: '0' }), 'C10')).toBe(true);
@@ -125,7 +125,7 @@ describe('Cumulative drift question visibility', () => {
   });
 });
 
-describe('PMA-only significance question visibility', () => {
+describe('PMA-only significance field visibility', () => {
   it('C_PMA1, C_PMA2, C_PMA3 appear for PMA assessments when B3 !== Yes', () => {
     expect(isVisible('C', basePMA(), 'C_PMA1')).toBe(true);
     expect(isVisible('C', basePMA(), 'C_PMA2')).toBe(true);
@@ -147,8 +147,8 @@ describe('PMA-only significance question visibility', () => {
     expect(isVisible('C', basePMA({ B3: Answer.Yes }), 'C_PMA4')).toBe(true);
   });
 
-  it('510(k) path does not show PMA-only questions', () => {
-    const q = getQuestions('C', base510k(), computeDerivedState(base510k()));
+  it('510(k) path does not show PMA-only fields', () => {
+    const q = getBlockFields('C', base510k(), computeDerivedState(base510k()));
     const ids = q.map(x => x.id);
     expect(ids).not.toContain('C_PMA1');
     expect(ids).not.toContain('C_PMA2');
@@ -170,7 +170,7 @@ describe('Dynamic change taxonomy', () => {
   it('B2 options populate from selected B1 category', () => {
     const ans = base510k({ B1: 'Training Data' });
     const ds = computeDerivedState(ans);
-    const b2 = getQuestions('B', ans, ds).find(q => q.id === 'B2');
+    const b2 = getBlockFields('B', ans, ds).find(q => q.id === 'B2');
     expect(b2).toBeDefined();
     expect(b2!.options!.length).toBeGreaterThan(0);
     expect(b2!.options).toContain('Additional data — same distribution');
@@ -179,7 +179,7 @@ describe('Dynamic change taxonomy', () => {
   it('B2 is disabled when B1 is empty', () => {
     const ans = base510k();
     const ds = computeDerivedState(ans);
-    const b2 = getQuestions('B', ans, ds).find(q => q.id === 'B2');
+    const b2 = getBlockFields('B', ans, ds).find(q => q.id === 'B2');
     expect(b2!.disabled).toBe(true);
     expect(b2!.options).toEqual([]);
   });
@@ -198,7 +198,7 @@ describe('Intended-use gating on significance questions', () => {
   });
 });
 
-describe('Significance question cascading skip chain', () => {
+describe('Significance field cascading skip chain', () => {
   it('C2 is hidden when C1 === Yes', () => {
     expect(isHidden('C', base510k({ C1: Answer.Yes }), 'C2')).toBe(true);
   });
@@ -244,18 +244,18 @@ describe('Bug-fix / cyber-only visibility branches', () => {
 });
 
 describe('Baseline engine tests still pass', () => {
-  it('getQuestions returns an array for each known block', () => {
+  it('getBlockFields returns an array for each known block', () => {
     for (const blockId of ['A', 'B', 'C', 'P', 'D', 'E']) {
       const ans = base510k({ A2: Answer.Yes, A6: ['LLM / Foundation Model'] });
       const ds = computeDerivedState(ans);
-      const qs = getQuestions(blockId, ans, ds);
+      const qs = getBlockFields(blockId, ans, ds);
       expect(Array.isArray(qs)).toBe(true);
     }
   });
 
-  it('getQuestions returns an empty array for unknown blocks', () => {
+  it('getBlockFields returns an empty array for unknown blocks', () => {
     const ds = computeDerivedState(base510k());
-    expect(getQuestions('Z', base510k(), ds)).toEqual([]);
+    expect(getBlockFields('Z', base510k(), ds)).toEqual([]);
   });
 });
 

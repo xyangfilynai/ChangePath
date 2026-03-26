@@ -6,7 +6,7 @@ import {
   type Answers,
   type Block,
   type DeterminationResult,
-  type Question,
+  type AssessmentField,
 } from './assessment-engine';
 import { ruleReasoningLibrary } from './content';
 import { joinWithAnd, getChangeLabel as getChangeLabelShared, getSelectedChangeContext, type SelectedChangeContext } from './change-utils';
@@ -60,7 +60,7 @@ const getChangeLabel = (answers: Answers): string =>
 const getPCCPStatusText = (answers: Answers): string => {
   if (answers.A2 === Answer.Yes) return 'An authorized PCCP is on file.';
   if (answers.A2 === Answer.No) return 'No authorized PCCP is on file.';
-  return 'PCCP status is not yet confirmed.';
+  return 'PCCP status is not specified.';
 };
 
 const getSubmittedCaseSentence = (answers: Answers): string | null => {
@@ -68,21 +68,21 @@ const getSubmittedCaseSentence = (answers: Answers): string | null => {
   return excerpt ? `From the submitted change description: ${excerpt}` : null;
 };
 
-const getMissingCriticalQuestions = (
+const getIncompleteCriticalFields = (
   answers: Answers,
   blocks: Block[],
-  getQuestionsForBlock: (blockId: string) => Question[],
+  getFieldsForBlock: (blockId: string) => AssessmentField[],
 ): string[] => {
-  const missing: string[] = [];
+  const incomplete: string[] = [];
   blocks.forEach((block) => {
     if (block.id === 'review') return;
-    getQuestionsForBlock(block.id).forEach((question) => {
-      if (question.sectionDivider || question.skip || !question.pathwayCritical) return;
-      if (isAnsweredValue(answers[question.id])) return;
-      pushUnique(missing, question.q || question.label || question.id);
+    getFieldsForBlock(block.id).forEach((item) => {
+      if (item.sectionDivider || item.skip || !item.pathwayCritical) return;
+      if (isAnsweredValue(answers[item.id])) return;
+      pushUnique(incomplete, item.q || item.label || item.id);
     });
   });
-  return missing;
+  return incomplete;
 };
 
 const getReasoningSectionTitles = (
@@ -97,18 +97,18 @@ const getReasoningSectionTitles = (
   if (pathway === Pathway.ImplementPCCP) {
     return {
       verificationTitle: 'What must be confirmed before implementation',
-      counterTitle: 'What would move this out of the PCCP route',
+      counterTitle: 'What would move this out of the PCCP pathway',
     };
   }
   if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
     return {
-      verificationTitle: 'What supports staying on this route',
-      counterTitle: 'What would change this route',
+      verificationTitle: 'What supports staying on this pathway',
+      counterTitle: 'What would change this pathway',
     };
   }
   return {
-    verificationTitle: 'What supports this route',
-    counterTitle: 'What would change this route',
+    verificationTitle: 'What supports this pathway',
+    counterTitle: 'What would change this pathway',
   };
 };
 
@@ -189,19 +189,19 @@ const getQuestionSpecificVerificationStep = (
   }
 };
 
-const getRouteChangeConditionForQuestion = (
+const getPathwayChangeConditionForQuestion = (
   questionId: 'C3' | 'C4' | 'C5' | 'C6',
-  pathway: string,
+  _pathway: string,
 ): string => {
   switch (questionId) {
     case 'C3':
-      return `This route could change only if the record supports concluding that the proposed change does not create a new or modified cause of harm with patient-injury potential.`;
+      return `This pathway could change only if the record supports concluding that the proposed change does not create a new or modified cause of harm with patient-injury potential.`;
     case 'C4':
-      return `This route could change only if the record supports concluding that the proposed change does not introduce a new hazardous situation.`;
+      return `This pathway could change only if the record supports concluding that the proposed change does not introduce a new hazardous situation.`;
     case 'C5':
-      return `This route could change only if the record supports concluding that the proposed change does not materially change any risk control tied to significant harm.`;
+      return `This pathway could change only if the record supports concluding that the proposed change does not materially change any risk control tied to significant harm.`;
     case 'C6':
-      return `This route could change only if the record supports concluding that the proposed change does not materially change clinical performance at the cleared operating point or in affected subgroups or use contexts.`;
+      return `This pathway could change only if the record supports concluding that the proposed change does not materially change clinical performance at the cleared operating point or in affected subgroups or use contexts.`;
   }
 };
 
@@ -224,7 +224,7 @@ export function buildCaseSpecificReasoning(
   answers: Answers,
   determination: DeterminationResult,
   blocks: Block[],
-  getQuestionsForBlock: (blockId: string) => Question[],
+  getFieldsForBlock: (blockId: string) => AssessmentField[],
 ): CaseSpecificReasoning {
   const ruleKey = getRuleKey(determination);
   const ruleReasoning = ruleKey ? ruleReasoningLibrary[ruleKey] : null;
@@ -245,7 +245,7 @@ export function buildCaseSpecificReasoning(
     : 'against the authorized baseline';
   const authIdText = answers.A1b ? ` (${answers.A1b as string})` : '';
   const caseDescriptionSentence = getSubmittedCaseSentence(answers);
-  const missingCriticalQuestions = getMissingCriticalQuestions(answers, blocks, getQuestionsForBlock);
+  const incompleteCriticalFields = getIncompleteCriticalFields(answers, blocks, getFieldsForBlock);
 
   narrative.push(
     `This assessment concerns ${authDescriptor}${authIdText}, evaluated ${baselineText}, for a change classified as "${changeLabel}". ${getPCCPStatusText(answers)}`,
@@ -268,7 +268,7 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.baselineIncomplete) {
-      blockers.push('the authorized baseline is incomplete because the authorization identifier, baseline version, or authorized IFU statement is missing');
+      blockers.push('the authorized baseline is incomplete because the authorization identifier, baseline version, or authorized IFU statement is not provided');
       addSources(sources, 'FDA-SW-510K-2017; FDA-PCCP-2025 §V');
       pushUnique(
         verificationSteps,
@@ -286,7 +286,7 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.pccpIncomplete) {
-      blockers.push('the PCCP scope review is incomplete, so the case cannot be closed under the authorized PCCP path');
+      blockers.push('the PCCP scope review is incomplete, so the case cannot be closed under the authorized PCCP pathway');
       addSources(sources, 'FDA-PCCP-2025 §V–VIII');
       pushUnique(
         verificationSteps,
@@ -294,21 +294,21 @@ export function buildCaseSpecificReasoning(
       );
     }
 
-    if (determination.significanceIncomplete && missingCriticalQuestions.length > 0) {
+    if (determination.significanceIncomplete && incompleteCriticalFields.length > 0) {
       blockers.push(
-        `one or more pathway-critical questions are still unanswered: ${joinWithAnd(
-          missingCriticalQuestions.map((question) => `"${question}"`),
+        `one or more pathway-critical fields are still unanswered: ${joinWithAnd(
+          incompleteCriticalFields.map((fieldLabel) => `"${fieldLabel}"`),
         )}`,
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3-Q4');
       pushUnique(
         verificationSteps,
-        'Answer every visible pathway-critical question before treating the U.S. significance assessment as complete.',
+        'Complete every visible pathway-critical field before treating the U.S. significance assessment as complete.',
       );
     }
 
     if (determination.hasUncertainSignificance) {
-      blockers.push("one or more U.S. significance questions were answered 'Uncertain', so the record does not yet support a final close-out");
+      blockers.push("one or more U.S. significance fields were answered 'Uncertain', so the record does not yet support a final close-out");
       addSources(sources, 'FDA-SW-510K-2017 Q3-Q4');
       pushUnique(
         verificationSteps,
@@ -316,7 +316,7 @@ export function buildCaseSpecificReasoning(
       );
       pushUnique(
         counterConsiderations,
-        'Unresolved significance uncertainty should not be treated as support for a documentation-only route.',
+        'Unresolved significance uncertainty should not be treated as support for a documentation-only pathway.',
       );
     }
 
@@ -331,15 +331,15 @@ export function buildCaseSpecificReasoning(
 
     narrative.push(
       blockers.length > 0
-        ? `The route remains Assessment Incomplete because ${joinWithAnd(blockers)}. On the current record, the assessment does not yet support a reliable final pathway recommendation.`
-        : 'The route remains Assessment Incomplete because one or more pathway-critical issues are still unresolved.',
+        ? `The pathway remains Assessment Incomplete because ${joinWithAnd(blockers)}. On the current record, the assessment does not yet support a reliable final pathway recommendation.`
+        : 'The pathway remains Assessment Incomplete because one or more pathway-critical issues are still unresolved.',
     );
 
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
     decisionPath.push(...blockers.map((blocker) => blocker.charAt(0).toUpperCase() + blocker.slice(1) + '.'));
   } else if (determination.isIntendedUseChange) {
     narrative.push(
-      `The route is ${determination.pathway} because the change was assessed as affecting the authorized intended use or indications for use. That threshold issue has to be resolved before any exemption, significance, or PCCP logic matters.`,
+      `The pathway is ${determination.pathway} because the change was assessed as affecting the authorized intended use or indications for use. That threshold issue has to be resolved before any exemption, significance, or PCCP logic applies.`,
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
     decisionPath.push('The change was assessed as affecting the intended use or indications for use, so the case was treated as an intended-use change.');
@@ -355,19 +355,19 @@ export function buildCaseSpecificReasoning(
     );
   } else if (determination.isIntendedUseUncertain) {
     narrative.push(
-      'The route is Assessment Incomplete because the current record does not establish whether the proposed change remains within the authorized intended use or indications for use, so no downstream pathway conclusion is reliable yet.',
+      'The pathway is Assessment Incomplete because the current record does not establish whether the proposed change remains within the authorized intended use or indications for use, so no downstream pathway conclusion is reliable yet.',
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
-    decisionPath.push('The intended-use threshold question is unresolved, so the route cannot be finalized.');
+    decisionPath.push('The intended-use threshold is unresolved, so the pathway cannot be finalized.');
     decisionPath.push('Result: Assessment Incomplete until intended-use impact is resolved.');
     addSources(sources, '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V');
     pushUnique(
       verificationSteps,
-      'Resolve intended-use uncertainty with senior RA/clinical review or an FDA Pre-Submission before relying on any submission or documentation-only route.',
+      'Resolve intended-use uncertainty with senior RA/clinical review or an FDA Pre-Submission before relying on any submission or documentation-only pathway.',
     );
     pushUnique(
       counterConsiderations,
-      'A borderline intended-use question cannot be neutralized by relying on downstream risk questions. Intended use is the threshold decision point.',
+      'A borderline intended-use answer cannot be neutralized by relying on downstream risk fields. Intended use is the threshold decision point.',
     );
   } else if (determination.pathway === Pathway.NewSubmission) {
     const triggerNarratives: string[] = [];
@@ -479,7 +479,7 @@ export function buildCaseSpecificReasoning(
     }
 
     narrative.push(
-      `The current record does not support a documentation-only route. ${triggerNarratives.length > 0 ? `${joinWithAnd(triggerNarratives)}. ` : ''}${answers.A2 === Answer.No ? 'Because no authorized PCCP exists, there is no pre-authorized PCCP path for this change. ' : ''}That combination supports ${determination.pathway}.`,
+      `The current record does not support a documentation-only pathway. ${triggerNarratives.length > 0 ? `${joinWithAnd(triggerNarratives)}. ` : ''}${answers.A2 === Answer.No ? 'Because no authorized PCCP exists, there is no pre-authorized PCCP pathway for this change. ' : ''}That combination supports ${determination.pathway}.`,
     );
 
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
@@ -489,7 +489,7 @@ export function buildCaseSpecificReasoning(
     if (answers.B4) {
       pushUnique(
         verificationSteps,
-        'Tie each answer that drove the route to the specific before/after observations described in the submitted change description, rather than relying only on the change classification.',
+        'Tie each answer that drove the pathway to the specific before/after observations described in the submitted change description, rather than relying only on the change classification.',
       );
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
@@ -513,42 +513,42 @@ export function buildCaseSpecificReasoning(
     }
 
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
-      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C3', determination.pathway));
+      pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C3', determination.pathway));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C4)) {
-      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C4', determination.pathway));
+      pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C4', determination.pathway));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C5)) {
-      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C5', determination.pathway));
+      pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C5', determination.pathway));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C6)) {
-      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C6', determination.pathway));
+      pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C6', determination.pathway));
     }
     if (determination.seNotSupportable) {
       pushUnique(
         counterConsiderations,
-        `This route could change only if substantial equivalence can be re-established against the predicate on the current cumulative-change record.`,
+        `This pathway could change only if substantial equivalence can be re-established against the predicate on the current cumulative-change record.`,
       );
     }
     if (determination.seUncertain) {
       pushUnique(
         counterConsiderations,
-        `This route could change only if the cumulative-change review supports a definitive substantial-equivalence conclusion rather than leaving it unresolved.`,
+        `This pathway could change only if the cumulative-change review supports a definitive substantial-equivalence conclusion rather than leaving it unresolved.`,
       );
     }
     if (determination.deNovoDeviceTypeFitFailed) {
       pushUnique(
         counterConsiderations,
-        `This route could change only if the modified device can still be shown to fit the existing De Novo device type and special controls.`,
+        `This pathway could change only if the modified device can still be shown to fit the existing De Novo device type and special controls.`,
       );
     }
   } else if (determination.pathway === Pathway.LetterToFile) {
     if (determination.isCyberOnly) {
       narrative.push(
-        'The route is Letter to File because the change was assessed as a cybersecurity-only update with no intended-use change and no claimed performance or functional impact.',
+        'The pathway is Letter to File because the change was assessed as a cybersecurity-only update with no intended-use change and no claimed performance or functional impact.',
       );
       decisionPath.push('The change was assessed as staying within the existing intended use and indications for use.');
-      decisionPath.push('The change qualifies for the cybersecurity-only documentation route.');
+      decisionPath.push('The change qualifies for the cybersecurity-only documentation pathway.');
       addSources(sources, 'FDA-SW-510K-2017 Q1; FDA-CYBER-2026');
       pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
@@ -557,14 +557,14 @@ export function buildCaseSpecificReasoning(
       );
       pushUnique(
         counterConsiderations,
-        `This route would change if the cybersecurity update changes any model behavior, preprocessing, dependency behavior, latency profile, or clinician-facing workflow instead of only strengthening security controls.`,
+        `This pathway would change if the cybersecurity update changes any model behavior, preprocessing, dependency behavior, latency profile, or clinician-facing workflow instead of only strengthening security controls.`,
       );
     } else if (determination.isBugFix) {
       narrative.push(
-        'The route is Letter to File because the change was assessed as restoring the device to a known, documented, previously authorized specification.',
+        'The pathway is Letter to File because the change was assessed as restoring the device to a known, documented, previously authorized specification.',
       );
       decisionPath.push('The change was assessed as staying within the existing intended use and indications for use.');
-      decisionPath.push('The change qualifies for the restore-to-specification documentation route.');
+      decisionPath.push('The change qualifies for the restore-to-specification documentation pathway.');
       addSources(sources, 'FDA-SW-510K-2017 Q2');
       pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
@@ -573,15 +573,15 @@ export function buildCaseSpecificReasoning(
       );
       pushUnique(
         counterConsiderations,
-        `This route would change if the target restored state cannot be shown to match a previously authorized configuration exactly.`,
+        `This pathway would change if the target restored state cannot be shown to match a previously authorized configuration exactly.`,
       );
     } else {
       narrative.push(
-        'The route is Letter to File because the change was assessed as staying within the existing intended use and indications for use, it did not qualify for a documentation-only exemption path, and the risk and performance review still came back all No: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
+        'The pathway is Letter to File because the change was assessed as staying within the existing intended use and indications for use, it did not qualify for a documentation-only exemption, and the risk and performance review still came back all No: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
       );
       decisionPath.push('The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo significance framework.');
       if (answers.C1 === Answer.No && answers.C2 === Answer.No) {
-        decisionPath.push('The route is not based on a cybersecurity-only or restore-to-specification exemption.');
+        decisionPath.push('The pathway is not based on a cybersecurity-only or restore-to-specification exemption.');
       }
       decisionPath.push('The core risk and performance reviews did not trigger a new submission on the current record.');
       addSources(sources, 'FDA-SW-510K-2017 Q3; FDA-SW-510K-2017 Q4');
@@ -598,7 +598,7 @@ export function buildCaseSpecificReasoning(
       }
       pushUnique(
         counterConsiderations,
-        `This route would change if additional review requires any of the core risk or performance conclusions to move from No to Yes or Uncertain.`,
+        `This pathway would change if additional review requires any of the core risk or performance conclusions to move from No to Yes or Uncertain.`,
       );
     }
 
@@ -615,7 +615,7 @@ export function buildCaseSpecificReasoning(
     addSources(sources, 'FDA-PCCP-2025 §V–VIII');
 
     narrative.push(
-      `The route is Implement Under Authorized PCCP because ${joinWithAnd(pccpSteps)}. On the current record, the change remains inside the already authorized PCCP boundaries rather than requiring a stand-alone submission for this implementation.`,
+      `The pathway is Implement Under Authorized PCCP because ${joinWithAnd(pccpSteps)}. On the current record, the change remains inside the already authorized PCCP boundaries rather than requiring a stand-alone submission for this implementation.`,
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
 
@@ -647,7 +647,7 @@ export function buildCaseSpecificReasoning(
     );
     pushUnique(
       counterConsiderations,
-      `This route would change if the actual modification exceeds the authorized change type, boundary conditions, validation protocol, or cumulative limits in the PCCP.`,
+      `This pathway would change if the actual modification exceeds the authorized change type, boundary conditions, validation protocol, or cumulative limits in the PCCP.`,
     );
   } else if (determination.pathway === Pathway.PMASupplementRequired) {
     const pmaDrivers: string[] = [];
@@ -663,7 +663,7 @@ export function buildCaseSpecificReasoning(
       pmaDrivers.push('the record indicates the manufacturing process or facility is affected');
     }
     if (answers.C_PMA4) {
-      pmaDrivers.push(`the planned PMA submission route was identified as "${answers.C_PMA4 as string}"`);
+      pmaDrivers.push(`the planned PMA supplement type was identified as "${answers.C_PMA4 as string}"`);
     }
 
     narrative.push(
@@ -687,12 +687,12 @@ export function buildCaseSpecificReasoning(
     if (answers.C_PMA4) {
       pushUnique(
         verificationSteps,
-        `Confirm that the planned supplement package truly fits the selected PMA route: "${answers.C_PMA4 as string}".`,
+        `Confirm that the planned supplement package fits the selected PMA supplement type: "${answers.C_PMA4 as string}".`,
       );
     }
     pushUnique(
       counterConsiderations,
-      `This route could change only if the record supports concluding that the proposed change does not affect safety or effectiveness.`,
+      `This pathway could change only if the record supports concluding that the proposed change does not affect safety or effectiveness.`,
     );
     pushUnique(
       counterConsiderations,
@@ -716,7 +716,7 @@ export function buildCaseSpecificReasoning(
     );
     pushUnique(
       counterConsiderations,
-      `This route would change if additional review shows that the proposed change affects safety, effectiveness, labeling, or qualifying manufacturing methods more than currently documented.`,
+      `This pathway would change if additional review shows that the proposed change affects safety, effectiveness, labeling, or qualifying manufacturing methods more than currently documented.`,
     );
   }
 

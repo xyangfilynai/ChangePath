@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { HelpTextWithLinks, AuthorityTag, GuidanceRef } from './ui';
-import type { Question } from '../lib/assessment-engine';
+import type { AssessmentField } from '../lib/assessment-engine';
 import { Answer } from '../lib/assessment-engine';
-import { questionReasoningLibrary } from '../lib/content';
+import { fieldReasoningLibrary } from '../lib/content';
 
 /** Reusable note box for contextual information (guidance, warnings, info notes). */
 const NoteBox: React.FC<{
@@ -42,7 +42,7 @@ const NoteBox: React.FC<{
 };
 
 interface QuestionCardProps {
-  question: Question;
+  field: AssessmentField;
   value: unknown;
   onChange: (value: unknown) => void;
   index: number;
@@ -50,7 +50,7 @@ interface QuestionCardProps {
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
-  question,
+  field,
   value,
   onChange,
   index,
@@ -61,23 +61,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     typeof value === 'string' || typeof value === 'number' ? String(value) : '',
   );
   const consequencePreview =
-    typeof question.consequencePreview === 'object' && question.consequencePreview !== null
-      ? question.consequencePreview
+    typeof field.consequencePreview === 'object' && field.consequencePreview !== null
+      ? field.consequencePreview
       : null;
   const hasForcedValue =
-    question.forcedValue !== undefined
-    && question.forcedValue !== null
-    && question.forcedValue !== '';
+    field.forcedValue !== undefined
+    && field.forcedValue !== null
+    && field.forcedValue !== '';
 
-  // Get question-specific reasoning from library
-  const qReasoning = questionReasoningLibrary[question.id];
+  // Field-specific reasoning from library (keys match assessment item ids)
+  const qReasoning = fieldReasoningLibrary[field.id];
 
   useEffect(() => {
     setLocalText(typeof value === 'string' || typeof value === 'number' ? String(value) : '');
   }, [value]);
 
   // Section divider rendering
-  if (question.sectionDivider) {
+  if (field.sectionDivider) {
     return (
       <div style={{
         display: 'flex',
@@ -96,7 +96,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <Icon name={question.icon || 'info'} size={18} color="var(--color-primary)" />
+          <Icon name={field.icon || 'info'} size={18} color="var(--color-primary)" />
         </div>
         <div>
           <h3 style={{
@@ -105,15 +105,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             color: 'var(--color-text)',
             margin: 0,
           }}>
-            {question.label}
+            {field.label}
           </h3>
-          {question.sublabel && (
+          {field.sublabel && (
             <p style={{
               fontSize: 12,
               color: 'var(--color-text-muted)',
               margin: '4px 0 0 0',
             }}>
-              {question.sublabel}
+              {field.sublabel}
             </p>
           )}
         </div>
@@ -121,22 +121,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     );
   }
 
-  // Skip hidden questions
-  if (question.skip) return null;
+  // Skip hidden fields
+  if (field.skip) return null;
 
-  const isCritical = question.critical || question.pathwayCritical;
+  const isCritical = field.critical || field.pathwayCritical;
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '');
   const hasSupportingContext = Boolean(
-    question.help ||
+    field.help ||
     qReasoning ||
-    question.mlguidance ||
-    question.infoNote ||
-    question.classificationGuidance ||
-    question.selectedTypeData ||
-    question.autoWarn ||
-    question.boundaryNote
+    field.mlguidance ||
+    field.infoNote ||
+    field.classificationGuidance ||
+    field.selectedTypeData ||
+    field.autoWarn ||
+    field.boundaryNote
   );
 
   // Commit text value on blur
@@ -146,12 +146,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
   };
 
-  // Render input based on question type
+  // Render input based on field type
   const renderInput = () => {
-    switch (question.type) {
+    switch (field.type) {
       case 'yesno':
       case 'yesnouncertain': {
-        const options = question.type === 'yesno'
+        const options = field.type === 'yesno'
           ? [Answer.Yes, Answer.No]
           : [Answer.Yes, Answer.No, Answer.Uncertain];
         return (
@@ -160,7 +160,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               <button
                 key={opt}
                 onClick={() => onChange(opt)}
-                disabled={question.disabled}
+                disabled={field.disabled}
                 style={{
                   flex: 1,
                   padding: 'var(--space-md)',
@@ -176,8 +176,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     : 'var(--color-text)',
                   fontWeight: 600,
                   fontSize: 14,
-                  cursor: question.disabled ? 'not-allowed' : 'pointer',
-                  opacity: question.disabled ? 0.5 : 1,
+                  cursor: field.disabled ? 'not-allowed' : 'pointer',
+                  opacity: field.disabled ? 0.5 : 1,
                   transition: 'all var(--transition-fast)',
                 }}
               >
@@ -191,11 +191,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       case 'single':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {(question.options || []).map((opt) => (
+            {(field.options || []).map((opt) => (
               <button
                 key={opt}
                 onClick={() => onChange(opt)}
-                disabled={question.disabled}
+                disabled={field.disabled}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -210,8 +210,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     : 'var(--color-bg-card)',
                   color: 'var(--color-text)',
                   textAlign: 'left',
-                  cursor: question.disabled ? 'not-allowed' : 'pointer',
-                  opacity: question.disabled ? 0.5 : 1,
+                  cursor: field.disabled ? 'not-allowed' : 'pointer',
+                  opacity: field.disabled ? 0.5 : 1,
                   transition: 'all var(--transition-fast)',
                 }}
               >
@@ -235,7 +235,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         const currentValues = Array.isArray(value) ? value : [];
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {(question.options || []).map((opt) => {
+            {(field.options || []).map((opt) => {
               const isSelected = currentValues.includes(opt);
               return (
                 <button
@@ -294,7 +294,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             value={localText}
             onChange={(e) => setLocalText(e.target.value)}
             onBlur={commitText}
-            placeholder={question.q?.includes('Paste') ? 'Paste or type here...' : 'Enter your response...'}
+            placeholder={field.q?.includes('Paste') ? 'Paste or type your answer...' : 'Enter your answer...'}
             rows={4}
             style={{
               width: '100%',
@@ -319,7 +319,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             value={localText}
             onChange={(e) => setLocalText(e.target.value)}
             onBlur={commitText}
-            placeholder="Enter number"
+            placeholder="Numeric value"
             style={{
               width: 160,
               padding: 'var(--space-md)',
@@ -343,20 +343,20 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       style={{
         padding: 'var(--space-lg)',
         borderRadius: 'var(--radius-lg)',
-        border: question.disabled
+        border: field.disabled
           ? '1px dashed var(--color-border)'
           : hasValidationError
             ? '1px solid var(--color-danger)'
             : '1px solid var(--color-border)',
-        background: question.disabled 
+        background: field.disabled 
           ? '#f8fafc' 
           : '#ffffff',
         marginBottom: 'var(--space-md)',
         animationDelay: `${index * 50}ms`,
         animationFillMode: 'backwards',
-        opacity: question.disabled ? 0.7 : 1,
+        opacity: field.disabled ? 0.7 : 1,
         position: 'relative',
-        boxShadow: question.disabled
+        boxShadow: field.disabled
           ? 'none'
           : hasValidationError
             ? '0 0 0 3px rgba(239, 68, 68, 0.12)'
@@ -364,7 +364,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }}
     >
       {/* Disabled overlay */}
-      {question.disabled && (
+      {field.disabled && (
         <div style={{
           position: 'absolute',
           top: 8,
@@ -380,17 +380,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           color: 'var(--color-text-muted)',
         }}>
           <Icon name="alert" size={12} />
-          Not applicable based on prior answers
+          Not applicable based on earlier answers
         </div>
       )}
-      {/* Question header */}
+      {/* Field header */}
       <div style={{
         display: 'flex',
         alignItems: 'flex-start',
         gap: 'var(--space-md)',
         marginBottom: 'var(--space-md)',
       }}>
-        {/* Status indicator (no question number) */}
+        {/* Status indicator (no item number) */}
         <div style={{
           width: 28,
           height: 28,
@@ -441,14 +441,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               color: 'var(--color-text-muted)',
               letterSpacing: '0.04em',
             }}>
-              {question.id}
+              {field.id}
             </span>
-            {question.disabled && (
+            {field.disabled && (
               <span style={{
                 fontSize: 10,
                 color: 'var(--color-text-muted)',
               }}>
-                Locked by prior answers
+                Set by earlier answers
               </span>
             )}
           </div>
@@ -460,7 +460,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             marginBottom: 'var(--space-sm)',
             flexWrap: 'wrap',
           }}>
-            {question.pathwayCritical && (
+            {field.pathwayCritical && (
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -475,7 +475,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 Required
               </span>
             )}
-            {question.critical && !question.pathwayCritical && (
+            {field.critical && !field.pathwayCritical && (
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -490,7 +490,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 Critical
               </span>
             )}
-            {question.draftRef && (
+            {field.draftRef && (
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -505,7 +505,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 Draft Guidance
               </span>
             )}
-            {question.dynamic && (
+            {field.dynamic && (
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -524,7 +524,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 Conditional
               </span>
             )}
-            {question.disabled && (
+            {field.disabled && (
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -555,12 +555,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 gap: 4,
               }}>
                 <Icon name="check" size={10} />
-                Auto-Set
+                Auto-set
               </span>
             )}
           </div>
 
-          {/* Question text */}
+          {/* Primary prompt */}
           <h4 style={{
             fontSize: 15,
             fontWeight: 600,
@@ -568,7 +568,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             margin: 0,
             lineHeight: 1.5,
           }}>
-            {question.q}
+            {field.q}
           </h4>
         </div>
 
@@ -585,19 +585,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           fontSize: 12,
           fontWeight: 500,
         }}>
-          This required question must be completed before you can continue.
+          This required field must be completed before you can continue.
         </div>
       )}
 
-      {question.autoWarn && (
+      {field.autoWarn && (
         <NoteBox variant="warning" icon="alert">
-          <HelpTextWithLinks text={question.autoWarn} />
+          <HelpTextWithLinks text={field.autoWarn} />
         </NoteBox>
       )}
 
-      {question.boundaryNote && (
-        <NoteBox variant="warning" label="Boundary Note">
-          <HelpTextWithLinks text={question.boundaryNote} />
+      {field.boundaryNote && (
+        <NoteBox variant="warning" label="Boundary note">
+          <HelpTextWithLinks text={field.boundaryNote} />
         </NoteBox>
       )}
 
@@ -618,20 +618,20 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             color: 'var(--color-text-secondary)',
             lineHeight: 1.6,
           }}>
-            <strong style={{ color: 'var(--color-info)' }}>Auto-determined:</strong>{' '}
-            This value has been set automatically based on your prior answers.
-            Value: <strong>{String(question.forcedValue)}</strong>
+            <strong style={{ color: 'var(--color-info)' }}>Set automatically:</strong>{' '}
+            This value is derived from earlier answers.
+            Value: <strong>{String(field.forcedValue)}</strong>
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div style={{ marginBottom: hasSupportingContext || Boolean(question.consequencePreview) || question.selectedTypeData ? 'var(--space-md)' : 0 }}>
+      <div style={{ marginBottom: hasSupportingContext || Boolean(field.consequencePreview) || field.selectedTypeData ? 'var(--space-md)' : 0 }}>
         {renderInput()}
       </div>
 
       {/* Consequence preview */}
-      {question.consequencePreview && (
+      {field.consequencePreview && (
         <div style={{
           padding: 'var(--space-md)',
           borderRadius: 'var(--radius-md)',
@@ -650,11 +650,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           }}>
             <Icon name="arrow" size={14} color="var(--color-info)" />
             <strong style={{ color: 'var(--color-info)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Pathway Impact
+              Pathway effect
             </strong>
           </div>
-          {typeof question.consequencePreview === 'string' ? (
-            <HelpTextWithLinks text={question.consequencePreview} />
+          {typeof field.consequencePreview === 'string' ? (
+            <HelpTextWithLinks text={field.consequencePreview} />
           ) : consequencePreview ? (
             <div>
               {consequencePreview.yes && (
@@ -680,7 +680,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
       )}
 
-      {question.selectedTypeData && (
+      {field.selectedTypeData && (
         <div style={{
           padding: 'var(--space-md)',
           borderRadius: 'var(--radius-md)',
@@ -699,19 +699,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             textTransform: 'uppercase',
             marginBottom: 'var(--space-xs)',
           }}>
-            Change-Type Context
+            Change-type context
           </div>
-          <div style={{ marginBottom: question.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
-            <strong>Example:</strong> {question.selectedTypeData.example}
+          <div style={{ marginBottom: field.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
+              <strong>Illustration:</strong> {field.selectedTypeData.example}
           </div>
-          {question.selectedTypeData.misclass && (
-            <div style={{ marginBottom: question.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
-              <strong>Common Misclassification:</strong> <HelpTextWithLinks text={question.selectedTypeData.misclass} />
+          {field.selectedTypeData.misclass && (
+            <div style={{ marginBottom: field.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
+              <strong>Common misclassification:</strong> <HelpTextWithLinks text={field.selectedTypeData.misclass} />
             </div>
           )}
-          {question.selectedTypeData.pccpNote && (
+          {field.selectedTypeData.pccpNote && (
             <div>
-              <strong>PCCP Note:</strong> <HelpTextWithLinks text={question.selectedTypeData.pccpNote} />
+              <strong>PCCP note:</strong> <HelpTextWithLinks text={field.selectedTypeData.pccpNote} />
             </div>
           )}
         </div>
@@ -737,13 +737,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             }}
           >
             <Icon name="book" size={14} color="var(--color-primary)" />
-            <span style={{ flex: 1 }}>Why this question matters and what to verify</span>
-            {(qReasoning?.status || question.mlguidance) && (
+            <span style={{ flex: 1 }}>Rationale and verification notes</span>
+            {(qReasoning?.status || field.mlguidance) && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 {qReasoning?.status && (
                   <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />
                 )}
-                {question.mlguidance && (
+                {field.mlguidance && (
                   <span style={{
                     fontSize: 10,
                     fontWeight: 700,
@@ -774,14 +774,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 marginTop: -1,
               }}
             >
-              {question.help && (
+              {field.help && (
                 <div style={{
                   marginBottom: 'var(--space-md)',
                   fontSize: 13,
                   color: 'var(--color-text-secondary)',
                   lineHeight: 1.7,
                 }}>
-                  <HelpTextWithLinks text={question.help} />
+                  <HelpTextWithLinks text={field.help} />
                 </div>
               )}
 
@@ -827,7 +827,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       color: 'var(--color-text-secondary)',
                       lineHeight: 1.5,
                     }}>
-                      <strong style={{ color: 'var(--color-warning)' }}>Counter-consideration:</strong>{' '}
+                      <strong style={{ color: 'var(--color-warning)' }}>Counterpoint:</strong>{' '}
                       <HelpTextWithLinks text={qReasoning.counter} />
                     </div>
                   )}
@@ -843,21 +843,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 </div>
               )}
 
-              {question.mlguidance && (
+              {field.mlguidance && (
                 <NoteBox variant="info" icon="cpu" label="AI/ML Guidance">
-                  <HelpTextWithLinks text={question.mlguidance} />
+                  <HelpTextWithLinks text={field.mlguidance} />
                 </NoteBox>
               )}
 
-              {question.infoNote && (
+              {field.infoNote && (
                 <NoteBox variant="success" icon="info">
-                  <HelpTextWithLinks text={question.infoNote} />
+                  <HelpTextWithLinks text={field.infoNote} />
                 </NoteBox>
               )}
 
-              {question.classificationGuidance && (
+              {field.classificationGuidance && (
                 <NoteBox variant="neutral" label="Classification Guidance">
-                  <HelpTextWithLinks text={question.classificationGuidance} />
+                  <HelpTextWithLinks text={field.classificationGuidance} />
                 </NoteBox>
               )}
             </div>

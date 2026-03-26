@@ -203,7 +203,7 @@ const getSections = (
         ? [
             'Confirm the applicable De Novo classification regulation and special controls',
             'Assess whether the modified device still fits the established device type',
-            'Schedule FDA Pre-Submission (Q-Sub) — strongly recommended',
+            'Consider FDA Pre-Submission (Q-Sub) for borderline device-type fit',
             'Identify testing requirements and evidence gaps',
             'If the modified device no longer fits the device type, discuss 510(k) vs new De Novo strategy with FDA',
           ]
@@ -343,7 +343,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             marginBottom: 24,
           }}
         >
-          <Icon name="arrowLeft" size={14} /> Back to Review
+          <Icon name="arrowLeft" size={14} /> Back to final review
         </button>
         <div style={{
           padding: 32,
@@ -359,14 +359,14 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             color: 'var(--color-text)',
             marginTop: 16,
             marginBottom: 8,
-          }}>Assessment Incomplete</h2>
+          }}>Assessment incomplete</h2>
           <p style={{
             fontSize: 14,
             color: 'var(--color-text-secondary)',
             lineHeight: 1.6,
             marginBottom: 20,
           }}>
-            The regulatory assessment is not complete. Please return to the assessment and answer all required questions before preparing documentation.
+            Required fields are still open. Return to the assessment and complete them before using the preparation checklist.
           </p>
           <button
             onClick={onBackToAssessment}
@@ -442,7 +442,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             marginBottom: 24,
           }}
         >
-          <Icon name="arrowLeft" size={14} /> Back to Review
+          <Icon name="arrowLeft" size={14} /> Back to final review
         </button>
 
         {/* Title Card */}
@@ -503,7 +503,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
               marginBottom: 18,
             }}>
               {[
-                { label: 'Regulatory route', value: determination.pathway },
+                { label: 'Regulatory pathway', value: determination.pathway },
                 { label: 'Primary package', value: packageLabel },
                 { label: 'Change', value: (answers.B2 as string) || (answers.B1 as string) || 'Not specified' },
                 { label: 'Authorized baseline', value: (answers.A1c as string) || 'Not specified' },
@@ -577,7 +577,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 color: 'var(--color-text-secondary)',
                 lineHeight: 1.55,
               }}>
-                <strong style={{ color: 'var(--color-success)' }}>Preparation checklist</strong> — Use this page to turn the determination into an execution checklist. For supporting document inventory and citations, refer back to Final Review.
+                <strong style={{ color: 'var(--color-success)' }}>Preparation checklist</strong> — Use this page as an execution-oriented checklist derived from the current determination. For citations and evidence inventory, return to Final review.
               </div>
             </div>
 
@@ -599,7 +599,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                   lineHeight: 1.55,
                 }}>
                   <strong style={{ color: 'var(--color-warning)' }}>Resolve flagged review items first.</strong>{' '}
-                  The underlying assessment still contains {consistencyIssues.length} review item{consistencyIssues.length === 1 ? '' : 's'} that may affect package strategy or documentation language.
+                  This assessment still lists {consistencyIssues.length} review item{consistencyIssues.length === 1 ? '' : 's'} that may affect package strategy or wording.
                 </div>
               </div>
             )}
@@ -620,7 +620,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 color: 'var(--color-text-muted)',
                 marginBottom: 8,
               }}>
-                Assessment Context
+                Assessment context
               </div>
               <div style={{
                 display: 'grid',
@@ -634,7 +634,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                   <strong>Authorization ID:</strong> {answers.A1b as string || 'Not specified'}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>PCCP status:</strong> {answers.A2 === Answer.Yes ? 'Authorized PCCP present' : answers.A2 === Answer.No ? 'No PCCP authorized' : 'Not specified'}
+                  <strong>PCCP status:</strong> {answers.A2 === Answer.Yes ? 'Authorized PCCP on file' : answers.A2 === Answer.No ? 'No authorized PCCP' : 'Not specified'}
                 </div>
               </div>
             </div>
@@ -660,7 +660,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                     display: 'block',
                     marginBottom: 4,
                   }}>
-                    Pre-Submission (Q-Sub) {isDeNovo ? 'Strongly Recommended' : 'Recommended'}
+                    Pre-Submission (Q-Sub) {isDeNovo ? 'Highly advisable' : 'Advisable'}
                   </span>
                   <div style={{
                     fontSize: 12.5,
@@ -668,8 +668,8 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                     lineHeight: 1.6,
                   }}>
                     {isDeNovo
-                      ? "For software changes, FDA's 510(k) change guidances are relevant to De Novo-authorized existing devices; a Pre-Submission is still valuable when continued device-type fit or the right pathway is uncertain."
-                      : `A Pre-Submission meeting with FDA is recommended before preparing the ${isPMA ? 'PMA supplement' : '510(k) submission'}.`}
+                      ? "FDA 510(k) software change guidance is often applied by analogy to De Novo-authorized devices; a Pre-Submission remains useful when device-type fit or pathway choice is uncertain."
+                      : `Consider a Pre-Submission with FDA before finalizing the ${isPMA ? 'PMA supplement' : '510(k)'} package when the case is borderline or novel.`}
                   </div>
                 </div>
               </div>
@@ -883,14 +883,14 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                     display: 'block',
                     marginBottom: 2,
                   }}>
-                    Preparation Marked Complete
+                    Checklist marked complete
                   </span>
                   <span style={{
                     fontSize: 12.5,
                     color: 'var(--color-text-secondary)',
                     lineHeight: 1.6,
                   }}>
-                    Checklist complete. Record completion in your QMS change control record.
+                    Record completion in your QMS change control per internal procedure.
                   </span>
                 </div>
               </div>

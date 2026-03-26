@@ -91,7 +91,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             letterSpacing: '-0.02em',
             lineHeight: 1.2,
           }}>
-            AI/ML Device Change Assessment
+            AI/ML device change assessment
           </h1>
           <p style={{
             fontSize: 15,
@@ -100,7 +100,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             lineHeight: 1.6,
             maxWidth: 700,
           }}>
-            FDA-primary change-routing workspace for regulatory, ML, quality, and clinical reviewers. Capture the authorized baseline, classify the change, review pathway logic, and assemble a traceable internal assessment for expert review.
+            FDA-primary pathway framing for regulatory, ML, quality, and clinical reviewers. Capture the authorized baseline, classify the change, trace pathway logic, and document an internal record for qualified expert review.
           </p>
         </div>
 
@@ -113,23 +113,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {[
             {
               title: 'FDA-primary',
-              desc: 'U.S. routing logic first, with follow-up cues for EU, UK, Canada, Japan, and China.',
+              desc: 'U.S. regulatory pathways first, with pointers to EU, UK, Canada, Japan, and China where relevant.',
               icon: 'shield',
               accent: '#0891b2',
               bg: '#ecfeff',
               border: '#a5f3fc',
             },
             {
-              title: 'Expert review workflow',
-              desc: 'Track blockers, evidence gaps, notes, and review status before relying on the output.',
+              title: 'Expert review',
+              desc: 'Surface open items, evidence gaps, reviewer notes, and review status before relying on outputs.',
               icon: 'users',
               accent: '#0f766e',
               bg: '#ecfdf5',
               border: '#a7f3d0',
             },
             {
-              title: 'Decision traceability',
-              desc: 'Capture the pathway basis, documentation cues, and expert-review context in one assessment.',
+              title: 'Traceability',
+              desc: 'Keep pathway basis, documentation cues, and review context in one assessment record.',
               icon: 'fileText',
               accent: '#475569',
               bg: '#f8fafc',
@@ -185,7 +185,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
               }}>
-                Continue Working
+                Resume or open
               </h2>
               <div style={{
                 height: 1,
@@ -229,10 +229,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 600, color: '#854d0e', marginBottom: 4 }}>
-                    Resume current browser session
+                    Resume this browser session
                   </div>
                   <p style={{ fontSize: 13, color: '#a16207', lineHeight: 1.55, margin: 0 }}>
-                    Continue the assessment currently stored in this browser without starting a new case.
+                    Continue the in-progress assessment stored locally in this browser (not a named saved case).
                   </p>
                 </div>
                 <Icon name="arrow" size={16} color="#ca8a04" style={{ marginTop: 4 }} />
@@ -398,7 +398,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
             }}>
-              Start Assessment
+              New assessment
             </h2>
             <div style={{
               height: 1,
@@ -459,7 +459,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                   }}>
-                    Primary workflow
+                    Default path
                   </span>
                 </div>
                 <p style={{
@@ -468,7 +468,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   margin: 0,
                   lineHeight: 1.55,
                 }}>
-                  Start a new case from the authorized baseline and work through the full regulatory, PCCP, GenAI, bias/equity, and jurisdiction review flow.
+                  Start a blank case from the authorized baseline through regulatory significance, optional PCCP scope, GenAI checks, population impact, and final review.
                 </p>
               </div>
               <Icon name="arrow" size={18} color="#0891b2" style={{ marginTop: 4 }} />
@@ -510,7 +510,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     fontWeight: 600,
                     color: '#111827',
                   }}>
-                    Guided Example
+                    Sample workflow
                   </span>
                   <span style={{
                     fontSize: 10,
@@ -523,7 +523,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                   }}>
-                    Sample case
+                    Example data
                   </span>
                 </div>
                 <p style={{
@@ -532,7 +532,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   margin: 0,
                   lineHeight: 1.55,
                 }}>
-                  Open a pre-filled example to inspect the workflow, reasoning, and final review output before using RegAccess on a live case.
+                  Load worked example answers to review navigation, rationale, and the final review screen before entering a live case.
                 </p>
                 <p style={{
                   fontSize: 12,
@@ -542,7 +542,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   paddingTop: 10,
                   borderTop: '1px solid #f3f4f6',
                 }}>
-                  Example: new clinical sites with different scanners and demographics, uncertain subgroup impact, no PCCP established.
+                  Example scenario: new clinical sites and scanners, demographic shift, uncertain subgroup performance, no authorized PCCP.
                 </p>
               </div>
               <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
@@ -565,9 +565,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             lineHeight: 1.6,
           }}>
             <strong style={{ color: '#374151', fontWeight: 600 }}>Decision support only — not a regulatory determination.</strong>{' '}
-            RegAccess supports internal change-control planning and regulatory strategy discussions.
-            It does not replace expert regulatory judgment, legal advice, or formal submission decisions.
-            All outputs require review by qualified regulatory and clinical professionals before action.
+            RegAccess supports internal change-control planning and submission strategy discussion.
+            It does not replace qualified regulatory or legal judgment or agency decisions.
+            Review all outputs with appropriate regulatory and clinical expertise before action.
           </p>
         </div>
       </main>

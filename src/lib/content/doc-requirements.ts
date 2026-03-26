@@ -44,10 +44,10 @@ const docModules: Record<string, DocumentRequirement[]> = {
     { doc: "Bias / equity assessment (recommended per draft guidance — verify finalization status at fda.gov)", source: "FDA-LIFECYCLE-2025 §IV.B" },
   ],
   pccpFutureRecommended510k: [
-    { doc: "PCCP for future changes — strongly recommended if device does not yet have an authorized PCCP. Including a PCCP in this submission enables future similar changes without additional submissions. See the Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions Guidance (Dec 2024, reissued Aug 2025), Sections V–VIII for policy and content requirements.", source: "FDA-PCCP-2025" },
+    { doc: "PCCP for future changes — consider including if the device does not yet have an authorized PCCP. A PCCP in this submission may support defined future changes when authorized by FDA. See Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025), Sections V–VIII.", source: "FDA-PCCP-2025" },
   ],
   pccpFutureRecommendedPMA: [
-    { doc: "PCCP for future changes — strongly recommended if device does not yet have an authorized PCCP. Including a PCCP in this PMA supplement enables future similar changes to be implemented without additional supplements. See the Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions Guidance (Dec 2024, reissued Aug 2025), Sections V–VIII.", source: "FDA-PCCP-2025" },
+    { doc: "PCCP for future changes — consider including if the device does not yet have an authorized PCCP. A PCCP in this PMA supplement may support defined future changes when authorized by FDA. See Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025), Sections V–VIII.", source: "FDA-PCCP-2025" },
   ],
   pccpDocs: [
     { doc: "PCCP scope verification record (change type, boundaries, protocol match)", source: "FDA-PCCP-2025 §V–VI" },
@@ -74,7 +74,7 @@ export const docRequirements: Record<string, DocumentationRequirementSet> = {
       { doc: "Performance comparison summary (pre/post change)", source: "Organization policy" },
       { doc: "Subgroup analysis of affected populations", source: "Organization policy" },
     ],
-    basis: "Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Cybersecurity/Restore-to-Spec exemptions or all significance questions NO; QMSR; internal change-control records; Quality Management System Regulation (QMSR, incorporating ISO 13485:2016)",
+    basis: "Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Cybersecurity/Restore-to-Spec exemptions or all significance fields NO; QMSR; internal change-control records; Quality Management System Regulation (QMSR, incorporating ISO 13485:2016)",
   },
   "Implement Under Authorized PCCP": {
     required: [
@@ -143,22 +143,22 @@ export const docRequirements: Record<string, DocumentationRequirementSet> = {
       { doc: "Advisory committee preparation materials (for Panel-Track supplements)", source: "Organization policy" },
     ],
     basis: "21 CFR 814.39; PMA Supplement Guidance",
-    scopeNote: "Scope limitation: RegAccess identifies that a PMA supplement is required but does not route to supplement-type-specific documentation requirements. The specific supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) — selected in question C_PMA4 — determines the actual submission format, clinical data requirements, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order for supplement-type-specific requirements.",
+    scopeNote: "Scope limitation: RegAccess identifies that a PMA supplement is required but does not list supplement-type-specific documentation. The supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) selected in field C_PMA4 drives submission format, clinical data, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order.",
   },
   "Assessment Incomplete": {
     required: [
-      { doc: "Document the specific unresolved questions and the reason each could not be answered", source: "Internal change-control records" },
+      { doc: "Document each unresolved field and why it could not be closed", source: "Internal change-control records" },
       { doc: "Record the current assessment state and all answers provided so far", source: "QMSR; internal change-control records" },
     ],
     recommended: [
-      { doc: "Pre-Submission (Q-Sub) meeting request with FDA to resolve unresolved questions", source: "FDA Q-Sub Guidance" },
+      { doc: "Pre-Submission (Q-Sub) meeting request with FDA to resolve open items", source: "FDA Q-Sub Guidance" },
       { doc: "Senior RA / clinical expert review of the unresolved areas before re-assessment", source: "Best practice" },
-      { doc: "Risk analysis of the change under the assumption of the most conservative answer to each unresolved question", source: "ISO 14971:2019" },
+      { doc: "Risk analysis assuming the most conservative answer for each unresolved field", source: "ISO 14971:2019" },
     ],
     orgSpecific: [
       { doc: "Escalation to regulatory decision board or equivalent internal governance body", source: "Organization policy" },
     ],
-    basis: "Assessment could not produce a reliable pathway recommendation because one or more questions critical to the determination remain unresolved. This is not a final regulatory conclusion — it is a signal that expert judgment, additional evidence, or FDA interaction is needed before proceeding.",
+    basis: "Assessment could not produce a reliable pathway recommendation because one or more fields critical to the determination remain unresolved. This is not a final regulatory conclusion — expert judgment, additional evidence, or FDA interaction may be needed before proceeding.",
   },
   "PMA Annual Report / Letter to File": {
     required: [

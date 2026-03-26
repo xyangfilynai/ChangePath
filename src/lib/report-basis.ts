@@ -62,7 +62,7 @@ export const buildAssessmentBasis = (
     items.push(
       baseline
         ? `The De Novo device${authId} was assessed against authorized baseline ${baseline}, and the non-PMA software-change framework was applied unless a threshold issue overrode it.`
-        : `The De Novo device record is missing a complete authorized baseline, which weakens the comparison point for this assessment.`,
+        : `The De Novo device record does not include a complete authorized baseline, which weakens the comparison point for this assessment.`,
     );
   } else if (answers.A1 === AuthPathway.FiveOneZeroK) {
     items.push(
@@ -88,14 +88,14 @@ export const buildAssessmentBasis = (
     }
   } else {
     items.push(
-      'The authorized Indications for Use statement is missing, so the intended-use assessment is not fully anchored to the cleared or approved device.',
+      'The authorized Indications for Use statement is not provided, so the intended-use assessment is not fully anchored to the cleared or approved device.',
     );
   }
 
   if (answers.A2 === Answer.Yes) {
     if (determination.isPCCPImpl) {
       items.push(
-        'An authorized PCCP was on file, and the current route depends on the change staying within the approved PCCP boundaries, validation protocol, and cumulative limits.',
+        'An authorized PCCP was on file, and the current pathway depends on the change staying within the approved PCCP boundaries, validation protocol, and cumulative limits.',
       );
     } else if (determination.pccpScopeFailed) {
       items.push(
@@ -107,7 +107,7 @@ export const buildAssessmentBasis = (
       );
     } else {
       items.push(
-        'An authorized PCCP was on file and was checked against the change, though it did not control the final route.',
+        'An authorized PCCP was on file and was checked against the change, though it did not control the final pathway.',
       );
     }
   } else if (answers.A2 === Answer.No) {
@@ -118,7 +118,7 @@ export const buildAssessmentBasis = (
 
   if (hasGenerativeAIContext(answers)) {
     items.push(
-      'Generative AI or foundation-model technology was identified, so the assessment included the GenAI supplemental checks rather than only the base software-change questions.',
+      'Generative AI or foundation-model technology was identified, so the assessment included the GenAI supplemental checks rather than only the base software-change fields.',
     );
   }
 

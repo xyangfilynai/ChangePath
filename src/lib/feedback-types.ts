@@ -24,51 +24,51 @@ export interface FeedbackFormData {
 }
 
 export type Q1Option =
-  | 'Yes — exactly what I would have concluded'
+  | 'Yes — matches my conclusion'
   | 'Mostly — minor differences'
-  | 'Partly — I see the direction, but I would qualify it differently'
-  | 'No, I would have reached a different conclusion';
+  | 'Partly — I would qualify the conclusion differently'
+  | 'No — I would reach a different conclusion';
 
 export const Q1_OPTIONS: Q1Option[] = [
-  'Yes — exactly what I would have concluded',
+  'Yes — matches my conclusion',
   'Mostly — minor differences',
-  'Partly — I see the direction, but I would qualify it differently',
-  'No, I would have reached a different conclusion',
+  'Partly — I would qualify the conclusion differently',
+  'No — I would reach a different conclusion',
 ];
 
 /** Options that trigger the Q1b follow-up. */
 export const Q1_FOLLOWUP_TRIGGERS: Q1Option[] = [
-  'Partly — I see the direction, but I would qualify it differently',
-  'No, I would have reached a different conclusion',
+  'Partly — I would qualify the conclusion differently',
+  'No — I would reach a different conclusion',
 ];
 
 export type Q4Option =
-  | 'Preliminary screening before full RA review'
-  | 'Training / onboarding new RA staff'
-  | 'Change control documentation support'
+  | 'Triage before full RA review'
+  | 'Training or onboarding RA staff'
+  | 'Change-control documentation support'
   | 'Submission planning'
   | 'Other';
 
 export const Q4_OPTIONS: Q4Option[] = [
-  'Preliminary screening before full RA review',
-  'Training / onboarding new RA staff',
-  'Change control documentation support',
+  'Triage before full RA review',
+  'Training or onboarding RA staff',
+  'Change-control documentation support',
   'Submission planning',
   'Other',
 ];
 
 export type Q6Option =
   | 'Early access to future versions'
-  | 'Participating in a longer pilot'
-  | 'A walkthrough / demo of the methodology'
-  | 'Providing more detailed feedback in a call'
+  | 'A longer pilot'
+  | 'Walkthrough of the methodology'
+  | 'Follow-up discussion (call)'
   | 'Not at this time';
 
 export const Q6_OPTIONS: Q6Option[] = [
   'Early access to future versions',
-  'Participating in a longer pilot',
-  'A walkthrough / demo of the methodology',
-  'Providing more detailed feedback in a call',
+  'A longer pilot',
+  'Walkthrough of the methodology',
+  'Follow-up discussion (call)',
   'Not at this time',
 ];
 
