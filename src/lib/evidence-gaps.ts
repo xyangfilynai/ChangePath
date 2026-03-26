@@ -87,7 +87,16 @@ export function computeEvidenceGaps(answers: Answers, determination: any): Evide
   if (answers.B3 === Answer.No && !isPMA) {
     const sigAnswers = [answers.C3, answers.C4, answers.C5, answers.C6];
     const hasYesOrUncertain = sigAnswers.some(a => a === Answer.Yes || a === Answer.Uncertain);
-    const allAnswered = sigAnswers.every(a => [Answer.Yes, Answer.No, Answer.Uncertain].includes(a));
+    // C3-C6 have cascading skip logic: if an earlier question is Yes, later ones are skipped.
+    // Only check "all answered" for questions that are actually visible (not skipped by cascade).
+    const c3Answered = [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C3);
+    const c4Visible = answers.C3 !== Answer.Yes;
+    const c5Visible = c4Visible && answers.C4 !== Answer.Yes;
+    const c6Visible = c5Visible && answers.C5 !== Answer.Yes;
+    const allAnswered = c3Answered &&
+      (!c4Visible || [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C4)) &&
+      (!c5Visible || [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C5)) &&
+      (!c6Visible || [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C6));
 
     if (!allAnswered && !determination.isCyberOnly && !determination.isBugFix) {
       gaps.push({
