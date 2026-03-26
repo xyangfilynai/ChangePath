@@ -11,6 +11,7 @@ import {
 } from '../src/lib/assessment-engine';
 import { computeEvidenceGaps } from '../src/lib/evidence-gaps';
 import { generateAssessmentArtifact } from '../src/lib/report-generator';
+import { buildCaseSpecificReasoning } from '../src/lib/case-specific-reasoning';
 
 type Answers = Record<string, any>;
 
@@ -97,5 +98,39 @@ describe('Authority/source classification credibility fixes', () => {
         d => d.source.includes('IEC 62304') && d.sourceClass === 'Standard',
       ),
     ).toBe(true);
+  });
+});
+
+describe('Case-specific reasoning credibility fixes', () => {
+  it('builds reasoning from the actual trigger answers and submitted case facts', () => {
+    const answers = base510k({
+      A1c: 'v3.2.1',
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B4: 'The updated model uses data from new clinical sites, including Canon scanners, and the submitted analysis reports lower sensitivity for small nodules on Canon systems.',
+      C1: Answer.No,
+      C2: Answer.No,
+      C3: Answer.Uncertain,
+      C4: Answer.No,
+      C5: Answer.No,
+      C6: Answer.Yes,
+      E1: Answer.Uncertain,
+      E4: Answer.No,
+    });
+    const determination = computeDetermination(answers);
+    const ds = computeDerivedState(answers);
+    const blocks = getBlocks(answers, ds);
+    const reasoning = buildCaseSpecificReasoning(
+      answers,
+      determination,
+      blocks,
+      (blockId: string) => getQuestions(blockId, answers, ds),
+    );
+
+    expect(reasoning.primaryReason).toContain('Additional data — new clinical sites');
+    expect(reasoning.primaryReason).toContain('question C3 was answered Uncertain');
+    expect(reasoning.decisionPath.some((step) => step.includes('Risk significance screen (C3): Uncertain'))).toBe(true);
+    expect(reasoning.decisionPath.some((step) => step.includes('Clinical performance screen (C6): Yes'))).toBe(true);
+    expect(reasoning.narrative.some((paragraph) => paragraph.includes('Canon scanners'))).toBe(true);
   });
 });

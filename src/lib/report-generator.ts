@@ -5,9 +5,10 @@
 
 import type { Answers, Block, Question } from './assessment-engine';
 import { Pathway } from './assessment-engine';
-import { ruleReasoningLibrary, docRequirements } from './content';
+import { docRequirements } from './content';
 import { computeEvidenceGaps, type EvidenceGap } from './evidence-gaps';
 import { classifySource, type SourceClass } from './source-classification';
+import { buildCaseSpecificReasoning } from './case-specific-reasoning';
 
 export interface AssessmentArtifact {
   meta: {
@@ -25,9 +26,11 @@ export interface AssessmentArtifact {
   rationale: {
     primaryReason: string;
     ruleKey: string | null;
-    verificationSteps: string | null;
-    counterConsiderations: string | null;
-    source: string | null;
+    narrative: string[];
+    decisionPath: string[];
+    verificationSteps: string[];
+    counterConsiderations: string[];
+    sources: string[];
   };
   keyInputs: Array<{
     id: string;
@@ -55,24 +58,6 @@ const pathwayToDocKey: Record<string, string> = {
   [Pathway.AssessmentIncomplete]: "Assessment Incomplete",
 };
 
-const getRuleKey = (determination: any): string | null => {
-  if (determination.isIntendedUseChange) return "SCREEN-01-Yes";
-  if (determination.isIntendedUseUncertain) return "SCREEN-01-Uncertain";
-  // PMA-specific rules — check before 510(k) framework rules
-  if (determination.pathway === Pathway.PMASupplementRequired) return "PMA-Supplement";
-  if (determination.pathway === Pathway.PMAAnnualReport) return "PMA-AnnualReport";
-  // 510(k)/De Novo framework rules
-  if (determination.deNovoDeviceTypeFitFailed) return "DENOVO-FIT-FAILED";
-  if (determination.isCyberOnly) return "SCREEN-02-Yes";
-  if (determination.isBugFix) return "SCREEN-03-Yes";
-  // PCCP — applicable to both PMA and 510(k)/De Novo
-  if (determination.pccpScopeVerified) return "PCCP-Verified";
-  if (determination.pccpScopeFailed) return "PCCP-Failed";
-  if (determination.isSignificant) return "RISK-01-Yes";
-  if (determination.pathway === Pathway.LetterToFile) return "LTF-NonSignificant";
-  return null;
-};
-
 export function generateAssessmentArtifact(
   answers: Answers,
   determination: any,
@@ -96,9 +81,12 @@ export function generateAssessmentArtifact(
       ? 'Preliminary'
       : 'Complete — Pending Review';
 
-  // Rationale
-  const ruleKey = getRuleKey(determination);
-  const ruleReasoning = ruleKey ? ruleReasoningLibrary[ruleKey] : null;
+  const caseReasoning = buildCaseSpecificReasoning(
+    answers,
+    determination,
+    blocks,
+    getQuestionsForBlock,
+  );
 
   // Key inputs — collect all pathway-critical answered questions
   const keyInputs: AssessmentArtifact['keyInputs'] = [];
@@ -217,11 +205,13 @@ export function generateAssessmentArtifact(
       confidenceLevel,
     },
     rationale: {
-      primaryReason: ruleReasoning?.text || 'No specific rule reasoning available for this determination.',
-      ruleKey,
-      verificationSteps: ruleReasoning?.verify || null,
-      counterConsiderations: ruleReasoning?.counter || null,
-      source: ruleReasoning?.source || null,
+      primaryReason: caseReasoning.primaryReason,
+      ruleKey: caseReasoning.ruleKey,
+      narrative: caseReasoning.narrative,
+      decisionPath: caseReasoning.decisionPath,
+      verificationSteps: caseReasoning.verificationSteps,
+      counterConsiderations: caseReasoning.counterConsiderations,
+      sources: caseReasoning.sources,
     },
     keyInputs,
     assumptions,
@@ -266,8 +256,25 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push('RATIONALE');
   lines.push(hr);
   lines.push(artifact.rationale.primaryReason);
-  if (artifact.rationale.source) {
-    lines.push(`Source: ${artifact.rationale.source}`);
+  if (artifact.rationale.decisionPath.length > 0) {
+    lines.push('');
+    lines.push('Case-Specific Decision Path:');
+    artifact.rationale.decisionPath.forEach((step, i) => lines.push(`  ${i + 1}. ${step}`));
+  }
+  if (artifact.rationale.verificationSteps.length > 0) {
+    lines.push('');
+    lines.push('Case-Specific Verification Focus:');
+    artifact.rationale.verificationSteps.forEach((step, i) => lines.push(`  ${i + 1}. ${step}`));
+  }
+  if (artifact.rationale.counterConsiderations.length > 0) {
+    lines.push('');
+    lines.push('What Could Still Change This Conclusion:');
+    artifact.rationale.counterConsiderations.forEach((item, i) => lines.push(`  ${i + 1}. ${item}`));
+  }
+  if (artifact.rationale.sources.length > 0) {
+    lines.push('');
+    lines.push('Authorities Relied On:');
+    artifact.rationale.sources.forEach((source, i) => lines.push(`  ${i + 1}. ${source}`));
   }
   lines.push('');
 

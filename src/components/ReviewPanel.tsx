@@ -13,13 +13,13 @@ import {
   docRequirements,
   findGuidanceLink,
   getSourceBadge,
-  ruleReasoningLibrary,
   questionReasoningLibrary,
 } from '../lib/content';
 import { changeTaxonomy } from '../lib/assessment-engine';
 import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
 import type { ReviewerNote } from '../lib/assessment-store';
 import { classifySource } from '../lib/source-classification';
+import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
 
 interface ReviewPanelProps {
   pathway: string;
@@ -43,25 +43,6 @@ const pathwayToDocKey: Record<string, string> = {
   [Pathway.PMASupplementRequired]: "PMA Supplement Required",
   [Pathway.PMAAnnualReport]: "PMA Annual Report / Letter to File",
   [Pathway.AssessmentIncomplete]: "Assessment Incomplete",
-};
-
-// Map determination rules to reasoning library keys
-const getRuleKey = (determination: any): string | null => {
-  if (determination.isIntendedUseChange) return "SCREEN-01-Yes";
-  if (determination.isIntendedUseUncertain) return "SCREEN-01-Uncertain";
-  // PMA-specific rules — check before 510(k) framework rules
-  if (determination.pathway === Pathway.PMASupplementRequired) return "PMA-Supplement";
-  if (determination.pathway === Pathway.PMAAnnualReport) return "PMA-AnnualReport";
-  // 510(k)/De Novo framework rules
-  if (determination.deNovoDeviceTypeFitFailed) return "DENOVO-FIT-FAILED";
-  if (determination.isCyberOnly) return "SCREEN-02-Yes";
-  if (determination.isBugFix) return "SCREEN-03-Yes";
-  // PCCP — applicable to both PMA and 510(k)/De Novo
-  if (determination.pccpScopeVerified) return "PCCP-Verified";
-  if (determination.pccpScopeFailed) return "PCCP-Failed";
-  if (determination.isSignificant) return "RISK-01-Yes";
-  if (determination.pathway === Pathway.LetterToFile) return "LTF-NonSignificant";
-  return null;
 };
 
 // Source class to AuthorityTag level mapping
@@ -134,10 +115,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   // Get documentation requirements for this pathway
   const docKey = pathwayToDocKey[pathway];
   const docs = docKey ? docRequirements[docKey] : null;
-
-  // Get rule reasoning for the determination
-  const ruleKey = getRuleKey(determination);
-  const ruleReasoning = ruleKey ? ruleReasoningLibrary[ruleKey] : null;
+  const caseReasoning = useMemo(
+    () => buildCaseSpecificReasoning(answers, determination, blocks, getQuestionsForBlock),
+    [answers, determination, blocks, getQuestionsForBlock],
+  );
 
   // Pathway styling
   const getPathwayConfig = () => {
@@ -762,20 +743,67 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       }}>
 
         {/* Regulatory Reasoning */}
-        {ruleReasoning && (
+        {caseReasoning && (
           <CollapsibleSection id="reasoning" title="Regulatory Reasoning">
-            <div style={{
-              fontSize: 14,
-              color: '#374151',
-              lineHeight: 1.7,
-              marginBottom: 16,
-            }}>
-              <HelpTextWithLinks text={ruleReasoning.text} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {caseReasoning.narrative.map((paragraph, index) => (
+                <div
+                  key={`reasoning-paragraph-${index}`}
+                  style={{
+                    fontSize: 14,
+                    color: '#374151',
+                    lineHeight: 1.7,
+                  }}
+                >
+                  <HelpTextWithLinks text={paragraph} />
+                </div>
+              ))}
             </div>
 
-            {(ruleReasoning.verify || ruleReasoning.counter) && (
+            {caseReasoning.decisionPath.length > 0 && (
+              <div style={{
+                marginTop: 16,
+                padding: '14px 16px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 6,
+              }}>
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#475569',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 10,
+                }}>
+                  Case-Specific Decision Path
+                </div>
+                <ol style={{
+                  margin: 0,
+                  paddingLeft: 18,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}>
+                  {caseReasoning.decisionPath.map((step, index) => (
+                    <li
+                      key={`decision-step-${index}`}
+                      style={{
+                        fontSize: 13,
+                        color: '#334155',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <HelpTextWithLinks text={step} />
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {(caseReasoning.verificationSteps.length > 0 || caseReasoning.counterConsiderations.length > 0) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-                {ruleReasoning.verify && (
+                {caseReasoning.verificationSteps.length > 0 && (
                   <details style={{
                     background: '#f9fafb',
                     border: '1px solid #e5e7eb',
@@ -793,20 +821,36 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       gap: 8,
                     }}>
                       <Icon name="checkCircle" size={14} color="#16a34a" />
-                      Verification Steps
+                      Case-Specific Verification Focus
                     </summary>
                     <div style={{
                       padding: '12px 14px',
                       borderTop: '1px solid #e5e7eb',
-                      fontSize: 13,
-                      color: '#6b7280',
-                      lineHeight: 1.6,
                     }}>
-                      <HelpTextWithLinks text={ruleReasoning.verify} />
+                      <ul style={{
+                        margin: 0,
+                        paddingLeft: 18,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}>
+                        {caseReasoning.verificationSteps.map((step, index) => (
+                          <li
+                            key={`verification-step-${index}`}
+                            style={{
+                              fontSize: 13,
+                              color: '#6b7280',
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            <HelpTextWithLinks text={step} />
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </details>
                 )}
-                {ruleReasoning.counter && (
+                {caseReasoning.counterConsiderations.length > 0 && (
                   <details style={{
                     background: '#f9fafb',
                     border: '1px solid #e5e7eb',
@@ -824,33 +868,53 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       gap: 8,
                     }}>
                       <Icon name="alert" size={14} color="#d97706" />
-                      Counter-Considerations
+                      What Could Still Change This Conclusion
                     </summary>
                     <div style={{
                       padding: '12px 14px',
                       borderTop: '1px solid #e5e7eb',
-                      fontSize: 13,
-                      color: '#6b7280',
-                      lineHeight: 1.6,
                     }}>
-                      <HelpTextWithLinks text={ruleReasoning.counter} />
+                      <ul style={{
+                        margin: 0,
+                        paddingLeft: 18,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}>
+                        {caseReasoning.counterConsiderations.map((item, index) => (
+                          <li
+                            key={`counter-item-${index}`}
+                            style={{
+                              fontSize: 13,
+                              color: '#6b7280',
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            <HelpTextWithLinks text={item} />
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </details>
                 )}
               </div>
             )}
 
-            {ruleReasoning.source && (
+            {caseReasoning.sources.length > 0 && (
               <div style={{
                 marginTop: 16,
                 paddingTop: 12,
                 borderTop: '1px solid #f3f4f6',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
               }}>
-                <span style={{ fontSize: 11, color: '#9ca3af' }}>Source:</span>
-                <GuidanceRef code={ruleReasoning.source} />
+                <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>Authorities relied on</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {caseReasoning.sources.map((source) => (
+                    <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                      <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
+                      <EvidenceGapSourceRef code={source} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </CollapsibleSection>

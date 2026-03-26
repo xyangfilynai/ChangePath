@@ -161,7 +161,7 @@ describe('UI workflow', () => {
           isDocOnly: false,
           isPCCPImpl: false,
           consistencyIssues: [],
-          hasUncertainSignificance: false,
+          hasUncertainSignificance: true,
           seUncertain: false,
           cumulativeDriftUnresolved: false,
           pccpRecommendation: { shouldRecommend: true },
@@ -175,11 +175,12 @@ describe('UI workflow', () => {
           A3: ['US'],
           B1: 'Training Data',
           B2: 'Additional data — new clinical sites',
+          B4: 'The submitted change description reports lower sensitivity on Canon scanners and higher false-positive rates in older patients with chronic lung disease.',
           B3: 'No',
           B5: 'Manufacturer-initiated (planned improvement)',
           C1: 'No',
           C2: 'No',
-          C3: 'No',
+          C3: 'Uncertain',
           C4: 'No',
           C5: 'No',
           C6: 'Yes',
@@ -194,7 +195,12 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
-    expect(screen.getByText(/Deciding When to Submit a 510\(k\) for a Software Change to an Existing Device/i)).toBeInTheDocument();
+    expect(screen.getByText(/question C3 was answered Uncertain/i)).toBeInTheDocument();
+    expect(screen.getByText(/Clinical performance screen \(C6\): Yes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Canon scanners/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/Deciding When to Submit a 510\(k\) for a Software Change to an Existing Device/i).length,
+    ).toBeGreaterThan(0);
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
