@@ -18,13 +18,13 @@ export const ruleReasoningLibrary: Record<string, any> = {
     source: "21 CFR 807.81(a)(3); FDA-PCCP-2025 §V",
   },
   "SCREEN-02-Yes": {
-    text: "This is a pure cybersecurity hardening change with verified zero impact on device performance or clinical functionality. It qualifies for the cybersecurity exemption — no new submission needed, just a Letter to File with supporting analysis.",
+    text: "Based on the information provided, this change may be eligible for the cybersecurity exemption (documentation only — Letter to File). This eligibility must be confirmed through appropriate analysis demonstrating that the change is solely to strengthen cybersecurity with zero impact on device performance or clinical functionality.",
     verify: "FDA requires the change to be solely cybersecurity-related with no other functional impact, backed by appropriate analysis. A conservative approach is bitwise comparison of model outputs before and after the patch — though FDA's standard is appropriate analysis, not necessarily bitwise equivalence.",
     counter: "Watch for ML framework dependency updates (PyTorch, TensorFlow, ONNX) bundled with the patch — these can silently alter floating-point behavior. Significant changes to inference timing can also affect clinical workflow. Either scenario exits the exemption.",
     source: "FDA-SW-510K-2017 Q1; FDA-CYBER-2026",
   },
   "SCREEN-03-Yes": {
-    text: "This is a bug fix that restores the device to its most recently cleared specification — rolling it back to a known, authorized state. No new submission required; document in a Letter to File.",
+    text: "Based on the information provided, this change may qualify for the restore-to-specification exemption (documentation only — Letter to File). This requires confirmation that the fix restores the device to a known, documented, previously cleared configuration.",
     verify: "Confirm the restoration target matches the previously cleared configuration exactly: model weights, preprocessing pipeline, threshold values. For generative AI, verify prompt versions and knowledge base state match the validated configuration. Document the specific cleared version ID.",
     counter: "This exemption only applies when the cleared specification is well-documented. If the original configuration was ambiguous, incomplete, or poorly versioned, the exemption may not be defensible.",
     source: "FDA-SW-510K-2017 Q2",

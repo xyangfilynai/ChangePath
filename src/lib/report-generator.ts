@@ -70,7 +70,8 @@ const getRuleKey = (determination: any): string | null => {
 };
 
 function classifySource(source: string): SourceClass {
-  if (/21 CFR|§\d|FD&C|Part \d{3}/.test(source)) return 'Regulation';
+  if (/FD&C Act|FDORA|§\d{3}[A-Z]/.test(source)) return 'Regulation'; // Statutes — mapped to Regulation for SourceClass compat
+  if (/21 CFR|Part \d{3}/.test(source)) return 'Regulation';
   if (/draft/i.test(source)) return 'Draft guidance';
   if (/FDA-|Guidance|guidance/.test(source)) return 'Final guidance';
   if (/[Oo]rganization|[Ii]nternal/.test(source)) return 'Internal conservative policy';
@@ -350,7 +351,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push(hr);
   lines.push('DISCLAIMER');
   lines.push(hr);
-  lines.push('Decision support only — not a regulatory determination.');
+  lines.push('Decision support only — not a final regulatory conclusion.');
   lines.push('This tool supports internal change-control planning and submission strategy discussions.');
   lines.push('All outputs require review by qualified regulatory and clinical professionals before action.');
   lines.push('');
