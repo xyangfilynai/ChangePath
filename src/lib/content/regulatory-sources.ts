@@ -30,8 +30,8 @@ export const REG_SOURCES: Record<string, any> = {
   "21 CFR Part 860": { title: "21 CFR Part 860 — Medical Device Classification Procedures", shortName: "21 CFR Part 860", fullName: "21 CFR Part 860 — Medical Device Classification Procedures (including De Novo)", status: "Regulation", jurisdiction: "US", url: "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-H/part-860" },
   "21 CFR Part 820": { title: "21 CFR Part 820 — Quality System Regulation (QMSR)", shortName: "21 CFR Part 820 (QMSR)", fullName: "21 CFR Part 820 — Quality System Regulation (QMSR, incorporating ISO 13485:2016)", status: "Regulation", jurisdiction: "US", url: "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-H/part-820" },
   "FDA Q-Sub": { title: "Requests for Feedback and Meetings for Medical Device Submissions: The Q-Submission Program", shortName: "FDA Q-Sub Guidance", fullName: "Requests for Feedback and Meetings for Medical Device Submissions: The Q-Submission Program", status: "Final Guidance", jurisdiction: "US", url: "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/requests-feedback-and-meetings-medical-device-submissions-q-submission-program" },
-  "FDORA 515C": { title: "Food and Drug Omnibus Reform Act (FDORA) §515C — Predetermined Change Control Plans", shortName: "FDORA §515C", fullName: "Food and Drug Omnibus Reform Act (FDORA) §515C — Predetermined Change Control Plans", status: "Regulation", jurisdiction: "US", url: "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence" },
-  "FD&C 524B": { title: "Federal Food, Drug, and Cosmetic Act §524B — Ensuring Cybersecurity of Devices", shortName: "FD&C Act §524B", fullName: "Federal Food, Drug, and Cosmetic Act §524B — Ensuring Cybersecurity of Devices", status: "Regulation", jurisdiction: "US", url: "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title21-section360n-2&num=0&edition=prelim" },
+  "FDORA 515C": { title: "Food and Drug Omnibus Reform Act (FDORA) §515C — Predetermined Change Control Plans", shortName: "FDORA §515C", fullName: "Food and Drug Omnibus Reform Act (FDORA) §515C — Predetermined Change Control Plans", status: "Statute", jurisdiction: "US", url: "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence" },
+  "FD&C 524B": { title: "Federal Food, Drug, and Cosmetic Act §524B — Ensuring Cybersecurity of Devices", shortName: "FD&C Act §524B", fullName: "Federal Food, Drug, and Cosmetic Act §524B — Ensuring Cybersecurity of Devices", status: "Statute", jurisdiction: "US", url: "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title21-section360n-2&num=0&edition=prelim" },
 };
 
 export const sourceCitations: Record<string, any> = Object.fromEntries(
@@ -98,25 +98,30 @@ export const getSourceBadge = (code: string | null | undefined) => {
   if (/GenAI|design.control/i.test(c)) return { full: c, status: "Best Practice", jurisdiction: "" };
   if (/De Novo|device-type|special-controls/i.test(c)) return { full: c, status: "Regulation", jurisdiction: "US" };
   if (/PMA Supplement/i.test(c)) return { full: c, status: "Regulation", jurisdiction: "US" };
-  return { full: c, status: "Final Guidance", jurisdiction: "" };
+  if (/FDORA|FD&C Act|§\d{3}[A-Z]/.test(c)) return { full: c, status: "Statute", jurisdiction: "US" };
+  return { full: c, status: "Unclassified", jurisdiction: "" };
 };
 
 export const statusBadgeStyle = (status: string | null | undefined) => {
   const s = (status || "").toLowerCase();
+  if (s === "statute") return { bg: "#EDE9FE", color: "#6D28D9", border: "#C4B5FD" };
   if (s === "regulation") return { bg: "#EFF6FF", color: "#2563EB", border: "#D0E3FF" };
   if (s === "standard") return { bg: "#F0F0FF", color: "#6B5CE7", border: "#D8D5F0" };
   if (s === "draft guidance") return { bg: "#FEF7E0", color: "#B8860B", border: "#F5E6B8" };
   if (s === "best practice") return { bg: "#F8F6F1", color: "#64748B", border: "#E2DED5" };
   if (s === "internal policy") return { bg: "#F1F0F8", color: "#7C6FA0", border: "#DDD8EE" };
+  if (s === "unclassified") return { bg: "#F9FAFB", color: "#9CA3AF", border: "#E5E7EB" };
   return { bg: "#E7F5EE", color: "#1B7D56", border: "#C6E7D4" }; // Final Guidance (default)
 };
 
 export const statusBadgeLabel = (status: string | null | undefined) => {
   const s = (status || "").toLowerCase();
+  if (s === "statute") return "STATUTE";
   if (s === "regulation") return "REGULATION";
   if (s === "standard") return "STANDARD";
   if (s === "draft guidance") return "DRAFT GUIDANCE";
   if (s === "best practice") return "BEST PRACTICE";
   if (s === "internal policy") return "INTERNAL POLICY";
+  if (s === "unclassified") return "UNCLASSIFIED";
   return "FINAL GUIDANCE";
 };
