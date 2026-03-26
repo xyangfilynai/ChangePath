@@ -706,262 +706,39 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       </div>
 
-      {/* ─ DETAILED REVIEW: Full-width accordion ─ */}
-      <details style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: 24,
-      }}>
-        <summary style={{
-          listStyle: 'none',
-          cursor: 'pointer',
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}>
-          <div>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 2,
-            }}>
-              Detailed Review
-            </div>
-            <div style={{
-              fontSize: 12.5,
-              color: '#6b7280',
-              lineHeight: 1.5,
-            }}>
-              Full rationale, documentation requirements, and supporting authorities.
-            </div>
-          </div>
-          <Icon name="arrowDown" size={16} color="#9ca3af" />
-        </summary>
-
+      {/* ─ AUTHORITIES REFERENCES ─ */}
+      {caseReasoning.sources.length > 0 && (
         <div style={{
-          borderTop: '1px solid #e5e7eb',
-          padding: '20px 24px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 24,
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '18px 20px',
+          marginBottom: 24,
         }}>
-          {/* Advisory / supporting evidence */}
-          {advisoryItems.length > 0 && (
-            <div>
-              <SectionLabel>Supporting Evidence</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {advisoryItems.map((item) => (
-                  <div key={`advisory-${item.id}`} style={{
-                    padding: '12px 14px',
-                    borderRadius: 6,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                  }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#111827',
-                      lineHeight: 1.45,
-                      marginBottom: 4,
-                    }}>
-                      <HelpTextWithLinks text={item.title} />
-                    </div>
-                    <div style={{
-                      fontSize: 12.5,
-                      color: '#4b5563',
-                      lineHeight: 1.6,
-                    }}>
-                      <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* MERGED RATIONALE SECTION */}
-          <div>
-            <SectionLabel>Decision Rationale</SectionLabel>
-
-            {/* Supporting reasoning paragraphs */}
-            {reportNarrative.supportingReasoning.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                {reportNarrative.supportingReasoning.map((paragraph, index) => (
-                  <div
-                    key={`reasoning-paragraph-${index}`}
-                    style={{
-                      fontSize: 13,
-                      color: '#374151',
-                      lineHeight: 1.65,
-                    }}
-                  >
-                    <HelpTextWithLinks text={paragraph} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Decision path */}
-            {caseReasoning.decisionPath.length > 0 && (
-              <div style={{
-                marginBottom: 16,
-                padding: '12px 14px',
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 6,
-              }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 8,
-                }}>
-                  How This Route Was Reached
-                </div>
-                <ol style={{
-                  margin: 0,
-                  paddingLeft: 18,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}>
-                  {caseReasoning.decisionPath
-                    .filter((step) => !step.startsWith('Result:'))
-                    .map((step, index) => (
-                    <li
-                      key={`decision-step-${index}`}
-                      style={{
-                        fontSize: 12.5,
-                        color: '#334155',
-                        lineHeight: 1.55,
-                      }}
-                    >
-                      <HelpTextWithLinks text={step} />
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {/* Verification and counter-considerations */}
-            {(caseReasoning.verificationSteps.length > 0 || caseReasoning.counterConsiderations.length > 0) && (
-              <div style={{ display: 'grid', gap: 12 }}>
-                {caseReasoning.verificationSteps.length > 0 && (
-                  <div style={{
-                    padding: '12px 14px',
-                    background: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                  }}>
-                    <div style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#475569',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      marginBottom: 8,
-                    }}>
-                      {caseReasoning.verificationTitle || 'Verification Focus'}
-                    </div>
-                    <ul style={{
-                      margin: 0,
-                      paddingLeft: 16,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                    }}>
-                      {caseReasoning.verificationSteps.map((step, index) => (
-                        <li
-                          key={`verification-step-${index}`}
-                          style={{
-                            fontSize: 12.5,
-                            color: '#4b5563',
-                            lineHeight: 1.55,
-                          }}
-                        >
-                          <HelpTextWithLinks text={step} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {caseReasoning.counterConsiderations.length > 0 && (
-                  <div style={{
-                    padding: '12px 14px',
-                    background: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                  }}>
-                    <div style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#475569',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      marginBottom: 8,
-                    }}>
-                      {caseReasoning.counterTitle || 'What Could Change This'}
-                    </div>
-                    <ul style={{
-                      margin: 0,
-                      paddingLeft: 16,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                    }}>
-                      {caseReasoning.counterConsiderations.map((item, index) => (
-                        <li
-                          key={`counter-item-${index}`}
-                          style={{
-                            fontSize: 12.5,
-                            color: '#4b5563',
-                            lineHeight: 1.55,
-                          }}
-                        >
-                          <HelpTextWithLinks text={item} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#475569',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            marginBottom: 12,
+          }}>
+            Authorities Relied On
           </div>
-
-          {/* DOCUMENTATION & AUTHORITIES */}
-          {caseReasoning.sources.length > 0 && (
-            <div>
-              <SectionLabel>Authorities Relied On</SectionLabel>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                padding: '12px 14px',
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 6,
-              }}>
-                {caseReasoning.sources.map((source) => (
-                  <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <span style={{ color: '#9ca3af', lineHeight: 1.4, flexShrink: 0 }}>•</span>
-                    <EvidenceGapSourceRef code={source} />
-                  </div>
-                ))}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}>
+            {caseReasoning.sources.map((source) => (
+              <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ color: '#9ca3af', lineHeight: 1.4, flexShrink: 0 }}>•</span>
+                <EvidenceGapSourceRef code={source} />
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
-      </details>
+      )}
 
       {onAddNote && (
         <div style={{
