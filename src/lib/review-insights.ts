@@ -69,19 +69,19 @@ const getRouteMeta = (determination: DeterminationResult): string =>
 
 const significanceQuestionDetails: Record<string, { label: string; short: string }> = {
   C3: {
-    label: 'C3 (new or modified cause of harm)',
+    label: 'whether the change creates a new or modified cause of harm',
     short: 'new or modified cause of harm',
   },
   C4: {
-    label: 'C4 (new hazardous situation)',
+    label: 'whether the change introduces a new hazardous situation',
     short: 'new hazardous situation',
   },
   C5: {
-    label: 'C5 (risk-control impact)',
-    short: 'risk-control impact',
+    label: 'whether the change materially alters a risk control tied to significant harm',
+    short: 'material risk-control change',
   },
   C6: {
-    label: 'C6 (clinical performance impact)',
+    label: 'whether the change materially affects clinical performance',
     short: 'clinical performance impact',
   },
 };
@@ -91,7 +91,7 @@ const getUncertainSignificanceQuestions = (answers: Answers): string[] =>
 
 const describeSignificanceUncertainty = (answers: Answers): string => {
   const uncertain = getUncertainSignificanceQuestions(answers);
-  if (uncertain.length === 0) return 'one or more route-driving significance questions remain unresolved';
+  if (uncertain.length === 0) return 'one or more key risk or performance questions remain unresolved';
   return joinWithAnd(uncertain.map((id) => significanceQuestionDetails[id].label));
 };
 
@@ -101,9 +101,9 @@ const getUncertainSignificanceTitle = (answers: Answers, changeLabel: string): s
     return `${significanceQuestionDetails[uncertain[0]].label} is still unresolved for ${changeLabel}`;
   }
   if (uncertain.length > 1) {
-    return `${joinWithAnd(uncertain.map((id) => significanceQuestionDetails[id].label))} remain unresolved for ${changeLabel}`;
+    return `Multiple key risk and performance questions are still unresolved for ${changeLabel}`;
   }
-  return `A route-driving significance screen is still unresolved for ${changeLabel}`;
+  return `A key risk or performance question is still unresolved for ${changeLabel}`;
 };
 
 const getSignificanceEvidenceNeed = (answers: Answers, changeLabel: string): string => {
@@ -111,20 +111,20 @@ const getSignificanceEvidenceNeed = (answers: Answers, changeLabel: string): str
   const evidence = uncertain.map((id) => {
     switch (id) {
       case 'C3':
-        return `For C3, show whether ${changeLabel} creates a new cause of harm or materially changes an existing harm pathway, with the affected hazards named explicitly.`;
+        return `Show whether ${changeLabel} creates a new cause of harm or materially changes an existing harm pathway, with the affected hazards named explicitly.`;
       case 'C4':
-        return `For C4, map ${changeLabel} to the hazardous situations in the risk-management file and show whether any new exposure scenario is introduced.`;
+        return `Map ${changeLabel} to the hazardous situations in the risk-management file and show whether any new exposure scenario is introduced.`;
       case 'C5':
-        return `For C5, identify every threshold, guardrail, override, monitoring rule, or mitigation touched by ${changeLabel} and document whether any control tied to significant harm changed in design or effectiveness.`;
+        return `Identify every threshold, guardrail, override, monitoring rule, or mitigation touched by ${changeLabel} and document whether any control tied to significant harm changed in design or effectiveness.`;
       case 'C6':
-        return `For C6, provide pre/post clinical performance evidence for ${changeLabel}, including site-, subgroup-, modality-, or workflow-specific analyses that match the modified use conditions.`;
+        return `Provide pre/post clinical performance evidence for ${changeLabel}, including site-, subgroup-, modality-, or workflow-specific analyses that match the modified use conditions.`;
       default:
         return null;
     }
   }).filter(Boolean);
 
   if (evidence.length === 0) {
-    return `Resolve the remaining significance screen with case-specific risk analysis and validation evidence for ${changeLabel}.`;
+    return `Resolve the remaining risk or performance question with case-specific risk analysis and validation evidence for ${changeLabel}.`;
   }
 
   return evidence.join(' ');
@@ -232,8 +232,8 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
         return {
           id,
           title: getUncertainSignificanceTitle(answers, changeLabel),
-          meta: `Internal conservative policy · ${routeMeta}`,
-          whyThisMatters: `${uncertainSummary} were answered Uncertain for ${changeLabel}. On the current record, RegAccess therefore keeps the case on the more conservative ${determination.pathway} path until those answers are resolved.`,
+          meta: `Internal decision rule · ${routeMeta}`,
+          whyThisMatters: `${uncertainSummary} were answered Uncertain for ${changeLabel}. On the current record, the assessment therefore stays on the more conservative ${determination.pathway} path until those answers are resolved.`,
           actionLabel: 'Evidence needed to close this',
           actionText: getSignificanceEvidenceNeed(answers, changeLabel),
           sourceRefs: sourceByRuleId[id],
@@ -242,9 +242,9 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       case 'pma-unresolved-safety-effectiveness-uncertainty-policy':
         return {
           id,
-          title: `C_PMA1 (safety or effectiveness impact) is still unresolved for ${changeLabel}`,
-          meta: `Internal conservative policy · ${routeMeta}`,
-          whyThisMatters: `C_PMA1 was answered Uncertain for ${changeLabel}, so the record does not yet show whether the PMA-approved device is affected in safety or effectiveness terms.`,
+          title: `Whether the change affects safety or effectiveness is still unresolved for ${changeLabel}`,
+          meta: `Internal decision rule · ${routeMeta}`,
+          whyThisMatters: `The safety-and-effectiveness review was marked Uncertain for ${changeLabel}, so the record does not yet show whether the PMA-approved device is affected in safety or effectiveness terms.`,
           actionLabel: 'Evidence needed to close this',
           actionText: `Document whether ${changeLabel} changes safety or effectiveness using pre/post evidence tied to the approved device, the approved labeling, and the specific modified design elements.`,
           sourceRefs: sourceByRuleId[id],
@@ -255,7 +255,7 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Define the authorized baseline before relying on this assessment',
           meta: `Reliability gate · ${routeMeta}`,
-          whyThisMatters: `The record is missing ${joinWithAnd(missing)}. Without a complete authorized baseline, RegAccess cannot show exactly what "${changeLabel}" is being compared against.`,
+          whyThisMatters: `The record is missing ${joinWithAnd(missing)}. Without a complete authorized baseline, the assessment cannot show exactly what "${changeLabel}" is being compared against.`,
           actionLabel: 'What to provide',
           actionText: 'Enter the authorization identifier, the cleared/approved baseline version, and the authorized IFU statement before using this assessment in any regulatory discussion.',
           sourceRefs: sourceByRuleId[id],
@@ -264,9 +264,9 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       case 'intended-use-uncertain':
         return {
           id,
-          title: `B3 (intended-use impact) is still unresolved for ${changeLabel}`,
+          title: `Whether the change affects the intended use or indications for use is still unresolved for ${changeLabel}`,
           meta: `Threshold issue · ${routeMeta}`,
-          whyThisMatters: `B3 was answered Uncertain, so the current record does not establish whether "${changeLabel}" stays inside the authorized intended use. That question overrides every lower-level significance and PCCP branch.`,
+          whyThisMatters: `The intended-use review was marked Uncertain, so the current record does not establish whether "${changeLabel}" stays inside the authorized intended use. That question has to be resolved before any significance or PCCP conclusion can be trusted.`,
           actionLabel: 'Evidence needed to close this',
           actionText: 'Compare the authorized IFU word-for-word against the post-change device description, clinical claims, population, and use setting. If internal review cannot close the gap, use an FDA Pre-Submission.',
           sourceRefs: sourceByRuleId[id],
@@ -274,9 +274,9 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       case 'cybersecurity-exemption-uncertain':
         return {
           id,
-          title: `C1 (cybersecurity-only exemption) is still unresolved for ${changeLabel}`,
+          title: `Whether this is a cybersecurity-only update is still unresolved for ${changeLabel}`,
           meta: `Final guidance · ${routeMeta}`,
-          whyThisMatters: `C1 was answered Uncertain, so the record does not yet show whether "${changeLabel}" is purely cybersecurity-related with zero functional impact.`,
+          whyThisMatters: `The cybersecurity-only review was marked Uncertain, so the record does not yet show whether "${changeLabel}" is purely cybersecurity-related with zero functional impact.`,
           actionLabel: 'Evidence needed to close this',
           actionText: 'Document whether the change is solely cybersecurity-related, show that it does not affect device behavior or ML inference outputs, and stop treating the exemption as available unless that record is complete.',
           sourceRefs: sourceByRuleId[id],
@@ -284,9 +284,9 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       case 'restore-to-spec-uncertain':
         return {
           id,
-          title: `C2 (restore-to-specification exemption) is still unresolved for ${changeLabel}`,
+          title: `Whether this change only restores a previously authorized configuration is still unresolved for ${changeLabel}`,
           meta: `Final guidance · ${routeMeta}`,
-          whyThisMatters: `C2 was answered Uncertain, so the record does not yet show whether "${changeLabel}" truly restores the device to a previously authorized configuration.`,
+          whyThisMatters: `The restore-to-specification review was marked Uncertain, so the record does not yet show whether "${changeLabel}" truly restores the device to a previously authorized configuration.`,
           actionLabel: 'Evidence needed to close this',
           actionText: 'Identify the exact authorized target state, show that the proposed fix restores the device to that state, and document that no additional functional or ML behavior changes are introduced.',
           sourceRefs: sourceByRuleId[id],
@@ -296,7 +296,7 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Reconcile population expansion with the intended-use answer',
           meta: `Regulatory consistency check · ${routeMeta}`,
-          whyThisMatters: `The record indicates that new demographic populations may be involved, while B3 was answered No. That combination can be credible only if "${changeLabel}" stays within the originally authorized population.`,
+          whyThisMatters: `The record indicates that new demographic populations may be involved, while the intended-use review says the change stays within the current scope. That combination only makes sense if "${changeLabel}" stays within the originally authorized population.`,
           actionLabel: 'What to confirm',
           actionText: 'Compare the introduced population against the cleared/approved population boundary and document why the change does or does not expand clinical scope.',
           sourceRefs: sourceByRuleId[id],
@@ -327,11 +327,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       case 'nonpma-monitoring-threshold-c5-conflict':
         return {
           id,
-          title: `Reconcile C5 (risk-control impact) with the recorded ${changeLabel} change`,
+          title: `Reconcile risk-control impact with the recorded ${changeLabel} change`,
           meta: `Risk-control consistency check · ${routeMeta}`,
           whyThisMatters: `The current answer set says the reported change does not affect risk-control significance, but the change description suggests that "${changeLabel}" may touch an existing control or mitigation.`,
           actionLabel: 'Evidence needed to close this',
-          actionText: `Review whether the modified feature in ${changeLabel} functions as a risk control tied to significant harm, and document the pre/post control design, effectiveness, and affected hazards before finalizing C5.`,
+          actionText: `Review whether the modified feature in ${changeLabel} functions as a risk control tied to significant harm, and document the pre/post control design, effectiveness, and affected hazards before finalizing the risk-control assessment.`,
           sourceRefs: sourceByRuleId[id],
         };
       case 'pma-genai-guardrail-cpma1-conflict':
@@ -343,11 +343,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       case 'pma-bias-mitigation-cpma1-conflict':
         return {
           id,
-          title: `Reconcile C_PMA1 with the recorded ${changeLabel} change`,
+          title: `Reconcile safety/effectiveness impact with the recorded ${changeLabel} change`,
           meta: `PMA consistency check · ${routeMeta}`,
           whyThisMatters: `The current answer set says the change does not affect safety or effectiveness, but the reported "${changeLabel}" modification is the kind of change that can affect PMA review obligations.`,
           actionLabel: 'Evidence needed to close this',
-          actionText: `Review ${changeLabel} against C_PMA1 and either document why the change truly has no safety/effectiveness impact or update the PMA answer set accordingly.`,
+          actionText: `Review ${changeLabel} against the PMA safety/effectiveness threshold and either document why the change truly has no safety/effectiveness impact or update the PMA answer set accordingly.`,
           sourceRefs: sourceByRuleId[id],
         };
       case 'nonpma-foundation-model-all-significance-no':
@@ -407,21 +407,21 @@ export function buildEvidenceGapInsightItems(
         return {
           ...defaultItem,
           title: `The data supporting ${changeLabel} is not yet shown to represent the cleared population`,
-          whyThisMatters: `E1 was answered ${getAnswerLabel(answers.E1)}, so the current record does not show whether the training, validation, or test data supporting ${changeLabel} represents the authorized patient population and operating conditions.`,
+          whyThisMatters: `The dataset representativeness review was answered ${getAnswerLabel(answers.E1)}, so the current record does not show whether the training, validation, or test data supporting ${changeLabel} represents the authorized patient population and operating conditions.`,
           actionText: getRepresentativenessNeed(answers, changeLabel),
         };
       case 'GAP-SUBGROUP':
         return {
           ...defaultItem,
           title: `Subgroup performance is not yet shown for the populations affected by ${changeLabel}`,
-          whyThisMatters: `E2 was answered No, so the record does not show whether ${changeLabel} performs acceptably across the relevant demographic groups or operating subgroups.`,
+          whyThisMatters: `The subgroup-performance review was answered No, so the record does not show whether ${changeLabel} performs acceptably across the relevant demographic groups or operating subgroups.`,
           actionText: getSubgroupNeed(answers, changeLabel),
         };
       case 'GAP-SIG-UNCERTAIN':
         return {
           ...defaultItem,
           title: getUncertainSignificanceTitle(answers, changeLabel),
-          whyThisMatters: `${uncertainSignificance} remain Uncertain for ${changeLabel}, so RegAccess keeps the pathway conservative until those answers are converted to documented Yes or No conclusions.`,
+          whyThisMatters: `${uncertainSignificance} remain unresolved for ${changeLabel}, so the assessment stays on the more conservative path until those questions are converted to documented Yes or No conclusions.`,
           actionLabel: 'Evidence needed to close this',
           actionText: getSignificanceEvidenceNeed(answers, changeLabel),
         };
@@ -444,43 +444,43 @@ export function buildEvidenceGapInsightItems(
       case 'GAP-IFU-UNCERTAIN':
         return {
           ...defaultItem,
-          title: `B3 (intended-use impact) is still unresolved for ${changeLabel}`,
-          whyThisMatters: `B3 was answered Uncertain, so the current record does not establish whether "${changeLabel}" stays inside the authorized intended use.`,
+          title: `Whether the change affects the intended use or indications for use is still unresolved for ${changeLabel}`,
+          whyThisMatters: `The intended-use review was marked Uncertain, so the current record does not establish whether "${changeLabel}" stays inside the authorized intended use.`,
           actionText: 'Compare the authorized IFU against the post-change device description word-for-word. If internal review cannot close the gap, prepare an FDA Pre-Submission.',
         };
       case 'GAP-IFU-MISSING':
         return {
           ...defaultItem,
-          title: `B3 (intended-use impact) has not been answered for ${changeLabel}`,
-          whyThisMatters: `The assessment cannot proceed credibly without an explicit B3 answer for "${changeLabel}".`,
+          title: `The intended-use assessment has not been completed for ${changeLabel}`,
+          whyThisMatters: `The assessment cannot proceed credibly without a clear conclusion on whether "${changeLabel}" affects the intended use or indications for use.`,
           actionText: 'Answer whether the change affects intended use before relying on any downstream significance or PCCP conclusion.',
         };
       case 'GAP-SIG-INCOMPLETE':
         return {
           ...defaultItem,
-          title: `One or more 510(k)/De Novo significance screens are still incomplete for ${changeLabel}`,
+          title: `One or more non-PMA risk or performance reviews are still incomplete for ${changeLabel}`,
           whyThisMatters: `The non-PMA significance branch is not fully answered for "${changeLabel}", so the current route cannot be treated as fully supported.`,
-          actionText: 'Complete the visible significance screens (C3-C6) and document the evidence behind each answer.',
+          actionText: 'Complete the remaining visible risk and performance reviews and document the evidence behind each answer.',
         };
       case 'GAP-POPULATION-SCOPE':
         return {
           ...defaultItem,
           title: `The record suggests population expansion for ${changeLabel}, but the authorized boundary is not yet reconciled`,
-          whyThisMatters: `E3 was answered ${getAnswerLabel(answers.E3)}, so the current record suggests that ${changeLabel} may involve populations not clearly covered by the authorized baseline.`,
+          whyThisMatters: `The population-expansion review was answered ${getAnswerLabel(answers.E3)}, so the current record suggests that ${changeLabel} may involve populations not clearly covered by the authorized baseline.`,
           actionText: 'Document exactly which populations were introduced by this change, whether each group remains inside the authorized scope, and what subgroup evidence supports that conclusion.',
         };
       case 'GAP-BIAS-ASSESSMENT-UPDATE':
         return {
           ...defaultItem,
           title: `The bias and equity review has not been updated for ${changeLabel}`,
-          whyThisMatters: `E4 was answered No, so the record still relies on the original submission-era bias analysis even though ${changeLabel} changes the current device record.`,
+          whyThisMatters: `The update to the bias and equity review was answered No, so the record still relies on the original submission-era bias analysis even though ${changeLabel} changes the current device record.`,
           actionText: 'Update the bias and equity assessment specifically for this change, naming the affected populations, environments, failure modes, and mitigations rather than relying on the original submission narrative.',
         };
       case 'GAP-BIAS-MITIGATION':
         return {
           ...defaultItem,
           title: `The modified bias mitigation in ${changeLabel} is not yet shown to remain effective`,
-          whyThisMatters: `E5 was answered ${getAnswerLabel(answers.E5)}, so the record indicates that a bias mitigation may have changed, weakened, or been removed as part of ${changeLabel}.`,
+          whyThisMatters: `The bias-mitigation review was answered ${getAnswerLabel(answers.E5)}, so the record indicates that a bias mitigation may have changed, weakened, or been removed as part of ${changeLabel}.`,
           actionText: 'Document exactly what changed in the mitigation, whether it functions as a risk control, and what validation or risk analysis shows it remains effective for the affected populations.',
         };
       case 'GAP-CUMULATIVE':
@@ -494,15 +494,15 @@ export function buildEvidenceGapInsightItems(
         return {
           ...defaultItem,
           title: `Predicate fit / substantial equivalence is still unresolved for the cumulative record`,
-          whyThisMatters: `The cumulative-change review still does not show whether substantial equivalence remains supportable after ${changeLabel}.`,
-          actionText: 'Compare the current modified device against the predicate on the full cumulative-change record and document whether substantial equivalence remains supportable after all accumulated changes.',
+          whyThisMatters: `The cumulative-change review still does not show whether substantial equivalence still holds after ${changeLabel}.`,
+          actionText: 'Compare the current modified device against the predicate on the full cumulative-change record and document whether substantial equivalence still holds after all accumulated changes.',
         };
       case 'GAP-PCCP-SCOPE':
         return {
           ...defaultItem,
           title: `This change has not yet been shown to fit inside the authorized PCCP`,
-          whyThisMatters: `An authorized PCCP may exist, but the current scope review is incomplete, so RegAccess cannot show that ${changeLabel} fits inside the authorized PCCP boundaries.`,
-          actionText: `Complete the PCCP scope gates and document the specific fit for "${changeLabel}"${changeContext?.pccpNote ? `, including this expected boundary condition: ${changeContext.pccpNote}` : ''}.`,
+          whyThisMatters: `An authorized PCCP may exist, but the current scope review is incomplete, so the assessment cannot show that ${changeLabel} fits inside the authorized PCCP boundaries.`,
+          actionText: `Complete the PCCP scope review and document the specific fit for "${changeLabel}"${changeContext?.pccpNote ? `, including this expected boundary condition: ${changeContext.pccpNote}` : ''}.`,
         };
       case 'GAP-PCCP-FAILED':
         return {
@@ -536,7 +536,7 @@ export function buildEvidenceGapInsightItems(
         return {
           ...defaultItem,
           title: `Cybersecurity-only treatment is still not supported for ${changeLabel}`,
-          whyThisMatters: `C1 was answered Uncertain, so the record does not yet show whether ${changeLabel} is a pure cybersecurity change with zero functional impact.`,
+          whyThisMatters: `The cybersecurity-only review was marked Uncertain, so the record does not yet show whether ${changeLabel} is a pure cybersecurity change with zero functional impact.`,
           actionText: 'Document either that the change is solely cybersecurity-related with zero device-behavior impact, or that it should not be treated as exemption-eligible.',
         };
       case 'GAP-PMA-INCOMPLETE':

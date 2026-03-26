@@ -127,9 +127,9 @@ describe('Case-specific reasoning credibility fixes', () => {
     );
 
     expect(reasoning.primaryReason).toContain('Additional data — new clinical sites');
-    expect(reasoning.primaryReason).toContain('question C3 was answered Uncertain');
-    expect(reasoning.decisionPath.some((step) => step.includes('Risk significance screen (C3): Uncertain'))).toBe(true);
-    expect(reasoning.decisionPath.some((step) => step.includes('Clinical performance screen (C6): Yes'))).toBe(true);
+    expect(reasoning.primaryReason).toContain('does not rule out a new or modified cause of harm');
+    expect(reasoning.decisionPath.some((step) => step.includes('New or modified cause of harm: Uncertain'))).toBe(true);
+    expect(reasoning.decisionPath.some((step) => step.includes('Clinical performance impact: Yes'))).toBe(true);
     expect(reasoning.narrative.some((paragraph) => paragraph.includes('Canon scanners'))).toBe(true);
   });
 
@@ -155,12 +155,12 @@ describe('Case-specific reasoning credibility fixes', () => {
       (blockId: string) => getQuestions(blockId, answers, ds),
     );
 
-    expect(reasoning.verificationTitle).toBe('What Evidence Confirms This Route');
-    expect(reasoning.counterTitle).toBe('What Would Need To Change To Avoid This Route');
+    expect(reasoning.verificationTitle).toBe('What supports this route');
+    expect(reasoning.counterTitle).toBe('What would change this route');
     expect(reasoning.verificationSteps.some((step) => step.includes('Layer addition / removal'))).toBe(true);
-    expect(reasoning.verificationSteps.some((step) => step.includes('Resolve C5'))).toBe(true);
+    expect(reasoning.verificationSteps.some((step) => step.includes('materially changes a risk control tied to significant harm'))).toBe(true);
     expect(
-      reasoning.counterConsiderations.some((step) => step.includes('revising C5 to No')),
+      reasoning.counterConsiderations.some((step) => step.includes('does not materially change any risk control tied to significant harm')),
     ).toBe(true);
   });
 });
@@ -183,7 +183,7 @@ describe('Review insight specificity fixes', () => {
     const item = items.find((candidate) => candidate.id === 'nonpma-unresolved-significance-uncertainty-policy');
 
     expect(item).toBeDefined();
-    expect(item?.title).toContain('C5 (risk-control impact)');
+    expect(item?.title).toContain('materially alters a risk control tied to significant harm');
     expect(item?.title).toContain('Layer addition / removal');
     expect(item?.meta).toContain('Current route: New Submission Required');
     expect(item?.actionText).toContain('threshold, guardrail, override, monitoring rule, or mitigation');
@@ -218,7 +218,7 @@ describe('Review insight specificity fixes', () => {
     expect(subgroup?.title).toContain('Additional data — new clinical sites');
     expect(subgroup?.actionText).toContain('new-site cohorts');
 
-    expect(uncertainty?.title).toContain('C3 (new or modified cause of harm)');
+    expect(uncertainty?.title).toContain('creates a new or modified cause of harm');
     expect(uncertainty?.actionText).toContain('creates a new cause of harm');
   });
 
@@ -252,8 +252,8 @@ describe('Review insight specificity fixes', () => {
     expect(text).toContain('CASE-SPECIFIC REASONING');
     expect(text).toContain('IMMEDIATE WORK');
     expect(text).toContain('PACKAGE MUST INCLUDE');
-    expect(text).toContain('The authorized IFU statement was available and used for the B3 intended-use comparison');
-    expect(text).toContain('No authorized PCCP was on file, so RegAccess did not treat PCCP as an available implementation path');
+    expect(text).toContain('The authorized Indications for Use statement was available, and the change was assessed as staying within the existing intended use and indications for use.');
+    expect(text).toContain('No authorized PCCP was on file, so there was no pre-authorized PCCP implementation path available for this case.');
     expect(text).toContain('Deciding When to Submit a 510(k) for a Software Change to an Existing Device');
     expect(text).toContain('AI-Enabled Device Software Functions: Lifecycle Management and Marketing Submission Recommendations');
     expect(text).not.toContain('ASSUMPTIONS');

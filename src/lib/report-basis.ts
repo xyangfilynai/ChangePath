@@ -75,40 +75,44 @@ export const buildAssessmentBasis = (
   if (answers.A1d) {
     if (answers.B3 === Answer.Yes || answers.B3 === Answer.No || answers.B3 === Answer.Uncertain) {
       items.push(
-        `The authorized IFU statement was available and used for the B3 intended-use comparison, which was answered ${String(answers.B3)}.`,
+        answers.B3 === Answer.Yes
+          ? 'The authorized Indications for Use statement was available, and the change was assessed as affecting the intended use or indications for use.'
+          : answers.B3 === Answer.No
+            ? 'The authorized Indications for Use statement was available, and the change was assessed as staying within the existing intended use and indications for use.'
+            : 'The authorized Indications for Use statement was available, but the record still does not establish whether the change affects the intended use or indications for use.',
       );
     } else {
       items.push(
-        'The authorized IFU statement was available, but the intended-use comparison has not yet been completed.',
+        'The authorized Indications for Use statement was available, but the intended-use assessment has not yet been completed.',
       );
     }
   } else {
     items.push(
-      'The authorized IFU statement is missing, so the intended-use comparison is not fully anchored to the cleared or approved device.',
+      'The authorized Indications for Use statement is missing, so the intended-use assessment is not fully anchored to the cleared or approved device.',
     );
   }
 
   if (answers.A2 === Answer.Yes) {
     if (determination.isPCCPImpl) {
       items.push(
-        'An authorized PCCP was on file, and the current route depends on the change remaining inside the approved PCCP boundaries, validation protocol, and cumulative limits.',
+        'An authorized PCCP was on file, and the current route depends on the change staying within the approved PCCP boundaries, validation protocol, and cumulative limits.',
       );
     } else if (determination.pccpScopeFailed) {
       items.push(
-        'An authorized PCCP was on file, but the current answers did not keep this change inside authorized PCCP scope.',
+        'An authorized PCCP was on file, but the current record does not keep this change within the authorized PCCP scope.',
       );
     } else if (determination.pccpIncomplete) {
       items.push(
-        'An authorized PCCP was on file, but the scope-verification record is incomplete, so PCCP could not be used as a reliable implementation path.',
+        'An authorized PCCP was on file, but the PCCP scope review is incomplete, so PCCP could not be used as a reliable implementation path.',
       );
     } else {
       items.push(
-        'An authorized PCCP was on file, so PCCP scope had to be evaluated as part of the routing decision even though it did not control the final route.',
+        'An authorized PCCP was on file, so PCCP scope still had to be checked even though it did not control the final route.',
       );
     }
   } else if (answers.A2 === Answer.No) {
     items.push(
-      'No authorized PCCP was on file, so RegAccess did not treat PCCP as an available implementation path for this case.',
+      'No authorized PCCP was on file, so there was no pre-authorized PCCP implementation path available for this case.',
     );
   }
 
@@ -121,11 +125,11 @@ export const buildAssessmentBasis = (
   const changeCount = getChangeCount(answers);
   if (changeCount && changeCount > 0) {
     const driftOutcome = answers.C10 === Answer.Yes
-      ? ' The cumulative-drift screen was answered Yes.'
+      ? ' The cumulative-change review indicates the device may have materially drifted from the cleared specification.'
       : answers.C10 === Answer.Uncertain
-        ? ' The cumulative-drift screen remains Uncertain.'
+        ? ' The cumulative-change review is still unresolved.'
         : answers.C10 === Answer.No
-          ? ' The cumulative-drift screen was answered No.'
+          ? ' The cumulative-change review did not indicate material drift from the cleared specification.'
           : '';
     items.push(
       `${changeCount} change${changeCount === 1 ? '' : 's'} since the last submission were reported, so cumulative-change review was included in this assessment.${driftOutcome}`,

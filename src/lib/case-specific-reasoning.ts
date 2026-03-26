@@ -123,30 +123,30 @@ const getReasoningSectionTitles = (
 ): { verificationTitle: string | null; counterTitle: string | null } => {
   if (pathway === Pathway.AssessmentIncomplete) {
     return {
-      verificationTitle: 'What Would Resolve This Case',
-      counterTitle: 'What Would Still Keep This Case Open',
+      verificationTitle: 'What would resolve this',
+      counterTitle: 'What would still keep this open',
     };
   }
   if (pathway === Pathway.ImplementPCCP) {
     return {
-      verificationTitle: 'What Must Be Confirmed Before Implementation',
-      counterTitle: 'What Would Break PCCP Eligibility',
+      verificationTitle: 'What must be confirmed before implementation',
+      counterTitle: 'What would move this out of the PCCP route',
     };
   }
   if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
     return {
-      verificationTitle: 'What Evidence Supports Staying On This Route',
-      counterTitle: 'What Would Escalate This Case',
+      verificationTitle: 'What supports staying on this route',
+      counterTitle: 'What would change this route',
     };
   }
   return {
-    verificationTitle: 'What Evidence Confirms This Route',
-    counterTitle: 'What Would Need To Change To Avoid This Route',
+    verificationTitle: 'What supports this route',
+    counterTitle: 'What would change this route',
   };
 };
 
 const getAnswerResolutionVerb = (answer: unknown): string => (
-  answer === Answer.Uncertain ? 'Resolve' : 'Support'
+  answer === Answer.Uncertain ? 'Resolve whether' : 'Support the conclusion that'
 );
 
 const getChangeSpecificVerificationStep = (
@@ -210,16 +210,16 @@ const getQuestionSpecificVerificationStep = (
   answer: unknown,
   changeLabel: string,
 ): string => {
-  const prefix = `${getAnswerResolutionVerb(answer)} ${questionId}`;
+  const prefix = getAnswerResolutionVerb(answer);
   switch (questionId) {
     case 'C3':
-      return `${prefix} with a hazard-by-hazard analysis showing whether "${changeLabel}" creates a new or modified cause of harm with patient-injury potential, including subgroup and edge-case behavior.`;
+      return `${prefix} "${changeLabel}" creates a new or modified cause of harm with patient-injury potential. Include a hazard-by-hazard analysis, including subgroup and edge-case behavior.`;
     case 'C4':
-      return `${prefix} with risk analysis showing whether "${changeLabel}" creates a hazardous situation not present in the current authorized design.`;
+      return `${prefix} "${changeLabel}" introduces a hazardous situation not present in the current authorized design. Include the supporting risk analysis.`;
     case 'C5':
-      return `${prefix} by mapping the before/after design for "${changeLabel}" to every risk control tied to significant harm and stating whether each control is unchanged, strengthened, weakened, or replaced.`;
+      return `${prefix} "${changeLabel}" materially changes a risk control tied to significant harm. Map the before/after design to each affected control and state whether it is unchanged, strengthened, weakened, or replaced.`;
     case 'C6':
-      return `${prefix} with pre/post validation for "${changeLabel}" at the cleared operating point, including subgroup-, site-, modality-, or environment-specific analyses relevant to the change.`;
+      return `${prefix} "${changeLabel}" materially affects clinical performance. Provide pre/post validation at the cleared operating point, including subgroup-, site-, modality-, or environment-specific analyses relevant to the change.`;
   }
 };
 
@@ -230,13 +230,13 @@ const getRouteChangeConditionForQuestion = (
 ): string => {
   switch (questionId) {
     case 'C3':
-      return `This case could move off ${pathway} only if the record supports revising C3 to No with evidence that "${changeLabel}" does not create a new or modified cause of harm with patient-injury potential.`;
+      return `This case could move off ${pathway} only if the record supports concluding that "${changeLabel}" does not create a new or modified cause of harm with patient-injury potential.`;
     case 'C4':
-      return `This case could move off ${pathway} only if the record supports revising C4 to No with evidence that "${changeLabel}" does not introduce a new hazardous situation.`;
+      return `This case could move off ${pathway} only if the record supports concluding that "${changeLabel}" does not introduce a new hazardous situation.`;
     case 'C5':
-      return `This case could move off ${pathway} only if the record supports revising C5 to No with evidence that "${changeLabel}" does not materially change any risk control tied to significant harm.`;
+      return `This case could move off ${pathway} only if the record supports concluding that "${changeLabel}" does not materially change any risk control tied to significant harm.`;
     case 'C6':
-      return `This case could move off ${pathway} only if the record supports revising C6 to No with evidence that "${changeLabel}" does not materially change clinical performance at the cleared operating point or in affected subgroups/contexts.`;
+      return `This case could move off ${pathway} only if the record supports concluding that "${changeLabel}" does not materially change clinical performance at the cleared operating point or in affected subgroups or use contexts.`;
   }
 };
 
@@ -290,7 +290,7 @@ export function buildCaseSpecificReasoning(
     const blockers: string[] = [];
 
     if (determination.isIntendedUseUncertain) {
-      blockers.push('question B3 was answered Uncertain, so the record does not establish whether the change stays within the authorized intended use');
+      blockers.push('the record does not establish whether the change stays within the authorized intended use or indications for use');
       addSources(sources, '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V');
       pushUnique(
         verificationSteps,
@@ -298,7 +298,7 @@ export function buildCaseSpecificReasoning(
       );
       pushUnique(
         counterConsiderations,
-        "Do not force B3 to 'No' just to continue the workflow. Intended-use uncertainty is a threshold issue and can invalidate every downstream conclusion.",
+        'Do not assume the change stays within the current intended use just to continue the workflow. Intended-use uncertainty is a threshold issue and can invalidate every downstream conclusion.',
       );
     }
 
@@ -312,20 +312,20 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.pmaIncomplete) {
-      blockers.push('the PMA safety/effectiveness question has not been answered');
+      blockers.push('the PMA safety-and-effectiveness review has not been completed');
       addSources(sources, '21 CFR 814.39(a)');
       pushUnique(
         verificationSteps,
-        'Answer the PMA safety/effectiveness question using pre/post evidence tied to the approved device and the proposed change.',
+        'Complete the PMA safety-and-effectiveness review using pre/post evidence tied to the approved device and the proposed change.',
       );
     }
 
     if (determination.pccpIncomplete) {
-      blockers.push('PCCP scope verification is incomplete, so the case cannot be closed under the authorized PCCP path');
+      blockers.push('the PCCP scope review is incomplete, so the case cannot be closed under the authorized PCCP path');
       addSources(sources, 'FDA-PCCP-2025 §V–VIII');
       pushUnique(
         verificationSteps,
-        'Complete the PCCP scope questions (P1-P5) and confirm change type fit, modification boundaries, validation protocol, monitoring, and cumulative impact.',
+        'Complete the PCCP scope review and confirm change type fit, modification boundaries, validation protocol, monitoring, and cumulative impact.',
       );
     }
 
@@ -351,16 +351,16 @@ export function buildCaseSpecificReasoning(
       );
       pushUnique(
         counterConsiderations,
-        "Under RegAccess's internal conservative policy, unresolved significance uncertainty cannot be treated as a documentation-only conclusion.",
+        'Unresolved significance uncertainty should not be treated as support for a documentation-only route.',
       );
     }
 
     if (determination.seUncertain) {
-      blockers.push('substantial equivalence supportability remains uncertain after the cumulative-change review');
+      blockers.push('it is still unclear whether substantial equivalence holds after the cumulative-change review');
       addSources(sources, '21 CFR 807.87; 21 CFR 807.92');
       pushUnique(
         verificationSteps,
-        'Reassess the modified device against the predicate and document why substantial equivalence remains supportable or why a new strategy is needed.',
+        'Reassess the modified device against the predicate and document whether substantial equivalence still holds or whether a new strategy is needed.',
       );
     }
 
@@ -374,10 +374,10 @@ export function buildCaseSpecificReasoning(
     decisionPath.push(...blockers.map((blocker) => blocker.charAt(0).toUpperCase() + blocker.slice(1) + '.'));
   } else if (determination.isIntendedUseChange) {
     narrative.push(
-      `The route is ${determination.pathway} because question B3 was answered Yes, meaning the proposed change was assessed as affecting the authorized intended use or indications for use. That threshold issue overrides the lower-level exemption, significance, and PCCP implementation branches.`,
+      `The route is ${determination.pathway} because the change was assessed as affecting the authorized intended use or indications for use. That threshold issue has to be resolved before any exemption, significance, or PCCP logic matters.`,
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
-    decisionPath.push('B3 was answered Yes, so the case was treated as an intended-use / indications change.');
+    decisionPath.push('The change was assessed as affecting the intended use or indications for use, so the case was treated as an intended-use change.');
     decisionPath.push(`Result: ${determination.pathway}.`);
     addSources(sources, '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V');
     pushUnique(
@@ -390,15 +390,15 @@ export function buildCaseSpecificReasoning(
     );
   } else if (determination.isIntendedUseUncertain) {
     narrative.push(
-      "The route is Assessment Incomplete because question B3 was answered Uncertain. The current record does not establish whether the proposed change remains within the authorized intended use, so no downstream pathway conclusion is reliable yet.",
+      'The route is Assessment Incomplete because the current record does not establish whether the proposed change remains within the authorized intended use or indications for use, so no downstream pathway conclusion is reliable yet.',
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
-    decisionPath.push('B3 was answered Uncertain, so the intended-use threshold question is unresolved.');
+    decisionPath.push('The intended-use threshold question is unresolved, so the route cannot be finalized.');
     decisionPath.push('Result: Assessment Incomplete until intended-use impact is resolved.');
     addSources(sources, '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V');
     pushUnique(
       verificationSteps,
-      'Resolve intended-use uncertainty with senior RA/clinical review or an FDA Pre-Submission before relying on any submission or documentation-only conclusion.',
+      'Resolve intended-use uncertainty with senior RA/clinical review or an FDA Pre-Submission before relying on any submission or documentation-only route.',
     );
     pushUnique(
       counterConsiderations,
@@ -408,72 +408,72 @@ export function buildCaseSpecificReasoning(
     const triggerNarratives: string[] = [];
     const triggerDecisionSteps: string[] = [];
 
-    decisionPath.push('B3 was answered No, so the case proceeded through the 510(k)/De Novo software-change significance framework.');
+    decisionPath.push('The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo software-change significance framework.');
     addSources(sources, '21 CFR 807.81(a)(3)');
 
     if (answers.C1 === Answer.No && answers.C2 === Answer.No) {
-      decisionPath.push('C1 = No and C2 = No, so neither the cybersecurity exemption nor the restore-to-specification exemption supports a documentation-only route.');
+      decisionPath.push('The change did not qualify for either the cybersecurity-only exemption or the restore-to-specification exemption.');
       addSources(sources, 'FDA-SW-510K-2017 Q1; FDA-SW-510K-2017 Q2');
     }
 
     if (answers.C3 === Answer.Yes) {
       triggerNarratives.push(
-        'question C3 was answered Yes, so the assessment affirmatively identifies a new or modified cause of harm with patient-injury potential',
+        'the record identifies a new or modified cause of harm with patient-injury potential',
       );
       triggerDecisionSteps.push(
-        'Risk significance screen (C3): Yes. The record identifies a new or modified cause of harm with patient-injury potential.',
+        'New or modified cause of harm: Yes. The record identifies a new or modified cause of harm with patient-injury potential.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3; ISO 14971:2019');
     } else if (answers.C3 === Answer.Uncertain) {
       triggerNarratives.push(
-        'question C3 was answered Uncertain, so the assessment did not rule out a new or modified cause of harm with patient-injury potential',
+        'the record does not rule out a new or modified cause of harm with patient-injury potential',
       );
       triggerDecisionSteps.push(
-        'Risk significance screen (C3): Uncertain. The record does not rule out a new or modified cause of harm with patient-injury potential.',
+        'New or modified cause of harm: Uncertain. The record does not rule out a new or modified cause of harm with patient-injury potential.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3; ISO 14971:2019');
     }
 
     if (answers.C4 === Answer.Yes) {
-      triggerNarratives.push('question C4 was answered Yes, so the case introduces an entirely new hazardous situation');
+      triggerNarratives.push('the case introduces a new hazardous situation');
       triggerDecisionSteps.push(
-        'Hazardous-situation screen (C4): Yes. The change introduces a new hazardous situation not previously covered by the record.',
+        'New hazardous situation: Yes. The change introduces a hazardous situation not previously covered by the record.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3-HazSit; ISO 14971:2019');
     } else if (answers.C4 === Answer.Uncertain) {
-      triggerNarratives.push('question C4 was answered Uncertain, so the record does not rule out a new hazardous situation');
+      triggerNarratives.push('the record does not rule out a new hazardous situation');
       triggerDecisionSteps.push(
-        'Hazardous-situation screen (C4): Uncertain. The record does not rule out a new hazardous situation.',
+        'New hazardous situation: Uncertain. The record does not rule out a new hazardous situation.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3-HazSit; ISO 14971:2019');
     }
 
     if (answers.C5 === Answer.Yes) {
       triggerNarratives.push(
-        'question C5 was answered Yes, so the change affects a risk control for a hazardous situation with significant harm potential',
+        'the change affects a risk control for a hazardous situation with significant harm potential',
       );
       triggerDecisionSteps.push(
-        'Risk-control screen (C5): Yes. The change touches a control tied to a hazardous situation with significant harm potential.',
+        'Risk-control impact: Yes. The change touches a control tied to a hazardous situation with significant harm potential.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3-RC; ISO 14971:2019');
     } else if (answers.C5 === Answer.Uncertain) {
-      triggerNarratives.push('question C5 was answered Uncertain, so the record does not rule out a material risk-control change');
+      triggerNarratives.push('the record does not rule out a material risk-control change');
       triggerDecisionSteps.push(
-        'Risk-control screen (C5): Uncertain. The record does not rule out a material change to an existing risk control.',
+        'Risk-control impact: Uncertain. The record does not rule out a material change to an existing risk control.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q3-RC; ISO 14971:2019');
     }
 
     if (answers.C6 === Answer.Yes) {
-      triggerNarratives.push('question C6 was answered Yes, so the assessment affirmatively identifies a clinically meaningful performance impact');
+      triggerNarratives.push('the record identifies a clinically meaningful performance impact');
       triggerDecisionSteps.push(
-        'Clinical performance screen (C6): Yes. The record identifies a clinically meaningful performance impact.',
+        'Clinical performance impact: Yes. The record identifies a clinically meaningful performance impact.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q4');
     } else if (answers.C6 === Answer.Uncertain) {
-      triggerNarratives.push('question C6 was answered Uncertain, so the record does not rule out clinically meaningful performance impact');
+      triggerNarratives.push('the record does not rule out a clinically meaningful performance impact');
       triggerDecisionSteps.push(
-        'Clinical performance screen (C6): Uncertain. The record does not rule out clinically meaningful performance impact.',
+        'Clinical performance impact: Uncertain. The record does not rule out a clinically meaningful performance impact.',
       );
       addSources(sources, 'FDA-SW-510K-2017 Q4');
     }
@@ -487,9 +487,9 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.seNotSupportable) {
-      triggerNarratives.push('substantial equivalence was not supportable after the cumulative-change review');
+      triggerNarratives.push('substantial equivalence could not be supported after the cumulative-change review');
       triggerDecisionSteps.push(
-        'Cumulative substantial-equivalence review: not supportable. The modified device can no longer be justified against the predicate on the current record.',
+        'Cumulative substantial-equivalence review: not supported. The modified device can no longer be justified against the predicate on the current record.',
       );
       addSources(sources, '21 CFR 807.87; 21 CFR 807.92');
     }
@@ -497,7 +497,7 @@ export function buildCaseSpecificReasoning(
     if (determination.seUncertain) {
       triggerNarratives.push('substantial equivalence remains uncertain after the cumulative-change review');
       triggerDecisionSteps.push(
-        'Cumulative substantial-equivalence review: uncertain. The current record does not yet show that substantial equivalence remains supportable.',
+        'Cumulative substantial-equivalence review: uncertain. The current record does not yet show that substantial equivalence still holds.',
       );
       addSources(sources, '21 CFR 807.87; 21 CFR 807.92');
     }
@@ -507,14 +507,14 @@ export function buildCaseSpecificReasoning(
     }
 
     if (answers.A2 === Answer.No) {
-      decisionPath.push('A2 = No, so there is no authorized PCCP path available for the current change.');
+      decisionPath.push('No authorized PCCP is on file, so there is no pre-authorized PCCP path available for this change.');
     } else if (determination.pccpScopeFailed) {
-      decisionPath.push('An authorized PCCP exists, but the scope-verification answers do not support implementing this change under that PCCP.');
+      decisionPath.push('An authorized PCCP exists, but the current scope review does not support implementing this change under that PCCP.');
       addSources(sources, 'FDA-PCCP-2025 §V–VI');
     }
 
     narrative.push(
-      `A documentation-only conclusion is not supportable on the current record. ${triggerNarratives.length > 0 ? `${joinWithAnd(triggerNarratives)}. ` : ''}${answers.A2 === Answer.No ? 'Because no authorized PCCP exists, there is also no pre-authorized implementation path for this case. ' : ''}That combination supports ${determination.pathway}.`,
+      `The current record does not support a documentation-only route. ${triggerNarratives.length > 0 ? `${joinWithAnd(triggerNarratives)}. ` : ''}${answers.A2 === Answer.No ? 'Because no authorized PCCP exists, there is no pre-authorized PCCP path for this change. ' : ''}That combination supports ${determination.pathway}.`,
     );
 
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
@@ -524,7 +524,7 @@ export function buildCaseSpecificReasoning(
     if (answers.B4) {
       pushUnique(
         verificationSteps,
-        `Tie the route-driving answer(s) for "${changeLabel}" to the specific before/after observations described in the submitted change description, rather than relying only on the change classification.`,
+        `Tie each answer that drove the route for "${changeLabel}" to the specific before/after observations described in the submitted change description, rather than relying only on the change classification.`,
       );
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
@@ -580,10 +580,10 @@ export function buildCaseSpecificReasoning(
   } else if (determination.pathway === Pathway.LetterToFile) {
     if (determination.isCyberOnly) {
       narrative.push(
-        'The route is Letter to File because C1 was answered Yes and the change was assessed as solely strengthening cybersecurity with no intended-use change and no claimed performance or functional impact.',
+        'The route is Letter to File because the change was assessed as a cybersecurity-only update with no intended-use change and no claimed performance or functional impact.',
       );
-      decisionPath.push('B3 was answered No, so the case stayed within the software-change framework.');
-      decisionPath.push('C1 was answered Yes, so the cybersecurity exemption is the basis for the documentation-only route.');
+      decisionPath.push('The change was assessed as staying within the existing intended use and indications for use.');
+      decisionPath.push('The change qualifies for the cybersecurity-only documentation route.');
       addSources(sources, 'FDA-SW-510K-2017 Q1; FDA-CYBER-2026');
       pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
@@ -596,10 +596,10 @@ export function buildCaseSpecificReasoning(
       );
     } else if (determination.isBugFix) {
       narrative.push(
-        'The route is Letter to File because C2 was answered Yes and the change was assessed as restoring the device to a known, documented, previously authorized specification.',
+        'The route is Letter to File because the change was assessed as restoring the device to a known, documented, previously authorized specification.',
       );
-      decisionPath.push('B3 was answered No, so the case stayed within the software-change framework.');
-      decisionPath.push('C2 was answered Yes, so the restore-to-specification exemption is the basis for the documentation-only route.');
+      decisionPath.push('The change was assessed as staying within the existing intended use and indications for use.');
+      decisionPath.push('The change qualifies for the restore-to-specification documentation route.');
       addSources(sources, 'FDA-SW-510K-2017 Q2');
       pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
@@ -612,13 +612,13 @@ export function buildCaseSpecificReasoning(
       );
     } else {
       narrative.push(
-        'The route is Letter to File because B3 was answered No, the case did not qualify for a documentation-only exemption path, and the significance branch still came back all No: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
+        'The route is Letter to File because the change was assessed as staying within the existing intended use and indications for use, it did not qualify for a documentation-only exemption path, and the risk and performance review still came back all No: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
       );
-      decisionPath.push('B3 was answered No, so the case proceeded through the 510(k)/De Novo significance framework.');
+      decisionPath.push('The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo significance framework.');
       if (answers.C1 === Answer.No && answers.C2 === Answer.No) {
-        decisionPath.push('C1 = No and C2 = No, so the route is not based on an exemption shortcut.');
+        decisionPath.push('The route is not based on a cybersecurity-only or restore-to-specification exemption.');
       }
-      decisionPath.push('C3-C6 were all answered No, so the case did not trigger a new submission on the current record.');
+      decisionPath.push('The core risk and performance reviews did not trigger a new submission on the current record.');
       addSources(sources, 'FDA-SW-510K-2017 Q3; FDA-SW-510K-2017 Q4');
       pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
@@ -628,12 +628,12 @@ export function buildCaseSpecificReasoning(
       if (answers.B4) {
         pushUnique(
           verificationSteps,
-          `Show why the specific facts described in the submitted change description do not require any of C3, C4, C5, or C6 to move away from No.`,
+          `Show why the specific facts described in the submitted change description do not require any of the core risk or performance conclusions to move away from No.`,
         );
       }
       pushUnique(
         counterConsiderations,
-        `This case would leave ${determination.pathway} if additional review of "${changeLabel}" requires any of C3, C4, C5, or C6 to change from No to Yes or Uncertain.`,
+        `This case would leave ${determination.pathway} if additional review of "${changeLabel}" requires any of the core risk or performance conclusions to change from No to Yes or Uncertain.`,
       );
     }
 
@@ -645,8 +645,8 @@ export function buildCaseSpecificReasoning(
     if (determination.isSignificant || determination.pmaRequiresSupplement) {
       pccpSteps.push('the underlying change would otherwise require a new submission or PMA supplement');
     }
-    pccpSteps.push('A2 was answered Yes, confirming an authorized PCCP is on file');
-    pccpSteps.push('the PCCP scope questions were answered Yes through every applicable gate');
+    pccpSteps.push('an authorized PCCP is on file');
+    pccpSteps.push('the PCCP scope review was satisfied through every applicable gate');
     addSources(sources, 'FDA-PCCP-2025 §V–VIII');
 
     narrative.push(
@@ -659,8 +659,8 @@ export function buildCaseSpecificReasoning(
         ? 'The underlying change would otherwise require regulatory handling beyond routine documentation.'
         : 'The change was still checked against the PCCP boundaries before implementation.',
     );
-    decisionPath.push('A2 = Yes, so an authorized PCCP is available.');
-    decisionPath.push('P1-P5 were satisfied as applicable, so the current change remains within authorized PCCP scope.');
+    decisionPath.push('An authorized PCCP is available.');
+    decisionPath.push('The PCCP scope review was satisfied across the applicable gates, so the current change remains within authorized PCCP scope.');
     decisionPath.push(`Result: ${determination.pathway}.`);
 
     pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
@@ -687,18 +687,18 @@ export function buildCaseSpecificReasoning(
   } else if (determination.pathway === Pathway.PMASupplementRequired) {
     const pmaDrivers: string[] = [];
     if (answers.C_PMA1 === Answer.Yes) {
-      pmaDrivers.push('C_PMA1 was answered Yes, so the assessment affirmatively identifies a change affecting safety or effectiveness');
+      pmaDrivers.push('the safety-and-effectiveness review indicates the change affects safety or effectiveness');
     } else if (answers.C_PMA1 === Answer.Uncertain) {
-      pmaDrivers.push('C_PMA1 was answered Uncertain, so the assessment did not rule out a safety or effectiveness impact');
+      pmaDrivers.push('the safety-and-effectiveness review does not rule out a safety or effectiveness impact');
     }
     if (answers.C_PMA2 === Answer.Yes) {
-      pmaDrivers.push('C_PMA2 was answered Yes, so device labeling is affected');
+      pmaDrivers.push('the record indicates device labeling is affected');
     }
     if (answers.C_PMA3 === Answer.Yes) {
-      pmaDrivers.push('C_PMA3 was answered Yes, so the manufacturing process or facility is affected');
+      pmaDrivers.push('the record indicates the manufacturing process or facility is affected');
     }
     if (answers.C_PMA4) {
-      pmaDrivers.push(`the anticipated PMA route was identified as "${answers.C_PMA4 as string}"`);
+      pmaDrivers.push(`the planned PMA submission route was identified as "${answers.C_PMA4 as string}"`);
     }
 
     narrative.push(
@@ -727,7 +727,7 @@ export function buildCaseSpecificReasoning(
     }
     pushUnique(
       counterConsiderations,
-      `This case could move down from ${determination.pathway} only if the record supports revising C_PMA1 to No with evidence that "${changeLabel}" does not affect safety or effectiveness.`,
+      `This case could move down from ${determination.pathway} only if the record supports concluding that "${changeLabel}" does not affect safety or effectiveness.`,
     );
     pushUnique(
       counterConsiderations,
@@ -735,19 +735,19 @@ export function buildCaseSpecificReasoning(
     );
   } else if (determination.pathway === Pathway.PMAAnnualReport) {
     narrative.push(
-      'This is a PMA-approved device, and C_PMA1 was answered No, meaning the current record does not identify a safety or effectiveness impact from the proposed change. That keeps the case in PMA annual-report / Letter-to-File handling rather than a PMA supplement.',
+      'This is a PMA-approved device, and the safety-and-effectiveness review was answered No, meaning the current record does not identify a safety or effectiveness impact from the proposed change. That keeps the case in PMA annual-report / Letter-to-File handling rather than a PMA supplement.',
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
 
     decisionPath.push('The device is PMA-approved, so the assessment used the PMA safety/effectiveness threshold.');
-    decisionPath.push('C_PMA1 was answered No, so the current record does not support a PMA supplement trigger.');
+    decisionPath.push('The safety-and-effectiveness review was answered No, so the current record does not support a PMA supplement trigger.');
     decisionPath.push(`Result: ${determination.pathway}.`);
 
     addSources(sources, '21 CFR 814.39(b); 21 CFR 814.84');
     pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
     pushUnique(
       verificationSteps,
-      `Retain the evidence supporting the No answer to C_PMA1 and document why "${changeLabel}" does not affect safety or effectiveness.`,
+      `Retain the evidence supporting the conclusion that "${changeLabel}" does not affect safety or effectiveness.`,
     );
     pushUnique(
       counterConsiderations,

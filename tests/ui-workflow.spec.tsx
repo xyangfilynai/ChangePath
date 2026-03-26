@@ -183,13 +183,13 @@ describe('UI workflow', () => {
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
     expect(screen.getByText('Case Snapshot')).toBeInTheDocument();
-    expect(screen.getByText('Recommended Route')).toBeInTheDocument();
-    expect(screen.getByText('What To Do Next')).toBeInTheDocument();
-    expect(screen.getByText('Blockers Before Reliance')).toBeInTheDocument();
+    expect(screen.getByText('Current Route')).toBeInTheDocument();
+    expect(screen.getByText('Next Step')).toBeInTheDocument();
+    expect(screen.getByText('What Still Needs Resolution')).toBeInTheDocument();
     expect(screen.getByText('No authorized PCCP')).toBeInTheDocument();
-    expect(screen.getAllByText(/Risk significance screen \(C3\): Uncertain/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Clinical performance screen \(C6\): Yes/i).length).toBeGreaterThan(0);
-    expect(screen.getByText('More Detail')).toBeInTheDocument();
+    expect(screen.getAllByText(/New or modified cause of harm: Uncertain/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Clinical performance impact: Yes/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Detailed Rationale')).toBeInTheDocument();
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
@@ -233,10 +233,10 @@ describe('UI workflow', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/List each newly added site for Additional data — new clinical sites/i)).toBeInTheDocument();
     expect(
-      screen.getAllByText(/C3 \(new or modified cause of harm\) is still unresolved for Additional data — new clinical sites/i).length,
+      screen.getAllByText(/whether the change creates a new or modified cause of harm is still unresolved for Additional data — new clinical sites/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('Blockers Before Reliance')).toBeInTheDocument();
-    expect(screen.getByText('More Detail')).toBeInTheDocument();
+    expect(screen.getByText('What Still Needs Resolution')).toBeInTheDocument();
+    expect(screen.getByText('Detailed Rationale')).toBeInTheDocument();
     expect(screen.queryByText('Package Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Documentation Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Regulatory Glossary')).not.toBeInTheDocument();

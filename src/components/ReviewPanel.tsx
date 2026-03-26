@@ -112,7 +112,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   const getPathwayConfig = () => {
     const hasIssues = determination.consistencyIssues?.length > 0;
-    const hasUncertainty = determination.hasUncertainSignificance || determination.seUncertain || determination.cumulativeDriftUnresolved;
 
     switch (pathway) {
       case Pathway.LetterToFile:
@@ -121,14 +120,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: hasIssues ? '#fffbeb' : '#f0fdf4',
           border: hasIssues ? '#fde68a' : '#bbf7d0',
           accent: hasIssues ? '#d97706' : '#16a34a',
-          statusLabel: hasIssues ? 'Documentation Only — Preliminary (Review Required)' : 'Documentation Only',
+          statusLabel: 'Documentation-only route',
         };
       case Pathway.ImplementPCCP:
         return {
           bg: '#eff6ff',
           border: '#bfdbfe',
           accent: '#2563eb',
-          statusLabel: 'PCCP Implementation',
+          statusLabel: 'Authorized PCCP route',
         };
       case Pathway.NewSubmission:
       case Pathway.PMASupplementRequired:
@@ -136,21 +135,21 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: '#fef2f2',
           border: '#fecaca',
           accent: '#dc2626',
-          statusLabel: hasUncertainty ? 'Submission Required (Uncertainty-Driven — Internal Conservative Policy)' : 'Submission Required',
+          statusLabel: 'Submission route',
         };
       case Pathway.AssessmentIncomplete:
         return {
           bg: '#fffbeb',
           border: '#fde68a',
           accent: '#d97706',
-          statusLabel: 'Assessment Incomplete — More Input Required',
+          statusLabel: 'Assessment not complete',
         };
       default:
         return {
           bg: '#f9fafb',
           border: '#e5e7eb',
           accent: '#6b7280',
-          statusLabel: 'Unknown',
+          statusLabel: 'Route summary',
         };
     }
   };
@@ -203,13 +202,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       return 'Complete the PMA safety/effectiveness, labeling, and manufacturing questions before the determination can be finalized';
     }
     if (determination.pccpIncomplete) {
-      return 'Complete the PCCP scope verification questions (P1–P5) to determine whether this change can be implemented under the authorized PCCP';
+      return 'Complete the PCCP scope review to determine whether this change can be implemented under the authorized PCCP';
     }
     if (determination.hasUncertainSignificance) {
-      return "Resolve uncertain significance answers — gather additional evidence or consult with RA/clinical experts to convert 'Uncertain' responses to 'Yes' or 'No'";
+      return "Resolve the unresolved risk and performance questions using validation evidence and RA/clinical review so each answer can be closed as 'Yes' or 'No'";
     }
     if (determination.seUncertain) {
-      return 'Resolve substantial equivalence uncertainty — compare the modified device against the predicate and consult RA if needed';
+      return 'Resolve whether substantial equivalence still holds on the full cumulative record, then confirm whether a different regulatory path is needed';
     }
     return 'Complete remaining assessment questions to finalize the determination';
   };
@@ -339,8 +338,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const relianceState = useMemo(() => {
     if (isIncomplete) {
       return {
-        label: 'Assessment incomplete',
-        detail: 'Critical questions remain unresolved, so the route is not ready to rely on yet.',
+        label: 'Not ready yet',
+        detail: 'Critical questions are still unanswered or unresolved, so the route cannot be finalized yet.',
         bg: '#fff7ed',
         border: '#fdba74',
         text: '#9a3412',
@@ -350,8 +349,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     if (mergedBlockers.length > 0 || hasCriticalGaps || isDocOnlyWithCriticalGaps) {
       const blockerCount = mergedBlockers.length > 0 ? mergedBlockers.length : criticalGaps.length;
       return {
-        label: 'Preliminary',
-        detail: `${blockerCount} blocker${blockerCount === 1 ? '' : 's'} still need resolution before this route should be relied on.`,
+        label: 'Open issues remain',
+        detail: `${blockerCount} open issue${blockerCount === 1 ? '' : 's'} still need resolution before this route should be used as the basis for action.`,
         bg: '#fffbeb',
         border: '#fde68a',
         text: '#92400e',
@@ -359,8 +358,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     }
 
     return {
-      label: 'No blockers surfaced on the current record',
-      detail: 'The current route is ready for the next workflow step, subject to normal expert review.',
+      label: 'Ready to proceed',
+      detail: 'No unresolved issues are surfaced in the current record, so the route is ready for the next workflow step, subject to normal expert review.',
       bg: '#f0fdf4',
       border: '#bbf7d0',
       text: '#166534',
@@ -476,7 +475,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               letterSpacing: '0.04em',
               marginBottom: 8,
             }}>
-              Recommended Route
+              Current Route
             </div>
             <h1 style={{
               fontSize: 24,
@@ -485,7 +484,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               margin: '0 0 12px',
               lineHeight: 1.2,
             }}>
-              {isIncomplete ? 'Assessment Incomplete — Expert Review Required' : pathway}
+              {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
             </h1>
             <p style={{
               fontSize: 13,
@@ -579,7 +578,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               letterSpacing: '0.04em',
               marginBottom: 8,
             }}>
-              What To Do Next
+              Next Step
             </div>
             <div style={{
               fontSize: 14,
@@ -640,7 +639,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               letterSpacing: '0.04em',
               marginBottom: 4,
             }}>
-              Blockers Before Reliance
+              What Still Needs Resolution
             </div>
             <div style={{
               fontSize: 13,
@@ -648,8 +647,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               lineHeight: 1.55,
             }}>
               {mergedBlockers.length > 0
-                ? 'These are the highest-priority items that still need resolution before the current route should be relied on.'
-                : 'No unresolved blockers are surfaced from the current record.'}
+                ? 'These are the highest-priority issues that still need to be resolved before this route should be used for action.'
+                : 'No open issues are surfaced from the current record.'}
             </div>
           </div>
           {remainingBlockerCount > 0 && (
@@ -662,7 +661,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               background: '#fffbeb',
               border: '1px solid #fde68a',
             }}>
-              {remainingBlockerCount} more in details
+              {remainingBlockerCount} more in the detailed review
             </div>
           )}
         </div>
@@ -728,7 +727,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             color: '#166534',
             lineHeight: 1.6,
           }}>
-            The current record does not surface unresolved blocker items in the report summary.
+            The current record does not surface unresolved open issues in the report summary.
           </div>
         )}
       </div>
@@ -758,14 +757,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               letterSpacing: '0.04em',
               marginBottom: 4,
             }}>
-              More Detail
+              Detailed Rationale
             </div>
             <div style={{
               fontSize: 13,
               color: '#6b7280',
               lineHeight: 1.55,
             }}>
-              Full blocker explanations, detailed rationale, verification focus, and source references.
+              Open issues, supporting rationale, verification focus, and source documents.
             </div>
           </div>
           <Icon name="arrowDown" size={16} color="#9ca3af" />
@@ -787,7 +786,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 letterSpacing: '0.04em',
                 marginBottom: 12,
               }}>
-                All Blockers Before Reliance
+                All Open Issues
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {mergedBlockers.map((item) => (
@@ -870,7 +869,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 letterSpacing: '0.04em',
                 marginBottom: 12,
               }}>
-                Additional Evidence That Could Strengthen The Record
+                Additional Supporting Evidence
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {advisoryItems.map((item) => (
@@ -988,7 +987,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                   letterSpacing: '0.04em',
                   marginBottom: 10,
                 }}>
-                  Case-Specific Decision Path
+                  How This Route Was Reached
                 </div>
                 <ol style={{
                   margin: 0,
@@ -1306,7 +1305,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               margin: '0 0 var(--space-xs)',
             }}>
               {consistencyIssues.length > 0
-                ? 'Preliminary — resolve flagged issues before relying on this determination'
+                ? 'Open issues remain before this route should be used'
                 : 'Ready to prepare documentation?'}
             </h4>
             <p style={{
@@ -1316,8 +1315,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               margin: 0,
             }}>
               {consistencyIssues.length > 0
-                ? 'This assessment has unresolved items that require expert review. The preparation checklist is available but should not be treated as a final regulatory conclusion.'
-                : 'Open the preparation checklist for the determined pathway.'}
+                ? 'This assessment still contains unresolved issues that need expert review. The preparation checklist is available, but the route should not be treated as final until those issues are closed.'
+                : 'Open the preparation checklist for this route.'}
             </p>
           </div>
           <button
