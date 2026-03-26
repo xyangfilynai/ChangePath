@@ -57,34 +57,6 @@ const CompactBadge: React.FC<{ label: string; bg: string; border: string; text: 
   </span>
 );
 
-const InfoCard: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div style={{
-    padding: '10px 12px',
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    borderRadius: 6,
-  }}>
-    <div style={{
-      fontSize: 10,
-      fontWeight: 700,
-      color: '#64748b',
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-      marginBottom: 4,
-    }}>
-      {label}
-    </div>
-    <div style={{
-      fontSize: 13,
-      color: '#0f172a',
-      lineHeight: 1.5,
-      fontWeight: 500,
-    }}>
-      {value}
-    </div>
-  </div>
-);
-
 const IssueCard: React.FC<{
   title: string;
   actionLabel: string;
@@ -665,17 +637,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       </div>
 
-      {/* ─ COMPACT DECISION ESSENTIALS ROW ─ */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-        gap: 12,
-        marginBottom: 24,
-      }}>
-        {snapshotItems.map((item) => (
-          <InfoCard key={item.label} label={item.label} value={item.value} />
-        ))}
-      </div>
+
 
       {/* ─ OPEN ISSUES PANEL: Top 3 above fold, expandable detail ─ */}
       <div style={{
