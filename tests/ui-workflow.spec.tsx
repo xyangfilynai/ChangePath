@@ -38,6 +38,8 @@ describe('UI workflow', () => {
     expect(screen.getByText('Continue Working')).toBeInTheDocument();
     expect(screen.getByText('Start Assessment')).toBeInTheDocument();
     expect(screen.getByText('Primary workflow')).toBeInTheDocument();
+    expect(screen.queryByText('Assessment Workflow')).not.toBeInTheDocument();
+    expect(screen.getByText(/Decision support only — not a regulatory determination\./i)).toBeInTheDocument();
     expect(
       resumeButton.compareDocumentPosition(fullAssessmentButton) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
@@ -189,6 +191,7 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();

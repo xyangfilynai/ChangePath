@@ -1271,66 +1271,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       )}
 
-      {/* ============================================
-          FOOTER DISCLAIMER
-          ============================================ */}
-      <div style={{
-        padding: '14px 18px',
-        background: '#f9fafb',
-        border: '1px solid #e5e7eb',
-        borderRadius: 6,
-      }}>
-        <p style={{
-          fontSize: 12,
-          color: '#6b7280',
-          lineHeight: 1.6,
-          margin: 0,
-        }}>
-          <strong style={{ color: '#374151' }}>Decision support only — not a regulatory determination.</strong>{' '}
-          This tool supports internal change-control planning and submission strategy discussions.
-          It does not replace expert regulatory judgment, legal advice, or formal submission decisions.
-          All outputs require review by qualified regulatory and clinical professionals before action.
-        </p>
-        {isIncomplete && (
-          <p style={{
-            fontSize: 12,
-            color: '#991b1b',
-            lineHeight: 1.6,
-            margin: '8px 0 0',
-            fontWeight: 600,
-          }}>
-            This assessment is INCOMPLETE. Do not cite this output as a final regulatory conclusion.
-          </p>
-        )}
-        {!isIncomplete && hasCriticalGaps && (
-          <p style={{
-            fontSize: 12,
-            color: '#92400e',
-            lineHeight: 1.6,
-            margin: '8px 0 0',
-            fontWeight: 500,
-          }}>
-            This assessment has unresolved evidence gaps. Treat as preliminary until gaps are addressed.
-          </p>
-        )}
-        <p style={{
-          fontSize: 11,
-          color: '#9ca3af',
-          lineHeight: 1.5,
-          margin: '8px 0 0',
-        }}>
-          This tool is not itself a validated or cleared medical device. U.S.-primary assessment; non-U.S. markets covered by escalation cues only.
-        </p>
-        <p style={{
-          fontSize: 11,
-          color: '#94a3b8',
-          margin: '6px 0 0',
-          lineHeight: 1.5,
-        }}>
-          Authority tags distinguish regulations, statutes, standards, guidance, and internal policy so reviewers can see what is binding versus advisory.
-        </p>
-      </div>
-
       {/* Preparation Checklist CTA */}
       {onHandoff && !determination.isIncomplete && (
         <div

@@ -610,26 +610,6 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
               </div>
             </div>
 
-            <div style={{
-              padding: '10px 16px',
-              marginBottom: 20,
-              borderRadius: 8,
-              background: 'var(--color-warning-bg)',
-              border: '1px solid var(--color-warning-border)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 8,
-            }}>
-              <Icon name="alertCircle" size={13} color="var(--color-warning)" style={{ marginTop: 1 }} />
-              <div style={{
-                fontSize: 11.5,
-                color: 'var(--color-text-secondary)',
-                lineHeight: 1.5,
-              }}>
-                Not a complete submission guide. Actual deliverables still depend on device specifics, authorization history, testing outcomes, and company QMS. Qualified RA review is required before using this checklist to drive package execution.
-              </div>
-            </div>
-
             {consistencyIssues.length > 0 && (
               <div style={{
                 padding: '12px 16px',

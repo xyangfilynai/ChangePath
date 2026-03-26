@@ -133,9 +133,9 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
                 icon: 'users',
               },
               {
-                title: 'Decision support only',
-                body: 'Use for internal planning, documentation, and escalation tracking before formal RA sign-off.',
-                icon: 'shield',
+                title: 'Structured review',
+                body: 'Designed to organize pathway analysis, evidence gaps, and documentation planning in one place.',
+                icon: 'fileText',
               },
             ].map((item) => (
               <div
@@ -292,7 +292,7 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
             margin: 0,
             lineHeight: 1.55,
           }}>
-            Decision support only. Invite codes are distributed through the pilot or organization onboarding process.
+            Invite codes are distributed through the pilot or organization onboarding process.
           </p>
         </div>
       </div>
