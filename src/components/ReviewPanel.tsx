@@ -466,47 +466,73 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   return (
     <div className="animate-fade-in-up">
-      {/* ─ HERO SECTION: 3 balanced columns ─ */}
+      {/* ─ HERO BANNER: Compact route + next step ─ */}
       <div style={{
         background: config.bg,
         border: `1px solid ${config.border}`,
         borderRadius: 8,
-        padding: '24px 28px',
+        padding: '20px 24px',
         marginBottom: 16,
       }}>
-        {/* Status row */}
         <div style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 16,
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 24,
+          flexWrap: 'wrap',
         }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: config.accent,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            {config.statusLabel}
-          </span>
-          <CompactBadge
-            label={relianceState.label}
-            bg={relianceState.bg}
-            border={relianceState.border}
-            text={relianceState.text}
-          />
-        </div>
+          {/* Left: Route + status */}
+          <div style={{ flex: '1 1 400px', minWidth: 0 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 10,
+            }}>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: config.accent,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>
+                {config.statusLabel}
+              </span>
+              <CompactBadge
+                label={relianceState.label}
+                bg={relianceState.bg}
+                border={relianceState.border}
+                text={relianceState.text}
+              />
+            </div>
+            <h1 style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: '#111827',
+              margin: '0 0 6px',
+              lineHeight: 1.2,
+            }}>
+              {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
+            </h1>
+            <p style={{
+              fontSize: 13,
+              color: '#4b5563',
+              margin: 0,
+              lineHeight: 1.55,
+            }}>
+              {relianceState.detail}
+            </p>
+          </div>
 
-        {/* 3-column grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: 20,
-          alignItems: 'start',
-        }}>
-          {/* COL 1: Route title + reliance detail */}
-          <div style={{ borderRight: `1px solid ${config.border}`, paddingRight: 20 }}>
+          {/* Right: Next step */}
+          <div style={{
+            flex: '0 0 auto',
+            maxWidth: 320,
+            padding: '14px 18px',
+            background: 'rgba(255,255,255,0.7)',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.6)',
+          }}>
             <div style={{
               fontSize: 10,
               fontWeight: 700,
@@ -515,129 +541,23 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               letterSpacing: '0.04em',
               marginBottom: 6,
             }}>
-              Current Route
-            </div>
-            <h1 style={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#111827',
-              margin: '0 0 10px',
-              lineHeight: 1.2,
-            }}>
-              {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
-            </h1>
-            <p style={{
-              fontSize: 12.5,
-              color: '#4b5563',
-              margin: 0,
-              lineHeight: 1.6,
-            }}>
-              {relianceState.detail}
-            </p>
-          </div>
-
-          {/* COL 2: Why this route */}
-          <div style={{ borderRight: `1px solid ${config.border}`, paddingRight: 20 }}>
-            <div style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 10,
-            }}>
-              Why This Route
-            </div>
-            {whyThisRouteItems.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {whyThisRouteItems.map((item, index) => (
-                  <div
-                    key={`route-reason-${index}`}
-                    style={{
-                      fontSize: 12.5,
-                      color: '#374151',
-                      lineHeight: 1.55,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 7,
-                    }}
-                  >
-                    <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 3, fontSize: 10 }}>▸</span>
-                    <span><HelpTextWithLinks text={item} /></span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: 12.5, color: '#9ca3af', margin: 0, lineHeight: 1.55 }}>
-                No additional reasoning available.
-              </p>
-            )}
-
-            {pccpHeroSummary && (
-              <div
-                data-testid="pccp-recommendation"
-                style={{
-                  marginTop: 12,
-                  padding: '10px 12px',
-                  borderRadius: 6,
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                }}
-              >
-                <div style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#1d4ed8',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 4,
-                }}>
-                  PCCP Strategy
-                </div>
-                <div style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.55 }}>
-                  <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
-                  {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* COL 3: Next step */}
-          <div>
-            <div style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 10,
-            }}>
               Next Step
             </div>
             <div style={{
               fontSize: 13,
               fontWeight: 600,
               color: '#111827',
-              lineHeight: 1.5,
-              marginBottom: supportingNextSteps.length > 0 ? 10 : 0,
+              lineHeight: 1.45,
             }}>
               {getPrimaryAction()}
             </div>
             {supportingNextSteps.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {supportingNextSteps.map((step, index) => (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {supportingNextSteps.slice(0, 2).map((step, index) => (
                   <div
                     key={`supporting-next-step-${index}`}
-                    style={{
-                      fontSize: 12,
-                      color: '#4b5563',
-                      lineHeight: 1.5,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 7,
-                    }}
+                    style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.45 }}
                   >
-                    <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 3, fontSize: 10 }}>▸</span>
                     <HelpTextWithLinks text={step} />
                   </div>
                 ))}
@@ -647,52 +567,189 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       </div>
 
-      {/* ─ BELOW HERO: Open issues (right) + Detailed review (left) side by side ─ */}
+      {/* ─ TWO EQUAL COLUMNS: Why This Route + Open Issues ─ */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.4fr) minmax(280px, 1fr)',
+        gridTemplateColumns: '1fr 1fr',
         gap: 16,
-        marginBottom: 24,
-        alignItems: 'start',
+        marginBottom: 16,
       }}>
-
-        {/* ─ DETAILED SECTION: Expandable rationale, docs, authorities ─ */}
-        <details style={{
+        {/* LEFT: Why This Route */}
+        <div style={{
           background: '#ffffff',
           border: '1px solid #e5e7eb',
           borderRadius: 8,
-          overflow: 'hidden',
+          padding: '18px 20px',
         }}>
-          <summary style={{
-            listStyle: 'none',
-            cursor: 'pointer',
-            padding: '16px 20px',
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#475569',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            marginBottom: 12,
+          }}>
+            Why This Route
+          </div>
+          {whyThisRouteItems.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {whyThisRouteItems.map((item, index) => (
+                <div
+                  key={`route-reason-${index}`}
+                  style={{
+                    fontSize: 13,
+                    color: '#374151',
+                    lineHeight: 1.55,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ color: '#9ca3af', flexShrink: 0, marginTop: 2 }}>•</span>
+                  <span><HelpTextWithLinks text={item} /></span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: '#9ca3af', margin: 0, lineHeight: 1.55 }}>
+              No additional reasoning available.
+            </p>
+          )}
+
+          {pccpHeroSummary && (
+            <div
+              data-testid="pccp-recommendation"
+              style={{
+                marginTop: 14,
+                padding: '12px 14px',
+                borderRadius: 6,
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+              }}
+            >
+              <div style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#1d4ed8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 4,
+              }}>
+                PCCP Strategy
+              </div>
+              <div style={{ fontSize: 12.5, color: '#1e3a8a', lineHeight: 1.55 }}>
+                <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
+                {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: Open Issues */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '18px 20px',
+        }}>
+          <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 12,
+            gap: 8,
+            marginBottom: 12,
           }}>
-            <div>
-              <div style={{
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              Open Issues
+            </div>
+            {mergedBlockers.length > 0 && (
+              <span style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: '#475569',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 2,
+                color: '#92400e',
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
               }}>
-                Detailed Review
-              </div>
-              <div style={{
-                fontSize: 12.5,
-                color: '#6b7280',
-                lineHeight: 1.5,
-              }}>
-                Full rationale, documentation requirements, and supporting authorities.
-              </div>
+                {mergedBlockers.length}
+              </span>
+            )}
+          </div>
+
+          {mergedBlockers.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {mergedBlockers.map((item) => (
+                <IssueCard
+                  key={item.id}
+                  title={item.title}
+                  actionLabel={item.actionLabel}
+                  actionText={item.actionText}
+                  kind={item.kind}
+                  isCompact
+                />
+              ))}
             </div>
-            <Icon name="arrowDown" size={16} color="#9ca3af" />
-          </summary>
+          ) : (
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 6,
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              fontSize: 13,
+              color: '#166534',
+              lineHeight: 1.55,
+            }}>
+              No unresolved issues in the current record.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─ DETAILED REVIEW: Full-width accordion ─ */}
+      <details style={{
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginBottom: 24,
+      }}>
+        <summary style={{
+          listStyle: 'none',
+          cursor: 'pointer',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}>
+          <div>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 2,
+            }}>
+              Detailed Review
+            </div>
+            <div style={{
+              fontSize: 12.5,
+              color: '#6b7280',
+              lineHeight: 1.5,
+            }}>
+              Full rationale, documentation requirements, and supporting authorities.
+            </div>
+          </div>
+          <Icon name="arrowDown" size={16} color="#9ca3af" />
+        </summary>
 
         <div style={{
           borderTop: '1px solid #e5e7eb',
@@ -953,74 +1010,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           )}
         </div>
       </details>
-
-        {/* ─ OPEN ISSUES PANEL: right column ─ */}
-        <div style={{
-          background: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: 8,
-          padding: '18px 20px',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-            marginBottom: 12,
-          }}>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}>
-              Open Issues
-            </div>
-            {mergedBlockers.length > 0 && (
-              <span style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#92400e',
-                padding: '2px 8px',
-                borderRadius: 999,
-                background: '#fffbeb',
-                border: '1px solid #fde68a',
-              }}>
-                {mergedBlockers.length}
-              </span>
-            )}
-          </div>
-
-          {mergedBlockers.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {mergedBlockers.map((item) => (
-                <IssueCard
-                  key={item.id}
-                  title={item.title}
-                  actionLabel={item.actionLabel}
-                  actionText={item.actionText}
-                  kind={item.kind}
-                  isCompact
-                />
-              ))}
-            </div>
-          ) : (
-            <div style={{
-              padding: '12px 14px',
-              borderRadius: 6,
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              fontSize: 12.5,
-              color: '#166534',
-              lineHeight: 1.6,
-            }}>
-              No unresolved issues in the current record.
-            </div>
-          )}
-        </div>
-
-      </div>{/* end 2-col grid */}
 
       {onAddNote && (
         <div style={{
