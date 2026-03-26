@@ -269,7 +269,8 @@ export const App: React.FC = () => {
     return Math.max(0, (requiredCounts[currentBlock.id] || 0) - (requiredAnsweredCounts[currentBlock.id] || 0));
   }, [currentBlock, requiredCounts, requiredAnsweredCounts]);
 
-  const caseSummary = useMemo(() => {
+  type CaseSummaryTone = 'default' | 'warning' | 'success' | 'info';
+  const caseSummary = useMemo((): { label: string; value: string; tone: CaseSummaryTone }[] => {
     const baselineMissing = !answers.A1c;
     const authIdMissing = !answers.A1b;
     return [
@@ -298,7 +299,7 @@ export const App: React.FC = () => {
         value: answers.A2 === Answer.Yes ? 'Authorized PCCP present' : answers.A2 === Answer.No ? 'No PCCP authorized' : 'Not yet specified',
         tone: answers.A2 === Answer.Yes ? 'success' : 'default',
       },
-    ] as const;
+    ];
   }, [answers.A1, answers.A1b, answers.A1c, answers.A2, answers.B1, answers.B2]);
 
   // Clear validation errors when answers change
@@ -689,7 +690,7 @@ export const App: React.FC = () => {
       overallTotal={overallTotal}
       overallRequiredAnswered={overallRequiredAnswered}
       overallRequiredTotal={overallRequiredTotal}
-      caseSummary={caseSummary.map(item => ({ ...item }))}
+      caseSummary={caseSummary}
       onReset={handleReset}
       onHome={handleHome}
     >

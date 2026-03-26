@@ -152,28 +152,4 @@ export const assessmentStore = {
     saveAll(all);
   },
 
-  restoreVersion(assessmentId: string, versionNumber: number): SavedAssessment | undefined {
-    const all = loadAll();
-    const idx = all.findIndex(a => a.id === assessmentId);
-    if (idx < 0) return undefined;
-    const version = all[idx].versions.find(v => v.versionNumber === versionNumber);
-    if (!version) return undefined;
-
-    // Save current as new version before restoring
-    const current = all[idx];
-    const snapshotVersion: AssessmentVersion = {
-      versionNumber: current.versions.length + 1,
-      answers: current.answers,
-      timestamp: current.updatedAt,
-      note: `Before restoring to v${versionNumber}`,
-    };
-    all[idx] = {
-      ...current,
-      answers: { ...version.answers },
-      updatedAt: new Date().toISOString(),
-      versions: [...current.versions, snapshotVersion],
-    };
-    saveAll(all);
-    return all[idx];
-  },
 };
