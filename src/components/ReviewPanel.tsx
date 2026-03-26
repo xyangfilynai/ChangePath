@@ -401,10 +401,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       push(reportNarrative.headlineReason || caseReasoning.primaryReason);
     }
 
-    assessmentBasis.forEach(push);
-
     return items.slice(0, 3);
-  }, [assessmentBasis, caseReasoning, reportNarrative.headlineReason]);
+  }, [caseReasoning, reportNarrative.headlineReason]);
 
   const supportingNextSteps = useMemo(() => {
     if (mergedBlockers.length > 0) {
