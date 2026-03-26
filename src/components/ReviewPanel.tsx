@@ -468,96 +468,47 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         padding: '20px 24px',
         marginBottom: 16,
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 24,
-          flexWrap: 'wrap',
-        }}>
-          {/* Left: Route + status */}
-          <div style={{ flex: '1 1 400px', minWidth: 0 }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 10,
-            }}>
-              <span style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: config.accent,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}>
-                {config.statusLabel}
-              </span>
-              <CompactBadge
-                label={relianceState.label}
-                bg={relianceState.bg}
-                border={relianceState.border}
-                text={relianceState.text}
-              />
-            </div>
-            <h1 style={{
-              fontSize: 24,
-              fontWeight: 700,
-              color: '#111827',
-              margin: '0 0 6px',
-              lineHeight: 1.2,
-            }}>
-              {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
-            </h1>
-            <p style={{
-              fontSize: 13,
-              color: '#4b5563',
-              margin: 0,
-              lineHeight: 1.55,
-            }}>
-              {relianceState.detail}
-            </p>
-          </div>
-
-          {/* Right: Next step */}
+        {/* Route + status */}
+        <div>
           <div style={{
-            flex: '0 0 auto',
-            maxWidth: 320,
-            padding: '14px 18px',
-            background: 'rgba(255,255,255,0.7)',
-            borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 10,
           }}>
-            <div style={{
-              fontSize: 10,
+            <span style={{
+              fontSize: 11,
               fontWeight: 700,
-              color: '#6b7280',
+              color: config.accent,
               textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 6,
+              letterSpacing: '0.05em',
             }}>
-              Next Step
-            </div>
-            <div style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#111827',
-              lineHeight: 1.45,
-            }}>
-              {getPrimaryAction()}
-            </div>
-            {supportingNextSteps.length > 0 && (
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {supportingNextSteps.slice(0, 2).map((step, index) => (
-                  <div
-                    key={`supporting-next-step-${index}`}
-                    style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.45 }}
-                  >
-                    <HelpTextWithLinks text={step} />
-                  </div>
-                ))}
-              </div>
-            )}
+              {config.statusLabel}
+            </span>
+            <CompactBadge
+              label={relianceState.label}
+              bg={relianceState.bg}
+              border={relianceState.border}
+              text={relianceState.text}
+            />
           </div>
+          <h1 style={{
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#111827',
+            margin: '0 0 6px',
+            lineHeight: 1.2,
+          }}>
+            {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
+          </h1>
+          <p style={{
+            fontSize: 13,
+            color: '#4b5563',
+            margin: 0,
+            lineHeight: 1.55,
+          }}>
+            {relianceState.detail}
+          </p>
         </div>
       </div>
 
