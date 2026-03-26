@@ -9,7 +9,7 @@ import {
   type AssessmentField,
 } from './assessment-engine';
 import { ruleReasoningLibrary } from './content';
-import { joinWithAnd, getChangeLabel as getChangeLabelShared, getSelectedChangeContext, type SelectedChangeContext } from './change-utils';
+import { joinWithAnd, getChangeLabel, getSelectedChangeContext, type SelectedChangeContext } from './change-utils';
 
 export interface CaseSpecificReasoning {
   ruleKey: string | null;
@@ -53,9 +53,6 @@ const getAuthorizationDescriptor = (answers: Answers): string => {
   if (answers.A1 === AuthPathway.PMA) return 'a PMA-approved device';
   return 'the device under assessment';
 };
-
-const getChangeLabel = (answers: Answers): string =>
-  getChangeLabelShared(answers, 'the change under assessment');
 
 const getPCCPStatusText = (answers: Answers): string => {
   if (answers.A2 === Answer.Yes) return 'An authorized PCCP is on file.';
@@ -238,7 +235,7 @@ export function buildCaseSpecificReasoning(
   addSources(sources, ruleReasoning?.source);
 
   const authDescriptor = getAuthorizationDescriptor(answers);
-  const changeLabel = getChangeLabel(answers);
+  const changeLabel = getChangeLabel(answers, 'the change under assessment');
   const changeContext = getSelectedChangeContext(answers);
   const baselineText = answers.A1c
     ? `against authorized baseline "${answers.A1c as string}"`

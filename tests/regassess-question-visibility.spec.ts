@@ -8,6 +8,7 @@ import {
   getBlockFields,
   type Answers,
 } from '../src/lib/assessment-engine';
+import { base510k, baseDeNovo, basePMA } from './helpers';
 
 const findQ = (blockId: string, answers: Answers, id: string) => {
   const ds = computeDerivedState(answers);
@@ -27,31 +28,6 @@ const blockIds = (answers: Answers) => {
   const ds = computeDerivedState(answers);
   return getBlocks(answers, ds).map(b => b.id);
 };
-
-const base510k = (overrides: Answers = {}): Answers => ({
-  A1: AuthPathway.FiveOneZeroK,
-  A1b: 'K123456',
-  A1c: 'v1.0',
-  A1d: 'Authorized IFU statement',
-  A2: Answer.No,
-  A6: ['Traditional ML (e.g., random forest, SVM)'],
-  B3: Answer.No,
-  ...overrides,
-});
-
-const baseDeNovo = (overrides: Answers = {}): Answers =>
-  base510k({ A1: AuthPathway.DeNovo, ...overrides });
-
-const basePMA = (overrides: Answers = {}): Answers => ({
-  A1: AuthPathway.PMA,
-  A1b: 'P123456',
-  A1c: 'v1.0',
-  A1d: 'Authorized IFU statement',
-  A2: Answer.No,
-  A6: ['Traditional ML (e.g., random forest, SVM)'],
-  B3: Answer.No,
-  ...overrides,
-});
 
 describe('De Novo-only field visibility', () => {
   it('C0_DN1 is hidden unless A1 === "De Novo" and B3 !== Yes', () => {

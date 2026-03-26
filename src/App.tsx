@@ -6,13 +6,13 @@ import { ReviewPanel } from './components/ReviewPanel';
 import { FeedbackSurvey } from './components/FeedbackSurvey';
 import { HandoffPage } from './components/HandoffPage';
 import { Icon } from './components/Icon';
+import { BlockBanners } from './components/BlockBanners';
 import { SAMPLE_CASE } from './sampleCase';
 import {
   getBlocks,
   getBlockFields,
   computeDerivedState,
   computeDetermination,
-  changeTaxonomy,
   Answer,
   isAnsweredValue,
   type Answers,
@@ -22,72 +22,14 @@ import {
   assessmentStore,
   type SavedAssessment,
 } from './lib/assessment-store';
-
-const STORAGE_KEY = 'regassess-answers';
-const BLOCK_STORAGE_KEY = 'regassess-block-index';
+import { storage } from './lib/storage';
 
 type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
 
-const bannerStyle = {
-  warning: {
-    marginBottom: 16,
-    padding: '12px 16px',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--color-warning-bg)',
-    border: '1px solid var(--color-warning-border)',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 10,
-  } as React.CSSProperties,
-  danger: {
-    marginBottom: 16,
-    padding: '12px 16px',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--color-danger-bg)',
-    border: '1px solid var(--color-danger-border)',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 10,
-  } as React.CSSProperties,
-};
-
-// Load saved answers from localStorage
-const loadSavedAnswers = (): Answers => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : {};
-  } catch {
-    return {};
-  }
-};
-
-// Load saved block index from localStorage
-const loadSavedBlockIndex = (): number => {
-  try {
-    const saved = localStorage.getItem(BLOCK_STORAGE_KEY);
-    const parsed = saved ? parseInt(saved, 10) : 0;
-    return Number.isNaN(parsed) ? 0 : parsed;
-  } catch {
-    return 0;
-  }
-};
-
-// Check if there's a saved session with actual answers
-const hasSavedAnswers = (): boolean => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return false;
-    const parsed = JSON.parse(saved);
-    return Object.keys(parsed).length > 0;
-  } catch {
-    return false;
-  }
-};
-
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<Screen>('dashboard');
-  const [answers, setAnswers] = useState<Answers>(loadSavedAnswers);
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(loadSavedBlockIndex);
+  const [answers, setAnswers] = useState<Answers>(storage.loadAnswers);
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(storage.loadBlockIndex);
 
   // Assessment management state
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
@@ -100,20 +42,12 @@ export const App: React.FC = () => {
 
   // Persist answers to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
-    } catch {
-      // Ignore storage errors
-    }
+    storage.saveAnswers(answers);
   }, [answers]);
 
   // Persist block index to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(BLOCK_STORAGE_KEY, String(currentBlockIndex));
-    } catch {
-      // Ignore storage errors
-    }
+    storage.saveBlockIndex(currentBlockIndex);
   }, [currentBlockIndex]);
 
   // Compute derived state from answers
@@ -258,12 +192,7 @@ export const App: React.FC = () => {
     setAnswers({});
     setCurrentBlockIndex(0);
     setCurrentAssessmentId(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(BLOCK_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
-    }
+    storage.clearSession();
     setScreen('dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -324,7 +253,7 @@ export const App: React.FC = () => {
     if (Object.keys(validationErrors).length > 0) {
       setValidationErrors({});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `validationErrors` is intentionally excluded to prevent an infinite loop (the effect sets validationErrors, so including it in deps would cause re-triggering)
   }, [answers]);
 
   // Navigation with validation gating
@@ -412,10 +341,7 @@ export const App: React.FC = () => {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(BLOCK_STORAGE_KEY);
-    } catch { /* ignore */ }
+    storage.clearSession();
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -433,7 +359,7 @@ export const App: React.FC = () => {
         onQuickReview={handleQuickReview}
         onFullAssessment={handleFullAssessment}
         onResume={handleResume}
-        hasSavedSession={hasSavedAnswers()}
+        hasSavedSession={storage.hasSavedAnswers()}
         savedAssessments={savedAssessments}
         onLoadAssessment={handleLoadAssessment}
         onDuplicateAssessment={handleDuplicateAssessment}
@@ -495,148 +421,13 @@ export const App: React.FC = () => {
 
     return (
       <div>
-        {/* Block-level contextual banners */}
-        {!currentBlockComplete && (
-          <div style={bannerStyle.warning}>
-            <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
-            <div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-                {currentMissingRequired} required field{currentMissingRequired === 1 ? '' : 's'} incomplete in this section
-              </span>
-              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                Complete items marked <strong>Required</strong> to continue. Optional fields add context for review and records.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {blockId === 'C' && answers.B3 === Answer.Yes && (
-          <div style={bannerStyle.warning}>
-            <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
-            <div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-                Intended use or indications change indicated
-              </span>
-              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                This pattern typically requires a new marketing submission.{' '}
-                {derivedState.isPMA
-                  ? 'Expect a PMA supplement unless a different reporting pathway applies.'
-                  : derivedState.isDeNovo
-                    ? 'Expect a 510(k) or De Novo submission, depending on device-type fit and strategy.'
-                    : 'Expect a new 510(k) unless another pathway applies.'}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {blockId === 'C' && answers.B3 === Answer.Uncertain && (
-          <div style={bannerStyle.warning}>
-            <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
-            <div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-                Intended use impact uncertain — conservative pathway selection
-              </span>
-              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                This tool applies conservative pathway selection when intended-use impact is uncertain. Complete the remaining fields for your internal record.{' '}
-                <strong>Consider an FDA Pre-Submission (Q-Sub) or equivalent expert review before relying on a documentation-only pathway.</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {blockId === 'C' && derivedState.isDeNovo && !derivedState.isPMA && answers.B3 !== Answer.Yes && (
-          (answers.C0_DN1 === Answer.No || answers.C0_DN1 === Answer.Uncertain ||
-           answers.C0_DN2 === Answer.No || answers.C0_DN2 === Answer.Uncertain) ? (
-            <div style={bannerStyle.danger}>
-              <Icon name="alertCircle" size={15} color="var(--color-danger)" style={{ marginTop: 1 }} />
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-danger)' }}>
-                  De Novo device-type fit unresolved
-                </span>
-                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                  The modified device may not remain within the De Novo device type and special controls. Consider an FDA Pre-Submission (Q-Sub) or senior RA review before treating any documentation-only pathway as sufficient.
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{
-              marginBottom: 16,
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-bg)',
-              border: '1px solid var(--color-warning-border)',
-              fontSize: 12,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.55,
-            }}>
-              <strong>De Novo note:</strong> {"For software changes, FDA 510(k) software change guidance is often applied by analogy to De Novo-authorized devices; confirm device-type fit and special controls. For borderline cases, consider a Pre-Submission (Q-Sub)."}
-            </div>
-          )
-        )}
-
-        {blockId === 'C' && !derivedState.isPMA && answers.B3 !== Answer.Yes &&
-         answers.C1 !== Answer.Yes && answers.C2 !== Answer.Yes &&
-         [answers.C3, answers.C4, answers.C5, answers.C6].includes(Answer.Uncertain) && (
-          <div style={{
-            marginBottom: 16,
-            padding: '10px 14px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-warning-bg)',
-            border: '1px solid var(--color-warning-border)',
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.55,
-          }}>
-            {'Answers of "Uncertain" are treated as significant for pathway determination. Complete the remaining fields and document the rationale in your change record.'}
-          </div>
-        )}
-
-        {blockId === 'P' && (() => {
-          const selType = (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1 as string]?.types?.find((t) => t.name === answers.B2) : null;
-          const pccpStatus = selType?.pccp;
-          const pccpNote = selType?.pccpNote;
-          if (!selType || !pccpStatus) return null;
-          const isEligible = pccpStatus === 'TYPICAL' || pccpStatus === 'EXEMPT';
-          const isConditional = pccpStatus === 'CONDITIONAL';
-          return (
-            <div style={{
-              marginBottom: 16,
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)',
-              background: isEligible ? 'var(--color-success-bg)' : isConditional ? 'var(--color-warning-bg)' : 'var(--color-danger-bg)',
-              border: `1px solid ${isEligible ? 'var(--color-success-border)' : isConditional ? 'var(--color-warning-border)' : 'var(--color-danger-border)'}`,
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-            }}>
-              <Icon
-                name={isEligible ? 'check' : 'alertCircle'}
-                size={15}
-                color={isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)'}
-                style={{ marginTop: 1 }}
-              />
-              <div>
-                <span style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)',
-                }}>
-                  PCCP suitability (change type only) for {`"${answers.B2 as string}"`}:{' '}
-                  {pccpStatus === 'TYPICAL' ? 'Often compatible with PCCP if the change is pre-described, bounded, and validated prospectively'
-                    : pccpStatus === 'EXEMPT' ? 'PCCP is typically not the primary mechanism for documentation-only cybersecurity or restore-to-spec pathways'
-                    : pccpStatus === 'CONDITIONAL' ? 'May fit a PCCP only if scope, acceptance criteria, and boundaries are explicitly authorized'
-                    : pccpStatus === 'UNLIKELY' ? 'Unlikely to fit a PCCP without a new authorization scope'
-                    : 'Outside typical PCCP scope under current FDA PCCP policy for this change pattern'}
-                </span>
-                {pccpNote && (
-                  <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-                    {pccpNote}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })()}
+        <BlockBanners
+          blockId={blockId}
+          answers={answers}
+          derivedState={derivedState}
+          currentBlockComplete={currentBlockComplete}
+          currentMissingRequired={currentMissingRequired}
+        />
 
         {currentBlockFields.map((field, index) => (
           <QuestionCard

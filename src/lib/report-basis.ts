@@ -1,6 +1,7 @@
 import {
   Answer,
   AuthPathway,
+  computeDerivedState,
   type Answers,
   type DeterminationResult,
 } from './assessment-engine';
@@ -9,14 +10,6 @@ export interface ReportNarrativeView {
   headlineReason: string;
   supportingReasoning: string[];
 }
-
-const hasGenerativeAIContext = (answers: Answers): boolean =>
-  Array.isArray(answers.A6)
-  && answers.A6.some(
-    (model) =>
-      typeof model === 'string'
-      && (model.includes('LLM') || model.includes('Foundation') || model.includes('Generative')),
-  );
 
 const getChangeCount = (answers: Answers): number | null => {
   if (answers.A8 === undefined || answers.A8 === null || answers.A8 === '') return null;
@@ -116,7 +109,7 @@ export const buildAssessmentBasis = (
     );
   }
 
-  if (hasGenerativeAIContext(answers)) {
+  if (computeDerivedState(answers).hasGenAI) {
     items.push(
       'Generative AI or foundation-model technology was identified, so the assessment included the GenAI supplemental checks rather than only the base software-change fields.',
     );
