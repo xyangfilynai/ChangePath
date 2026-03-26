@@ -248,9 +248,12 @@ describe('Review insight specificity fixes', () => {
     const text = formatArtifactAsText(artifact);
 
     expect(text).toContain('SUMMARY');
+    expect(text).toContain('WHAT THIS DECISION WAS BASED ON');
     expect(text).toContain('CASE-SPECIFIC REASONING');
     expect(text).toContain('IMMEDIATE WORK');
     expect(text).toContain('PACKAGE MUST INCLUDE');
+    expect(text).toContain('The authorized IFU statement was available and used for the B3 intended-use comparison');
+    expect(text).toContain('No authorized PCCP was on file, so RegAccess did not treat PCCP as an available implementation path');
     expect(text).toContain('Deciding When to Submit a 510(k) for a Software Change to an Existing Device');
     expect(text).toContain('AI-Enabled Device Software Functions: Lifecycle Management and Marketing Submission Recommendations');
     expect(text).not.toContain('ASSUMPTIONS');

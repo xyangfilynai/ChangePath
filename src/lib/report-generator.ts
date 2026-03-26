@@ -12,6 +12,7 @@ import type { ReviewInsightItem, EvidenceGapInsightItem } from './review-insight
 import { buildEvidenceGapInsightItems, buildExpertReviewItems } from './review-insights';
 import { classifySource, type SourceClass } from './source-classification';
 import { buildCaseSpecificReasoning } from './case-specific-reasoning';
+import { buildAssessmentBasis, splitReportNarrative } from './report-basis';
 
 export interface AssessmentArtifact {
   meta: {
@@ -27,8 +28,10 @@ export interface AssessmentArtifact {
     confidenceLevel: 'HIGH' | 'MODERATE' | 'LOW';
   };
   rationale: {
+    headlineReason: string;
     primaryReason: string;
     ruleKey: string | null;
+    assessmentBasis: string[];
     narrative: string[];
     decisionPath: string[];
     verificationTitle: string | null;
@@ -86,6 +89,8 @@ export function generateAssessmentArtifact(
     blocks,
     getQuestionsForBlock,
   );
+  const reportNarrative = splitReportNarrative(caseReasoning.narrative);
+  const assessmentBasis = buildAssessmentBasis(answers, determination);
 
   // Evidence gaps
   const evidenceGaps = computeEvidenceGaps(answers, determination);
@@ -149,8 +154,10 @@ export function generateAssessmentArtifact(
       confidenceLevel,
     },
     rationale: {
+      headlineReason: reportNarrative.headlineReason || caseReasoning.primaryReason,
       primaryReason: caseReasoning.primaryReason,
       ruleKey: caseReasoning.ruleKey,
+      assessmentBasis,
       narrative: caseReasoning.narrative,
       decisionPath: caseReasoning.decisionPath,
       verificationTitle: caseReasoning.verificationTitle,
@@ -201,8 +208,16 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push(`Confidence: ${artifact.outcome.confidenceLevel}`);
   lines.push('');
   lines.push('SUMMARY');
-  lines.push(artifact.rationale.primaryReason);
+  lines.push(artifact.rationale.headlineReason || artifact.rationale.primaryReason);
   lines.push('');
+
+  if (artifact.rationale.assessmentBasis.length > 0) {
+    lines.push(hr);
+    lines.push('WHAT THIS DECISION WAS BASED ON');
+    lines.push(hr);
+    artifact.rationale.assessmentBasis.forEach((item, i) => lines.push(`  ${i + 1}. ${item}`));
+  lines.push('');
+  }
 
   lines.push(hr);
   lines.push('CASE-SPECIFIC REASONING');

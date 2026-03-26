@@ -183,6 +183,13 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
+    expect(screen.getByText('What This Decision Was Based On')).toBeInTheDocument();
+    expect(
+      screen.getByText(/authorized IFU statement was available and used for the B3 intended-use comparison/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/No authorized PCCP was on file, so RegAccess did not treat PCCP as an available implementation path/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/question C3 was answered Uncertain/i)).toBeInTheDocument();
     expect(screen.getByText(/Clinical performance screen \(C6\): Yes/i)).toBeInTheDocument();
     expect(screen.getByText(/Canon scanners/i)).toBeInTheDocument();

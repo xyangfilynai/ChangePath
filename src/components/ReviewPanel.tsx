@@ -22,6 +22,7 @@ import {
 } from '../lib/review-insights';
 import { classifySource } from '../lib/source-classification';
 import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
+import { buildAssessmentBasis, splitReportNarrative } from '../lib/report-basis';
 
 interface ReviewPanelProps {
   determination: DeterminationResult;
@@ -126,8 +127,16 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     () => buildCaseSpecificReasoning(answers, determination, blocks, getQuestionsForBlock),
     [answers, determination, blocks, getQuestionsForBlock],
   );
-  const heroReason = caseReasoning?.narrative?.[0] || '';
-  const reasoningDetailParagraphs = caseReasoning?.narrative?.slice(1) || [];
+  const reportNarrative = useMemo(
+    () => splitReportNarrative(caseReasoning?.narrative || []),
+    [caseReasoning],
+  );
+  const assessmentBasis = useMemo(
+    () => buildAssessmentBasis(answers, determination),
+    [answers, determination],
+  );
+  const heroReason = reportNarrative.headlineReason;
+  const reasoningDetailParagraphs = reportNarrative.supportingReasoning;
 
   // Pathway styling
   const getPathwayConfig = () => {
@@ -452,7 +461,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         }}>
           {isIncomplete
             ? 'Critical questions remain unresolved, so this output should not be used for regulatory decision-making.'
-            : heroReason || 'This review summarizes the current route, what supports it, and what must happen before the team relies on it.'}
+            : heroReason || caseReasoning?.primaryReason || 'This review summarizes the current route, what supports it, and what must happen before the team relies on it.'}
         </p>
 
         {/* Primary next action */}
@@ -804,6 +813,47 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         {/* Regulatory Reasoning */}
         {caseReasoning && (
           <CollapsibleSection id="reasoning" title="Regulatory Reasoning">
+            {assessmentBasis.length > 0 && (
+              <div style={{
+                marginBottom: reasoningDetailParagraphs.length > 0 || caseReasoning.decisionPath.length > 0 ? 16 : 0,
+                padding: '14px 16px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 6,
+              }}>
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#475569',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 10,
+                }}>
+                  What This Decision Was Based On
+                </div>
+                <ul style={{
+                  margin: 0,
+                  paddingLeft: 18,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}>
+                  {assessmentBasis.map((item, index) => (
+                    <li
+                      key={`basis-item-${index}`}
+                      style={{
+                        fontSize: 13,
+                        color: '#334155',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <HelpTextWithLinks text={item} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {reasoningDetailParagraphs.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {reasoningDetailParagraphs.map((paragraph, index) => (
