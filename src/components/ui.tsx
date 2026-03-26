@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from './Icon';
 import {
-  glossary,
   guidanceLinks,
   findGuidanceLink,
 } from '../lib/content';
@@ -711,127 +710,6 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
           <span style={{ fontSize: 13, color: 'var(--color-text)' }}>{opt}</span>
         </label>
       ))}
-    </div>
-  );
-};
-
-/* ── GlossaryPanel ── */
-
-interface GlossaryPanelProps {
-  searchTerm?: string;
-}
-
-export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' }) => {
-  const [localSearch, setLocalSearch] = useState(searchTerm);
-  const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
-
-  const filteredTerms = Object.entries(glossary).filter(([term, definition]) => {
-    const search = localSearch.toLowerCase();
-    return term.toLowerCase().includes(search) || definition.toLowerCase().includes(search);
-  });
-
-  const toggleTerm = (term: string) => {
-    const newSet = new Set(expandedTerms);
-    if (newSet.has(term)) {
-      newSet.delete(term);
-    } else {
-      newSet.add(term);
-    }
-    setExpandedTerms(newSet);
-  };
-
-  return (
-    <div>
-      {/* Search input */}
-      <div style={{ marginBottom: 12 }}>
-        <input
-          type="text"
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          placeholder="Search glossary..."
-          style={{
-            width: '100%',
-            padding: '10px 14px',
-            borderRadius: 7,
-            border: '1.5px solid var(--color-border)',
-            fontSize: 13,
-            fontFamily: 'var(--font-sans)',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-        />
-      </div>
-
-      {/* Terms list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filteredTerms.length === 0 ? (
-          <div style={{
-            padding: 16,
-            textAlign: 'center',
-            color: 'var(--color-text-muted)',
-            fontSize: 13,
-          }}>
-            No glossary terms match your search.
-          </div>
-        ) : (
-          filteredTerms.map(([term, definition]) => {
-            const isExpanded = expandedTerms.has(term);
-            return (
-              <div key={term} style={{
-                borderRadius: 8,
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-elevated)',
-                overflow: 'hidden',
-              }}>
-                <button
-                  onClick={() => toggleTerm(term)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: isExpanded ? '#fafafa' : 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-sans)',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span style={{
-                    flex: 1,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--color-primary)',
-                  }}>
-                    {term}
-                  </span>
-                  <span style={{
-                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                    transition: 'transform .15s ease',
-                    display: 'inline-flex',
-                    flexShrink: 0,
-                  }}>
-                    <Icon name="arrow" size={12} color="var(--color-text-tertiary)" />
-                  </span>
-                </button>
-                {isExpanded && (
-                  <div style={{
-                    padding: '12px 16px',
-                    borderTop: '1px solid var(--color-border)',
-                    fontSize: 12,
-                    lineHeight: 1.65,
-                    color: 'var(--color-text)',
-                    animation: 'fadeIn .15s ease',
-                  }}>
-                    <HelpTextWithLinks text={definition} />
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
     </div>
   );
 };

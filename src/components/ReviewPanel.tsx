@@ -221,13 +221,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     title,
     children,
     badge,
-    defaultOpen = false,
   }: {
     id: string;
     title: string;
     children: React.ReactNode;
     badge?: React.ReactNode;
-    defaultOpen?: boolean;
   }) => {
     const isExpanded = expandedSections.has(id);
     return (

@@ -15,9 +15,7 @@ import {
   computeDetermination,
   changeTaxonomy,
   Answer,
-  AuthPathway,
   type Answers,
-  type Block,
   type Question,
 } from './lib/assessment-engine';
 import {
@@ -442,7 +440,6 @@ export const App: React.FC = () => {
   if (screen === 'handoff') {
     return (
       <HandoffPage
-        pathway={determination.pathway}
         determination={determination}
         answers={answers}
         onBack={() => {

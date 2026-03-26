@@ -129,13 +129,12 @@ interface IssueRule<Facts> {
 
 const all = <Facts>(...conditions: RuleCondition<Facts>[]): RuleCondition<Facts> => ({ all: conditions });
 const anyOf = <Facts>(...conditions: RuleCondition<Facts>[]): RuleCondition<Facts> => ({ any: conditions });
-const not = <Facts>(condition: RuleCondition<Facts>): RuleCondition<Facts> => ({ not: condition });
 const eq = <Facts, Key extends keyof Facts>(fact: Key, equals: Facts[Key]): RuleCondition<Facts> => ({
   fact,
   equals,
 });
 
-const matchesCondition = <Facts extends Record<string, unknown>>(
+const matchesCondition = <Facts extends object>(
   facts: Facts,
   condition: RuleCondition<Facts>,
 ): boolean => {
@@ -145,7 +144,7 @@ const matchesCondition = <Facts extends Record<string, unknown>>(
   return Object.is(facts[condition.fact], condition.equals);
 };
 
-const selectFirstMatchingRule = <Facts extends Record<string, unknown>, Outcome>(
+const selectFirstMatchingRule = <Facts extends object, Outcome>(
   facts: Facts,
   rules: DeclarativeRule<Facts, Outcome>[],
 ): DeclarativeRule<Facts, Outcome> => {
@@ -156,7 +155,7 @@ const selectFirstMatchingRule = <Facts extends Record<string, unknown>, Outcome>
   return matchedRule;
 };
 
-const collectTriggeredRules = <Facts extends Record<string, unknown>>(
+const collectTriggeredRules = <Facts extends object>(
   facts: Facts,
   rules: IssueRule<Facts>[],
 ): IssueRule<Facts>[] => rules.filter((rule) => matchesCondition(facts, rule.when));

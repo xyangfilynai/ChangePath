@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Icon } from './Icon';
-import { Pathway, AuthPathway, Answer, type Answers } from '../lib/assessment-engine';
+import { AuthPathway, Answer, type Answers } from '../lib/assessment-engine';
 
 interface HandoffPageProps {
-  pathway: string;
   determination: any;
   answers: Answers;
   onBack: () => void;
@@ -18,7 +17,6 @@ interface ChecklistSection {
 }
 
 const getSections = (
-  pathway: string,
   determination: any,
   answers: Answers,
 ): ChecklistSection[] => {
@@ -247,7 +245,6 @@ const getSections = (
 };
 
 const getHandoffTitle = (
-  pathway: string,
   determination: any,
   answers: Answers,
 ): string => {
@@ -265,7 +262,6 @@ const getHandoffTitle = (
 };
 
 const getHandoffDesc = (
-  pathway: string,
   determination: any,
   answers: Answers,
 ): string => {
@@ -300,7 +296,6 @@ const getPreparationPackageLabel = (
 };
 
 export const HandoffPage: React.FC<HandoffPageProps> = ({
-  pathway,
   determination,
   answers,
   onBack,
@@ -316,11 +311,11 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
   const consistencyIssues = determination.consistencyIssues || [];
 
   const sections = useMemo(
-    () => getSections(pathway, determination, answers),
-    [pathway, determination, answers],
+    () => getSections(determination, answers),
+    [determination, answers],
   );
-  const title = getHandoffTitle(pathway, determination, answers);
-  const desc = getHandoffDesc(pathway, determination, answers);
+  const title = getHandoffTitle(determination, answers);
+  const desc = getHandoffDesc(determination, answers);
   const packageLabel = getPreparationPackageLabel(determination, answers);
 
   if (isIncomplete) {
@@ -532,7 +527,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
               marginBottom: 18,
             }}>
               {[
-                { label: 'Regulatory route', value: pathway },
+                { label: 'Regulatory route', value: determination.pathway },
                 { label: 'Primary package', value: packageLabel },
                 { label: 'Change', value: (answers.B2 as string) || (answers.B1 as string) || 'Not specified' },
                 { label: 'Authorized baseline', value: (answers.A1c as string) || 'Not specified' },

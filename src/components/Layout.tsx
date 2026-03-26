@@ -59,8 +59,6 @@ export const Layout: React.FC<LayoutProps> = ({
   const progress = overallRequiredTotal > 0
     ? Math.round((overallRequiredAnswered / overallRequiredTotal) * 100)
     : 0;
-  const currentAnswered = currentBlock ? (answeredCounts[currentBlock.id] || 0) : 0;
-  const currentTotal = currentBlock ? (totalCounts[currentBlock.id] || 0) : 0;
   const currentRequiredAnswered = currentBlock ? (requiredAnsweredCounts[currentBlock.id] || 0) : 0;
   const currentRequiredTotal = currentBlock ? (requiredCounts[currentBlock.id] || 0) : 0;
   const currentMissingRequired = Math.max(0, currentRequiredTotal - currentRequiredAnswered);
