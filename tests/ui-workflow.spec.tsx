@@ -182,19 +182,14 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
-    expect(screen.getByText('What This Decision Was Based On')).toBeInTheDocument();
-    expect(
-      screen.getByText(/authorized IFU statement was available and used for the B3 intended-use comparison/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/No authorized PCCP was on file, so RegAccess did not treat PCCP as an available implementation path/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/question C3 was answered Uncertain/i)).toBeInTheDocument();
-    expect(screen.getByText(/Clinical performance screen \(C6\): Yes/i)).toBeInTheDocument();
-    expect(screen.getByText(/Canon scanners/i)).toBeInTheDocument();
-    expect(
-      screen.getAllByText(/Deciding When to Submit a 510\(k\) for a Software Change to an Existing Device/i).length,
-    ).toBeGreaterThan(0);
+    expect(screen.getByText('Case Snapshot')).toBeInTheDocument();
+    expect(screen.getByText('Recommended Route')).toBeInTheDocument();
+    expect(screen.getByText('What To Do Next')).toBeInTheDocument();
+    expect(screen.getByText('Blockers Before Reliance')).toBeInTheDocument();
+    expect(screen.getByText('No authorized PCCP')).toBeInTheDocument();
+    expect(screen.getAllByText(/Risk significance screen \(C3\): Uncertain/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Clinical performance screen \(C6\): Yes/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('More Detail')).toBeInTheDocument();
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
@@ -240,7 +235,9 @@ describe('UI workflow', () => {
     expect(
       screen.getAllByText(/C3 \(new or modified cause of harm\) is still unresolved for Additional data — new clinical sites/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('Package Requirements')).toBeInTheDocument();
+    expect(screen.getByText('Blockers Before Reliance')).toBeInTheDocument();
+    expect(screen.getByText('More Detail')).toBeInTheDocument();
+    expect(screen.queryByText('Package Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Documentation Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Regulatory Glossary')).not.toBeInTheDocument();
     expect(screen.queryByText('Response Details')).not.toBeInTheDocument();

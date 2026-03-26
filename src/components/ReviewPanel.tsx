@@ -1,15 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icon } from './Icon';
 import {
   GuidanceRef,
   HelpTextWithLinks,
-  ConfBadge,
-  AuthorityTag,
 } from './ui';
-import { Answer, Pathway, pathwayToDocKey } from '../lib/assessment-engine';
+import { Answer, Pathway } from '../lib/assessment-engine';
 import type { Answers, Block, DeterminationResult, Question } from '../lib/assessment-engine';
 import {
-  docRequirements,
   findGuidanceLink,
   getSourceBadge,
 } from '../lib/content';
@@ -20,7 +17,6 @@ import {
   buildEvidenceGapInsightItems,
   buildExpertReviewItems,
 } from '../lib/review-insights';
-import { classifySource } from '../lib/source-classification';
 import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
 import { buildAssessmentBasis, splitReportNarrative } from '../lib/report-basis';
 
@@ -29,6 +25,7 @@ interface ReviewPanelProps {
   answers: Answers;
   blocks: Block[];
   getQuestionsForBlock: (blockId: string) => Question[];
+  onEditBlock: (blockIndex: number) => void;
   onFeedback?: () => void;
   onHandoff?: () => void;
   reviewerNotes?: ReviewerNote[];
@@ -36,16 +33,23 @@ interface ReviewPanelProps {
   onRemoveNote?: (noteId: string) => void;
 }
 
-// Source class to AuthorityTag level mapping
-const sourceClassToLevel: Record<string, string> = {
-  'Statute': 'statute',
-  'Regulation': 'regulation',
-  'Final guidance': 'final_guidance',
-  'Draft guidance': 'draft_guidance',
-  'Standard': 'standard',
-  'Internal conservative policy': 'internal_policy',
-  'Best practice': 'best_practice',
-};
+interface MergedBlockerItem {
+  id: string;
+  title: string;
+  meta: string;
+  whyThisMatters: string;
+  actionLabel: string;
+  actionText: string;
+  sourceRefs: string[];
+  priority: number;
+  kind: 'expert' | 'evidence';
+}
+
+const normalizeTitle = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 
 const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
   const link = findGuidanceLink(code);
@@ -74,32 +78,17 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   answers,
   blocks,
   getQuestionsForBlock,
-  onFeedback,
   onHandoff,
   reviewerNotes,
   onAddNote,
   onRemoveNote,
 }) => {
   const pathway = determination.pathway;
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['reasoning'])
-  );
   const [noteAuthor, setNoteAuthor] = useState('');
   const [noteText, setNoteText] = useState('');
 
-  const toggleSection = (id: string) => {
-    const newSet = new Set(expandedSections);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-    setExpandedSections(newSet);
-  };
-
-  // Evidence gaps
   const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, determination), [answers, determination]);
-  const criticalGaps = evidenceGaps.filter(g => g.severity === 'critical');
+  const criticalGaps = evidenceGaps.filter((gap) => gap.severity === 'critical');
   const expertReviewItems = useMemo(
     () => buildExpertReviewItems(answers, determination),
     [answers, determination],
@@ -108,10 +97,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     () => buildEvidenceGapInsightItems(answers, determination, evidenceGaps),
     [answers, determination, evidenceGaps],
   );
-
-  // Get documentation requirements for this pathway
-  const docKey = pathwayToDocKey[pathway];
-  const docs = docKey ? docRequirements[docKey] : null;
   const caseReasoning = useMemo(
     () => buildCaseSpecificReasoning(answers, determination, blocks, getQuestionsForBlock),
     [answers, determination, blocks, getQuestionsForBlock],
@@ -124,15 +109,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     () => buildAssessmentBasis(answers, determination),
     [answers, determination],
   );
-  const heroReason = reportNarrative.headlineReason;
-  const reasoningDetailParagraphs = reportNarrative.supportingReasoning;
 
-  // Pathway styling
   const getPathwayConfig = () => {
     const hasIssues = determination.consistencyIssues?.length > 0;
     const hasUncertainty = determination.hasUncertainSignificance || determination.seUncertain || determination.cumulativeDriftUnresolved;
-    // Confidence drops for consistency issues OR unresolved uncertainty driving the determination
-    const baseConfidence = (hasIssues || hasUncertainty) ? 'MODERATE' as const : 'HIGH' as const;
+
     switch (pathway) {
       case Pathway.LetterToFile:
       case Pathway.PMAAnnualReport:
@@ -140,18 +121,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: hasIssues ? '#fffbeb' : '#f0fdf4',
           border: hasIssues ? '#fde68a' : '#bbf7d0',
           accent: hasIssues ? '#d97706' : '#16a34a',
-          icon: hasIssues ? 'alertCircle' : 'checkCircle',
           statusLabel: hasIssues ? 'Documentation Only — Preliminary (Review Required)' : 'Documentation Only',
-          confidence: baseConfidence,
         };
       case Pathway.ImplementPCCP:
         return {
           bg: '#eff6ff',
           border: '#bfdbfe',
           accent: '#2563eb',
-          icon: 'checkCircle',
           statusLabel: 'PCCP Implementation',
-          confidence: baseConfidence,
         };
       case Pathway.NewSubmission:
       case Pathway.PMASupplementRequired:
@@ -159,27 +136,21 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           bg: '#fef2f2',
           border: '#fecaca',
           accent: '#dc2626',
-          icon: 'alert',
           statusLabel: hasUncertainty ? 'Submission Required (Uncertainty-Driven — Internal Conservative Policy)' : 'Submission Required',
-          confidence: baseConfidence,
         };
       case Pathway.AssessmentIncomplete:
         return {
           bg: '#fffbeb',
           border: '#fde68a',
           accent: '#d97706',
-          icon: 'alertCircle',
           statusLabel: 'Assessment Incomplete — More Input Required',
-          confidence: 'LOW' as const,
         };
       default:
         return {
           bg: '#f9fafb',
           border: '#e5e7eb',
           accent: '#6b7280',
-          icon: 'info',
           statusLabel: 'Unknown',
-          confidence: 'LOW' as const,
         };
     }
   };
@@ -187,200 +158,271 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const config = getPathwayConfig();
   const { consistencyIssues = [], pccpRecommendation } = determination;
   const isIncomplete = determination.isIncomplete;
+  const hasCriticalGaps = criticalGaps.length > 0;
+  const isDocOnlyWithCriticalGaps = determination.isDocOnly && hasCriticalGaps;
 
-  // PCCP recommendation logic
   const hasPCCP = answers.A2 === Answer.Yes;
   const isNewSub = determination.isNewSub;
   const selectedChangeType = (answers.B1 && answers.B2)
-    ? changeTaxonomy[answers.B1 as string]?.types?.find((t) => t.name === answers.B2)
+    ? changeTaxonomy[answers.B1 as string]?.types?.find((item) => item.name === answers.B2)
     : null;
   const pccpEligibility = selectedChangeType?.pccp;
-  const showPCCPRecommendation = pccpRecommendation?.shouldRecommend && !hasPCCP && isNewSub
-    && pccpEligibility && ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility);
+  const showPCCPRecommendation = pccpRecommendation?.shouldRecommend
+    && !hasPCCP
+    && isNewSub
+    && pccpEligibility
+    && ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility);
 
-  // Hard gating: determine if assessment has critical unknowns that should block doc-only conclusion
-  const hasCriticalGaps = criticalGaps.length > 0;
-  const isDocOnlyWithCriticalGaps = determination.isDocOnly && hasCriticalGaps;
   const pccpHeroSummary = showPCCPRecommendation ? {
     heading: pccpEligibility === 'TYPICAL'
       ? 'PCCP application recommended in the upcoming submission'
       : 'PCCP application may be worth requesting in the upcoming submission',
-    likelihood: pccpEligibility === 'TYPICAL' ? 'Likely fit' : 'Conditional fit',
     summary: pccpEligibility === 'TYPICAL'
       ? `${(answers.B2 as string) || 'This change type'} is generally suitable for future PCCP authorization. Because this case already routes to a new submission and no PCCP is currently authorized, this submission is the right time to seek pre-authorization for similar future changes within explicit bounds.`
       : `${(answers.B2 as string) || 'This change type'} can sometimes be authorized in a PCCP, but only when future modifications can be tightly bounded and prospectively validated. Because this case already routes to a new submission and no PCCP is currently authorized, this submission is the right opportunity to evaluate that option.`,
     detail: selectedChangeType?.pccpNote || null,
   } : null;
 
-  // Collapsible section component
-  const CollapsibleSection = ({
-    id,
-    title,
-    children,
-    badge,
-  }: {
-    id: string;
-    title: string;
-    children: React.ReactNode;
-    badge?: React.ReactNode;
-  }) => {
-    const isExpanded = expandedSections.has(id);
-    return (
-      <div style={{
-        borderBottom: '1px solid #e5e7eb',
-      }}>
-        <button
-          onClick={() => toggleSection(id)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            width: '100%',
-            padding: '16px 0',
-            background: 'transparent',
-            textAlign: 'left',
-            cursor: 'pointer',
-          }}
-        >
-          <span style={{
-            flex: 1,
-            fontSize: 13,
-            fontWeight: 600,
-            color: '#374151',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}>
-            {title}
-          </span>
-          {badge}
-          <Icon
-            name={isExpanded ? 'arrowUp' : 'arrowDown'}
-            size={14}
-            color="#9ca3af"
-          />
-        </button>
-        {isExpanded && (
-          <div style={{ paddingBottom: 24 }} className="animate-fade-in">
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Get primary next action
   const getPrimaryAction = () => {
     if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
-      return "Document rationale and file in device history record";
+      return 'Document rationale and file in device history record';
     }
     if (pathway === Pathway.ImplementPCCP) {
-      return "Execute PCCP validation protocol before implementation";
+      return 'Execute PCCP validation protocol before implementation';
     }
     if (pathway === Pathway.NewSubmission) {
-      return "Prepare 510(k) or De Novo submission with updated device description";
+      return 'Prepare 510(k) or De Novo submission with updated device description';
     }
     if (pathway === Pathway.PMASupplementRequired) {
-      return "Determine supplement type and prepare submission package";
+      return 'Determine supplement type and prepare submission package';
     }
-    // Assessment Incomplete — provide specific guidance based on reason
     if (determination.isIntendedUseUncertain) {
-      return "Resolve intended use uncertainty through senior RA/clinical expert review or an FDA Pre-Submission (Q-Sub) before re-running this assessment";
+      return 'Resolve intended use uncertainty through senior RA/clinical expert review or an FDA Pre-Submission (Q-Sub) before re-running this assessment';
     }
     if (determination.pmaIncomplete) {
-      return "Complete the PMA safety/effectiveness, labeling, and manufacturing questions before the determination can be finalized";
+      return 'Complete the PMA safety/effectiveness, labeling, and manufacturing questions before the determination can be finalized';
     }
     if (determination.pccpIncomplete) {
-      return "Complete the PCCP scope verification questions (P1–P5) to determine whether this change can be implemented under the authorized PCCP";
+      return 'Complete the PCCP scope verification questions (P1–P5) to determine whether this change can be implemented under the authorized PCCP';
     }
     if (determination.hasUncertainSignificance) {
       return "Resolve uncertain significance answers — gather additional evidence or consult with RA/clinical experts to convert 'Uncertain' responses to 'Yes' or 'No'";
     }
     if (determination.seUncertain) {
-      return "Resolve substantial equivalence uncertainty — compare the modified device against the predicate and consult RA if needed";
+      return 'Resolve substantial equivalence uncertainty — compare the modified device against the predicate and consult RA if needed';
     }
-    return "Complete remaining assessment questions to finalize the determination — review the consistency issues below for specific guidance";
+    return 'Complete remaining assessment questions to finalize the determination';
   };
+
+  const mergedBlockers = useMemo(() => {
+    const deduped = new Map<string, MergedBlockerItem>();
+    const addItem = (item: MergedBlockerItem) => {
+      const key = normalizeTitle(item.title);
+      const existing = deduped.get(key);
+      if (!existing || item.priority < existing.priority) {
+        deduped.set(key, item);
+      }
+    };
+
+    expertReviewItems.forEach((item) => {
+      addItem({
+        id: item.id,
+        title: item.title,
+        meta: item.meta,
+        whyThisMatters: item.whyThisMatters,
+        actionLabel: item.actionLabel,
+        actionText: item.actionText,
+        sourceRefs: item.sourceRefs,
+        priority: 0,
+        kind: 'expert',
+      });
+    });
+
+    evidenceGapItems
+      .filter((item) => item.severity !== 'advisory')
+      .forEach((item) => {
+        addItem({
+          id: item.id,
+          title: item.title,
+          meta: item.meta,
+          whyThisMatters: item.whyThisMatters,
+          actionLabel: item.actionLabel,
+          actionText: item.actionText,
+          sourceRefs: item.sourceRefs,
+          priority: item.severity === 'critical' ? 1 : 2,
+          kind: 'evidence',
+        });
+      });
+
+    return Array.from(deduped.values()).sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return a.title.localeCompare(b.title);
+    });
+  }, [evidenceGapItems, expertReviewItems]);
+
+  const advisoryItems = useMemo(
+    () => evidenceGapItems.filter((item) => item.severity === 'advisory'),
+    [evidenceGapItems],
+  );
+
+  const topBlockers = mergedBlockers.slice(0, 3);
+  const remainingBlockerCount = Math.max(0, mergedBlockers.length - topBlockers.length);
+
+  const snapshotItems = useMemo(() => ([
+    {
+      label: 'Authorization',
+      value: answers.A1 ? `${String(answers.A1)}${answers.A1b ? ` · ${String(answers.A1b)}` : ''}` : 'Not provided',
+    },
+    {
+      label: 'Authorized baseline',
+      value: answers.A1c ? String(answers.A1c) : 'Not provided',
+    },
+    {
+      label: 'Change type',
+      value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not classified',
+    },
+    {
+      label: 'PCCP status',
+      value: answers.A2 === Answer.Yes
+        ? 'Authorized PCCP on file'
+        : answers.A2 === Answer.No
+          ? 'No authorized PCCP'
+          : 'Not specified',
+    },
+  ]), [answers.A1, answers.A1b, answers.A1c, answers.A2, answers.B1, answers.B2]);
+
+  const whyThisRouteItems = useMemo(() => {
+    const items: string[] = [];
+    const push = (value: string | null | undefined) => {
+      if (!value) return;
+      const trimmed = value.trim();
+      if (!trimmed || items.includes(trimmed)) return;
+      items.push(trimmed);
+    };
+
+    caseReasoning.decisionPath
+      .filter((step) => !step.startsWith('Result:'))
+      .forEach(push);
+
+    if (items.length === 0) {
+      push(reportNarrative.headlineReason || caseReasoning.primaryReason);
+    }
+
+    assessmentBasis.forEach(push);
+
+    return items.slice(0, 3);
+  }, [assessmentBasis, caseReasoning, reportNarrative.headlineReason]);
+
+  const supportingNextSteps = useMemo(() => {
+    if (mergedBlockers.length > 0) {
+      return mergedBlockers.slice(0, 2).map((item) => item.actionText);
+    }
+
+    const items: string[] = [];
+    if (!isIncomplete && onHandoff) {
+      items.push(
+        determination.isPCCPImpl
+          ? 'Open the preparation checklist and complete the PCCP implementation package.'
+          : determination.isDocOnly
+            ? 'Open the preparation checklist and assemble the documentation package.'
+            : 'Open the preparation checklist and start assembling the submission package.',
+      );
+    }
+    caseReasoning.verificationSteps.forEach((step) => {
+      if (items.length < 2 && !items.includes(step)) {
+        items.push(step);
+      }
+    });
+    return items.slice(0, 2);
+  }, [caseReasoning.verificationSteps, determination.isDocOnly, determination.isPCCPImpl, isIncomplete, mergedBlockers, onHandoff]);
+
+  const relianceState = useMemo(() => {
+    if (isIncomplete) {
+      return {
+        label: 'Assessment incomplete',
+        detail: 'Critical questions remain unresolved, so the route is not ready to rely on yet.',
+        bg: '#fff7ed',
+        border: '#fdba74',
+        text: '#9a3412',
+      };
+    }
+
+    if (mergedBlockers.length > 0 || hasCriticalGaps || isDocOnlyWithCriticalGaps) {
+      const blockerCount = mergedBlockers.length > 0 ? mergedBlockers.length : criticalGaps.length;
+      return {
+        label: 'Preliminary',
+        detail: `${blockerCount} blocker${blockerCount === 1 ? '' : 's'} still need resolution before this route should be relied on.`,
+        bg: '#fffbeb',
+        border: '#fde68a',
+        text: '#92400e',
+      };
+    }
+
+    return {
+      label: 'No blockers surfaced on the current record',
+      detail: 'The current route is ready for the next workflow step, subject to normal expert review.',
+      bg: '#f0fdf4',
+      border: '#bbf7d0',
+      text: '#166534',
+    };
+  }, [criticalGaps.length, hasCriticalGaps, isDocOnlyWithCriticalGaps, isIncomplete, mergedBlockers.length]);
 
   return (
     <div className="animate-fade-in-up">
-      {/* ============================================
-          HARD GATE: INCOMPLETE ASSESSMENT BANNER
-          ============================================ */}
-      {isIncomplete && (
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        padding: '20px 24px',
+        marginBottom: 24,
+      }}>
         <div style={{
-          padding: '20px 24px',
-          borderRadius: 8,
-          background: '#7c2d12',
-          color: '#fff',
-          marginBottom: 24,
-          border: '2px solid #9a3412',
+          fontSize: 12,
+          fontWeight: 700,
+          color: '#475569',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginBottom: 14,
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 10,
-          }}>
-            <Icon name="alertCircle" size={20} color="#fbbf24" />
-            <span style={{
-              fontSize: 15,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              Assessment Incomplete — Expert Review Required
-            </span>
-          </div>
-          <p style={{
-            fontSize: 13,
-            lineHeight: 1.7,
-            margin: 0,
-            opacity: 0.95,
-          }}>
-            This assessment cannot produce a reliable regulatory pathway recommendation.
-            One or more critical questions remain unresolved. <strong>Do not treat this output as a
-            final regulatory conclusion.</strong> Resolve the unresolved questions below, then
-            re-run the assessment before relying on the result for any regulatory decision.
-          </p>
+          Case Snapshot
         </div>
-      )}
-
-      {/* Hard gate: doc-only pathway with critical evidence gaps */}
-      {isDocOnlyWithCriticalGaps && !isIncomplete && (
         <div style={{
-          padding: '16px 20px',
-          borderRadius: 8,
-          background: '#fffbeb',
-          border: '2px solid #f59e0b',
-          marginBottom: 24,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 12,
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 8,
-          }}>
-            <Icon name="alert" size={16} color="#d97706" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>
-              Preliminary Assessment — Critical Evidence Gaps Remain
-            </span>
-          </div>
-          <p style={{
-            fontSize: 13,
-            color: '#78350f',
-            lineHeight: 1.6,
-            margin: 0,
-          }}>
-            This assessment routes to documentation-only, but {criticalGaps.length} critical evidence
-            gap{criticalGaps.length > 1 ? 's' : ''} must be resolved before this conclusion can be
-            relied upon. Review the Evidence Gaps section below.
-          </p>
+          {snapshotItems.map((item) => (
+            <div
+              key={item.label}
+              style={{
+                padding: '12px 14px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 6,
+              }}
+            >
+              <div style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 6,
+              }}>
+                {item.label}
+              </div>
+              <div style={{
+                fontSize: 13,
+                color: '#0f172a',
+                lineHeight: 1.5,
+              }}>
+                {item.value}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* ============================================
-          SECTION 1: HERO / TOP SUMMARY BAND
-          ============================================ */}
       <div style={{
         background: config.bg,
         border: `1px solid ${config.border}`,
@@ -388,423 +430,493 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         padding: '28px 32px',
         marginBottom: 24,
       }}>
-        {/* Status row */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          marginBottom: 8,
+          flexWrap: 'wrap',
+          marginBottom: 12,
         }}>
           <span style={{
             fontSize: 11,
-            fontWeight: 600,
+            fontWeight: 700,
             color: config.accent,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
             {config.statusLabel}
           </span>
-          <span title={
-            config.confidence === 'HIGH'
-              ? 'No internal consistency issues detected. All pathway-critical questions were answered without contradictions. This reflects internal consistency only; expert review is still required before treating this as a regulatory conclusion.'
-              : config.confidence === 'MODERATE'
-                ? 'PRELIMINARY — consistency issues or unresolved uncertainty detected. Do not treat this as a final regulatory determination. Review and resolve the flagged items below before using this assessment.'
-                : 'ASSESSMENT INCOMPLETE — one or more critical questions remain unresolved. This output should not be used for regulatory decision-making. Expert review is required.'
-          }>
-            <ConfBadge level={config.confidence} />
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '3px 8px',
+            borderRadius: 999,
+            background: relianceState.bg,
+            color: relianceState.text,
+            border: `1px solid ${relianceState.border}`,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}>
+            {relianceState.label}
           </span>
-          {/* Preliminary label when there are evidence gaps on non-incomplete */}
-          {!isIncomplete && hasCriticalGaps && (
-            <span style={{
-              fontSize: 10,
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.5fr) minmax(280px, 1fr)',
+          gap: 20,
+          alignItems: 'start',
+        }}>
+          <div>
+            <div style={{
+              fontSize: 11,
               fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              background: '#fef3c7',
-              color: '#92400e',
+              color: '#6b7280',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
-            }}>
-              PRELIMINARY
-            </span>
-          )}
-        </div>
-
-        {/* Primary determination */}
-        <h1 style={{
-          fontSize: 24,
-          fontWeight: 600,
-          color: '#111827',
-          margin: '0 0 12px',
-          lineHeight: 1.2,
-        }}>
-          {isIncomplete ? 'Assessment Incomplete — Expert Review Required' : pathway}
-        </h1>
-
-        <p style={{
-          fontSize: 13,
-          color: '#6b7280',
-          margin: '0 0 16px',
-          lineHeight: 1.65,
-          maxWidth: 900,
-        }}>
-          {isIncomplete
-            ? 'Critical questions remain unresolved, so this output should not be used for regulatory decision-making.'
-            : heroReason || caseReasoning?.primaryReason || 'This review summarizes the current route, what supports it, and what must happen before the team relies on it.'}
-        </p>
-
-        {/* Primary next action */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 10,
-          padding: '12px 16px',
-          background: 'rgba(255,255,255,0.7)',
-          borderRadius: 6,
-          marginBottom: 20,
-        }}>
-          <Icon name="arrow" size={14} color={config.accent} style={{ marginTop: 2 }} />
-          <div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Next Step
-            </span>
-            <p style={{ fontSize: 13, color: '#111827', margin: '4px 0 0', fontWeight: 500 }}>
-              {getPrimaryAction()}
-            </p>
-          </div>
-        </div>
-
-        {pccpHeroSummary && (
-          <div
-            data-testid="pccp-recommendation"
-            style={{
-              padding: '16px 18px',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              borderRadius: 8,
-              marginBottom: 20,
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              flexWrap: 'wrap',
               marginBottom: 8,
             }}>
-              <span style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#1d4ed8',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-              }}>
-                PCCP submission strategy
-              </span>
-              <span style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '3px 8px',
-                borderRadius: 999,
-                background: pccpEligibility === 'TYPICAL' ? '#dbeafe' : '#fef3c7',
-                color: pccpEligibility === 'TYPICAL' ? '#1d4ed8' : '#92400e',
-                border: `1px solid ${pccpEligibility === 'TYPICAL' ? '#93c5fd' : '#fde68a'}`,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}>
-                {pccpHeroSummary.likelihood}
-              </span>
+              Recommended Route
             </div>
-            <div style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: '#0f172a',
-              marginBottom: 8,
-              lineHeight: 1.35,
+            <h1 style={{
+              fontSize: 24,
+              fontWeight: 600,
+              color: '#111827',
+              margin: '0 0 12px',
+              lineHeight: 1.2,
             }}>
-              {pccpHeroSummary.heading}
-            </div>
+              {isIncomplete ? 'Assessment Incomplete — Expert Review Required' : pathway}
+            </h1>
             <p style={{
               fontSize: 13,
-              color: '#475569',
+              color: '#4b5563',
+              margin: '0 0 16px',
               lineHeight: 1.65,
-              margin: 0,
+              maxWidth: 760,
             }}>
-              {pccpHeroSummary.summary}
+              {relianceState.detail}
             </p>
-            {pccpHeroSummary.detail && (
-              <p style={{
-                fontSize: 12.5,
-                color: '#1e40af',
-                lineHeight: 1.6,
-                margin: '10px 0 0',
-                paddingTop: 10,
-                borderTop: '1px solid #dbeafe',
-              }}>
-                <strong>What must be true:</strong> {pccpHeroSummary.detail}
-              </p>
+
+            {whyThisRouteItems.length > 0 && (
+              <div>
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#6b7280',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 8,
+                }}>
+                  Why This Route
+                </div>
+                <ul style={{
+                  margin: 0,
+                  paddingLeft: 18,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}>
+                  {whyThisRouteItems.map((item, index) => (
+                    <li
+                      key={`route-reason-${index}`}
+                      style={{
+                        fontSize: 13,
+                        color: '#1f2937',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <HelpTextWithLinks text={item} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {pccpHeroSummary && (
+              <div
+                data-testid="pccp-recommendation"
+                style={{
+                  marginTop: 16,
+                  padding: '12px 14px',
+                  borderRadius: 6,
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                }}
+              >
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#1d4ed8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 6,
+                }}>
+                  PCCP Strategy Note
+                </div>
+                <div style={{
+                  fontSize: 13,
+                  color: '#1e3a8a',
+                  lineHeight: 1.6,
+                }}>
+                  <strong>{pccpHeroSummary.heading}.</strong> {pccpHeroSummary.summary}
+                  {pccpHeroSummary.detail ? ` What must be true: ${pccpHeroSummary.detail}` : ''}
+                </div>
+              </div>
             )}
           </div>
-        )}
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button
-            onClick={() => window.print()}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 18px',
-              borderRadius: 6,
-              background: '#111827',
-              border: 'none',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            <Icon name="printer" size={14} color="#fff" />
-            Print Assessment Summary
-          </button>
+          <div style={{
+            padding: '16px 18px',
+            background: 'rgba(255,255,255,0.72)',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.65)',
+          }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 8,
+            }}>
+              What To Do Next
+            </div>
+            <div style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#111827',
+              lineHeight: 1.55,
+              marginBottom: supportingNextSteps.length > 0 ? 12 : 0,
+            }}>
+              {getPrimaryAction()}
+            </div>
+            {supportingNextSteps.length > 0 && (
+              <ul style={{
+                margin: 0,
+                paddingLeft: 18,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}>
+                {supportingNextSteps.map((step, index) => (
+                  <li
+                    key={`supporting-next-step-${index}`}
+                    style={{
+                      fontSize: 12.5,
+                      color: '#4b5563',
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    <HelpTextWithLinks text={step} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ============================================
-          CONSISTENCY ISSUES (if any)
-          ============================================ */}
-      {expertReviewItems.length > 0 && (
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        padding: '20px 24px',
+        marginBottom: 24,
+      }}>
         <div style={{
-          padding: '16px 20px',
-          borderRadius: 6,
-          background: '#fffbeb',
-          border: '1px solid #fde68a',
-          marginBottom: 24,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+          marginBottom: 14,
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 12,
-          }}>
-            <Icon name="alert" size={16} color="#d97706" />
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>
-              Expert Review Required Before Reliance ({expertReviewItems.length})
-            </span>
+          <div>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 4,
+            }}>
+              Blockers Before Reliance
+            </div>
+            <div style={{
+              fontSize: 13,
+              color: '#6b7280',
+              lineHeight: 1.55,
+            }}>
+              {mergedBlockers.length > 0
+                ? 'These are the highest-priority items that still need resolution before the current route should be relied on.'
+                : 'No unresolved blockers are surfaced from the current record.'}
+            </div>
           </div>
-          <p style={{
-            fontSize: 12,
-            color: '#78350f',
-            margin: '0 0 12px',
-            lineHeight: 1.55,
-          }}>
-            Each item below identifies a specific contradiction, unresolved judgment, or threshold decision that still needs expert resolution for this case.
-          </p>
+          {remainingBlockerCount > 0 && (
+            <div style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#92400e',
+              padding: '6px 10px',
+              borderRadius: 999,
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
+            }}>
+              {remainingBlockerCount} more in details
+            </div>
+          )}
+        </div>
+
+        {mergedBlockers.length > 0 ? (
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             gap: 10,
           }}>
-            {expertReviewItems.map((item) => (
+            {topBlockers.map((item) => (
               <div key={item.id} style={{
                 padding: '12px 14px',
                 borderRadius: 6,
-                background: '#fffcf2',
-                border: '1px solid #fde7a7',
+                background: item.kind === 'expert' ? '#fffcf2' : '#fff7ed',
+                border: `1px solid ${item.kind === 'expert' ? '#fde7a7' : '#fed7aa'}`,
               }}>
                 <div style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#7c2d12',
-                  lineHeight: 1.45,
-                  marginBottom: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  flexWrap: 'wrap',
+                  marginBottom: 6,
                 }}>
-                  <HelpTextWithLinks text={item.title} />
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: '#a16207',
-                  marginBottom: 8,
-                  lineHeight: 1.45,
-                }}>
-                  {item.meta}
-                </div>
-                <div style={{
-                  fontSize: 12.5,
-                  color: '#78350f',
-                  lineHeight: 1.6,
-                  marginBottom: 8,
-                }}>
-                  <strong>Why this matters here:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
-                </div>
-                <div style={{
-                  fontSize: 12.5,
-                  color: '#78350f',
-                  lineHeight: 1.6,
-                }}>
-                  <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
-                </div>
-                {item.sourceRefs.length > 0 && (
                   <div style={{
-                    fontSize: 12,
-                    color: '#6b7280',
-                    lineHeight: 1.5,
-                    marginTop: 8,
-                    paddingTop: 8,
-                    borderTop: '1px solid #f3e8c1',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#111827',
+                    lineHeight: 1.45,
                   }}>
-                    <strong>Basis:</strong>
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                      marginTop: 4,
-                    }}>
-                      {item.sourceRefs.map((ref) => (
-                        <div key={`${item.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                          <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
-                          <EvidenceGapSourceRef code={ref} />
-                        </div>
-                      ))}
-                    </div>
+                    <HelpTextWithLinks text={item.title} />
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ============================================
-          EVIDENCE GAPS CHECKLIST
-          ============================================ */}
-      {evidenceGapItems.length > 0 && (
-        <div style={{
-          padding: '16px 20px',
-          borderRadius: 6,
-          background: criticalGaps.length > 0 ? '#fef2f2' : '#fffbeb',
-          border: `1px solid ${criticalGaps.length > 0 ? '#fecaca' : '#fde68a'}`,
-          marginBottom: 24,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 12,
-          }}>
-            <Icon name="alertCircle" size={16} color={criticalGaps.length > 0 ? '#dc2626' : '#d97706'} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: criticalGaps.length > 0 ? '#991b1b' : '#92400e' }}>
-              Evidence Needed Before Reliance ({evidenceGapItems.length})
-              {criticalGaps.length > 0 && (
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: 4,
-                  background: '#fecaca',
-                  color: '#dc2626',
-                  marginLeft: 8,
-                }}>
-                  {criticalGaps.length} CRITICAL
-                </span>
-              )}
-            </span>
-          </div>
-          <p style={{
-            fontSize: 12,
-            color: '#6b7280',
-            margin: '0 0 12px',
-            lineHeight: 1.5,
-          }}>
-            These items identify missing analyses or documents for this specific case. The assessment can be reviewed now, but it should not be relied upon until the listed evidence is added.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {evidenceGapItems.map((item) => (
-              <div key={item.id} style={{
-                padding: '10px 12px',
-                background: item.severity === 'critical' ? '#fff5f5' : '#fffdf5',
-                borderRadius: 4,
-                border: `1px solid ${item.severity === 'critical' ? '#fed7d7' : '#fef3c7'}`,
-              }}>
-                <div style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#111827',
-                  lineHeight: 1.45,
-                  marginBottom: 4,
-                }}>
-                  <HelpTextWithLinks text={item.title} />
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: '#9a3412',
-                  lineHeight: 1.45,
-                  marginBottom: 8,
-                }}>
-                  {item.meta}
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: item.kind === 'expert' ? '#92400e' : '#9a3412',
+                    background: item.kind === 'expert' ? '#fef3c7' : '#ffedd5',
+                    borderRadius: 999,
+                    padding: '2px 8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {item.kind === 'expert' ? 'Expert review' : 'Evidence needed'}
+                  </span>
                 </div>
                 <div style={{
                   fontSize: 12.5,
                   color: '#4b5563',
-                  lineHeight: 1.6,
-                  marginBottom: 8,
-                }}>
-                  <strong>Why this matters here:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
-                </div>
-                <div style={{
-                  fontSize: 12.5,
-                  color: '#6b7280',
-                  lineHeight: 1.6,
+                  lineHeight: 1.55,
                 }}>
                   <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
-                </div>
-                <div style={{
-                  fontSize: 12,
-                  color: '#6b7280',
-                  lineHeight: 1.5,
-                  marginTop: 8,
-                  paddingTop: 8,
-                  borderTop: '1px solid #f3f4f6',
-                }}>
-                  <strong>Source documents:</strong>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 4,
-                    marginTop: 4,
-                  }}>
-                    {item.sourceRefs.map((ref) => (
-                        <div key={`${item.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                          <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
-                          <EvidenceGapSourceRef code={ref} />
-                        </div>
-                      ))}
-                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div style={{
+            padding: '14px 16px',
+            borderRadius: 6,
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            fontSize: 13,
+            color: '#166534',
+            lineHeight: 1.6,
+          }}>
+            The current record does not surface unresolved blocker items in the report summary.
+          </div>
+        )}
+      </div>
 
-      {/* ============================================
-          SECTION 2: MAIN CONTENT AREA
-          ============================================ */}
-      <div style={{
+      <details style={{
         background: '#ffffff',
         border: '1px solid #e5e7eb',
         borderRadius: 8,
-        padding: '0 28px',
         marginBottom: 24,
+        overflow: 'hidden',
       }}>
+        <summary style={{
+          listStyle: 'none',
+          cursor: 'pointer',
+          padding: '18px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}>
+          <div>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 4,
+            }}>
+              More Detail
+            </div>
+            <div style={{
+              fontSize: 13,
+              color: '#6b7280',
+              lineHeight: 1.55,
+            }}>
+              Full blocker explanations, detailed rationale, verification focus, and source references.
+            </div>
+          </div>
+          <Icon name="arrowDown" size={16} color="#9ca3af" />
+        </summary>
+        <div style={{
+          borderTop: '1px solid #e5e7eb',
+          padding: '20px 24px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 24,
+        }}>
+          {mergedBlockers.length > 0 && (
+            <div>
+              <div style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 12,
+              }}>
+                All Blockers Before Reliance
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {mergedBlockers.map((item) => (
+                  <div key={`detail-${item.id}`} style={{
+                    padding: '12px 14px',
+                    borderRadius: 6,
+                    background: item.kind === 'expert' ? '#fffcf2' : '#fffdf5',
+                    border: `1px solid ${item.kind === 'expert' ? '#fde7a7' : '#fef3c7'}`,
+                  }}>
+                    <div style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#111827',
+                      lineHeight: 1.45,
+                      marginBottom: 4,
+                    }}>
+                      <HelpTextWithLinks text={item.title} />
+                    </div>
+                    <div style={{
+                      fontSize: 11,
+                      color: '#a16207',
+                      marginBottom: 8,
+                      lineHeight: 1.45,
+                    }}>
+                      {item.meta}
+                    </div>
+                    <div style={{
+                      fontSize: 12.5,
+                      color: '#4b5563',
+                      lineHeight: 1.6,
+                      marginBottom: 8,
+                    }}>
+                      <strong>Why this matters:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
+                    </div>
+                    <div style={{
+                      fontSize: 12.5,
+                      color: '#4b5563',
+                      lineHeight: 1.6,
+                    }}>
+                      <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
+                    </div>
+                    {item.sourceRefs.length > 0 && (
+                      <div style={{
+                        fontSize: 12,
+                        color: '#6b7280',
+                        lineHeight: 1.5,
+                        marginTop: 8,
+                        paddingTop: 8,
+                        borderTop: '1px solid #f3f4f6',
+                      }}>
+                        <strong>Source documents:</strong>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                          marginTop: 4,
+                        }}>
+                          {item.sourceRefs.map((ref) => (
+                            <div key={`${item.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                              <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
+                              <EvidenceGapSourceRef code={ref} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {/* Regulatory Reasoning */}
-        {caseReasoning && (
-          <CollapsibleSection id="reasoning" title="Regulatory Reasoning">
+          {advisoryItems.length > 0 && (
+            <div>
+              <div style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 12,
+              }}>
+                Additional Evidence That Could Strengthen The Record
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {advisoryItems.map((item) => (
+                  <div key={`advisory-${item.id}`} style={{
+                    padding: '12px 14px',
+                    borderRadius: 6,
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                  }}>
+                    <div style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#111827',
+                      lineHeight: 1.45,
+                      marginBottom: 6,
+                    }}>
+                      <HelpTextWithLinks text={item.title} />
+                    </div>
+                    <div style={{
+                      fontSize: 12.5,
+                      color: '#4b5563',
+                      lineHeight: 1.6,
+                    }}>
+                      <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 12,
+            }}>
+              Full Rationale
+            </div>
+
             {assessmentBasis.length > 0 && (
               <div style={{
-                marginBottom: reasoningDetailParagraphs.length > 0 || caseReasoning.decisionPath.length > 0 ? 16 : 0,
+                marginBottom: 16,
                 padding: '14px 16px',
                 background: '#f8fafc',
                 border: '1px solid #e2e8f0',
@@ -843,9 +955,9 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               </div>
             )}
 
-            {reasoningDetailParagraphs.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {reasoningDetailParagraphs.map((paragraph, index) => (
+            {reportNarrative.supportingReasoning.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                {reportNarrative.supportingReasoning.map((paragraph, index) => (
                   <div
                     key={`reasoning-paragraph-${index}`}
                     style={{
@@ -862,7 +974,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
             {caseReasoning.decisionPath.length > 0 && (
               <div style={{
-                marginTop: reasoningDetailParagraphs.length > 0 ? 16 : 0,
+                marginBottom: 16,
                 padding: '14px 16px',
                 background: '#f8fafc',
                 border: '1px solid #e2e8f0',
@@ -902,100 +1014,85 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             )}
 
             {(caseReasoning.verificationSteps.length > 0 || caseReasoning.counterConsiderations.length > 0) && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+              <div style={{ display: 'grid', gap: 12 }}>
                 {caseReasoning.verificationSteps.length > 0 && (
-                  <details style={{
+                  <div style={{
+                    padding: '14px 16px',
                     background: '#f9fafb',
                     border: '1px solid #e5e7eb',
                     borderRadius: 6,
-                    overflow: 'hidden',
                   }}>
-                    <summary style={{
-                      padding: '10px 14px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#374151',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
+                    <div style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#475569',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      marginBottom: 10,
                     }}>
-                      <Icon name="checkCircle" size={14} color="#16a34a" />
                       {caseReasoning.verificationTitle || 'Case-Specific Verification Focus'}
-                    </summary>
-                    <div style={{
-                      padding: '12px 14px',
-                      borderTop: '1px solid #e5e7eb',
-                    }}>
-                      <ul style={{
-                        margin: 0,
-                        paddingLeft: 18,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                      }}>
-                        {caseReasoning.verificationSteps.map((step, index) => (
-                          <li
-                            key={`verification-step-${index}`}
-                            style={{
-                              fontSize: 13,
-                              color: '#6b7280',
-                              lineHeight: 1.6,
-                            }}
-                          >
-                            <HelpTextWithLinks text={step} />
-                          </li>
-                        ))}
-                      </ul>
                     </div>
-                  </details>
+                    <ul style={{
+                      margin: 0,
+                      paddingLeft: 18,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}>
+                      {caseReasoning.verificationSteps.map((step, index) => (
+                        <li
+                          key={`verification-step-${index}`}
+                          style={{
+                            fontSize: 13,
+                            color: '#4b5563',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          <HelpTextWithLinks text={step} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
+
                 {caseReasoning.counterConsiderations.length > 0 && (
-                  <details style={{
+                  <div style={{
+                    padding: '14px 16px',
                     background: '#f9fafb',
                     border: '1px solid #e5e7eb',
                     borderRadius: 6,
-                    overflow: 'hidden',
                   }}>
-                    <summary style={{
-                      padding: '10px 14px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#374151',
-                      cursor: 'pointer',
+                    <div style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#475569',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      marginBottom: 10,
+                    }}>
+                      {caseReasoning.counterTitle || 'What Could Still Change This Conclusion'}
+                    </div>
+                    <ul style={{
+                      margin: 0,
+                      paddingLeft: 18,
                       display: 'flex',
-                      alignItems: 'center',
+                      flexDirection: 'column',
                       gap: 8,
                     }}>
-                      <Icon name="alert" size={14} color="#d97706" />
-                      {caseReasoning.counterTitle || 'What Could Still Change This Conclusion'}
-                    </summary>
-                    <div style={{
-                      padding: '12px 14px',
-                      borderTop: '1px solid #e5e7eb',
-                    }}>
-                      <ul style={{
-                        margin: 0,
-                        paddingLeft: 18,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                      }}>
-                        {caseReasoning.counterConsiderations.map((item, index) => (
-                          <li
-                            key={`counter-item-${index}`}
-                            style={{
-                              fontSize: 13,
-                              color: '#6b7280',
-                              lineHeight: 1.6,
-                            }}
-                          >
-                            <HelpTextWithLinks text={item} />
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </details>
+                      {caseReasoning.counterConsiderations.map((item, index) => (
+                        <li
+                          key={`counter-item-${index}`}
+                          style={{
+                            fontSize: 13,
+                            color: '#4b5563',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          <HelpTextWithLinks text={item} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
             )}
@@ -1006,7 +1103,16 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 paddingTop: 12,
                 borderTop: '1px solid #f3f4f6',
               }}>
-                <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>Authorities relied on</div>
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#475569',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 8,
+                }}>
+                  Authorities Relied On
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {caseReasoning.sources.map((source) => (
                     <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
@@ -1017,108 +1123,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 </div>
               </div>
             )}
-          </CollapsibleSection>
-        )}
+          </div>
+        </div>
+      </details>
 
-        {/* Documentation Requirements */}
-        {docs && (
-          <CollapsibleSection
-            id="documentation"
-            title="Package Requirements"
-            badge={
-              docs.required?.length ? (
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  background: '#fef2f2',
-                  color: '#dc2626',
-                }}>
-                  {docs.required.length} Required
-                </span>
-              ) : undefined
-            }
-          >
-            <div style={{
-              fontSize: 12.5,
-              color: '#6b7280',
-              lineHeight: 1.6,
-              marginBottom: docs.required?.length ? 16 : 0,
-            }}>
-              This section lists the materials the next package should contain. It complements the preparation checklist rather than repeating the full assessment record.
-            </div>
-            {docs.required && docs.required.length > 0 && (
-              <div style={{ marginBottom: docs.scopeNote ? 16 : 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#dc2626', marginBottom: 10 }}>
-                  Package Must Include
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {docs.required.map((item: { doc: string; source: string }, i: number) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 10,
-                      padding: '10px 12px',
-                      background: '#fef2f2',
-                      borderRadius: 4,
-                    }}>
-                      <div style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 4,
-                        border: '1.5px solid #fca5a5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: 1,
-                      }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <GuidanceRef code={item.source} showSection={false} />
-                          <AuthorityTag level={sourceClassToLevel[classifySourceInline(item.source)] || 'final_guidance'} compact />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {docs.scopeNote && (
-              <div style={{
-                padding: '10px 12px',
-                background: '#fffbeb',
-                border: '1px solid #fde68a',
-                borderRadius: 4,
-                fontSize: 12,
-                color: '#92400e',
-                lineHeight: 1.5,
-              }}>
-                <strong>Note: </strong>
-                <HelpTextWithLinks text={docs.scopeNote} />
-              </div>
-            )}
-
-            {((docs.recommended && docs.recommended.length > 0) || (docs.orgSpecific && docs.orgSpecific.length > 0)) && (
-              <div style={{
-                marginTop: 14,
-                fontSize: 12,
-                color: '#6b7280',
-                lineHeight: 1.6,
-              }}>
-                Additional recommended and organization-specific materials are available in the preparation checklist for this route.
-              </div>
-            )}
-          </CollapsibleSection>
-        )}
-      </div>
-
-      {/* ============================================
-          REVIEW/SHARE WORKFLOW
-          ============================================ */}
       {onAddNote && (
         <div style={{
           background: '#ffffff',
@@ -1138,118 +1146,142 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             Reviewer Notes
           </div>
 
-          {/* Reviewer notes */}
-          {onAddNote && (
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
-                Reviewer Notes
-              </div>
-              {reviewerNotes && reviewerNotes.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                  {reviewerNotes.map(note => (
-                    <div key={note.id} style={{
-                      padding: '10px 12px',
-                      background: '#f9fafb',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
-                          {note.author}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
+              Reviewer Notes
+            </div>
+            {reviewerNotes && reviewerNotes.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                {reviewerNotes.map((note) => (
+                  <div key={note.id} style={{
+                    padding: '10px 12px',
+                    background: '#f9fafb',
+                    borderRadius: 6,
+                    border: '1px solid #e5e7eb',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                        {note.author}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                          {new Date(note.timestamp).toLocaleString()}
                         </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                            {new Date(note.timestamp).toLocaleString()}
-                          </span>
-                          {onRemoveNote && (
-                            <button
-                              onClick={() => onRemoveNote(note.id)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: 2,
-                                color: '#9ca3af',
-                                fontSize: 14,
-                                lineHeight: 1,
-                              }}
-                              title="Remove note"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
-                        {note.text}
+                        {onRemoveNote && (
+                          <button
+                            onClick={() => onRemoveNote(note.id)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: 2,
+                              color: '#9ca3af',
+                              fontSize: 14,
+                              lineHeight: 1,
+                            }}
+                            title="Remove note"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={noteAuthor}
-                  onChange={e => setNoteAuthor(e.target.value)}
-                  placeholder="Your name"
-                  style={{
-                    width: 140,
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    border: '1px solid #d1d5db',
-                    fontSize: 13,
-                    outline: 'none',
-                  }}
-                />
-                <input
-                  type="text"
-                  value={noteText}
-                  onChange={e => setNoteText(e.target.value)}
-                  placeholder="Add a review note..."
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && noteAuthor.trim() && noteText.trim()) {
-                      onAddNote(noteAuthor.trim(), noteText.trim());
-                      setNoteText('');
-                    }
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    border: '1px solid #d1d5db',
-                    fontSize: 13,
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (noteAuthor.trim() && noteText.trim()) {
-                      onAddNote(noteAuthor.trim(), noteText.trim());
-                      setNoteText('');
-                    }
-                  }}
-                  disabled={!noteAuthor.trim() || !noteText.trim()}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 6,
-                    background: noteAuthor.trim() && noteText.trim() ? '#111827' : '#e5e7eb',
-                    border: 'none',
-                    color: noteAuthor.trim() && noteText.trim() ? '#fff' : '#9ca3af',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: noteAuthor.trim() && noteText.trim() ? 'pointer' : 'default',
-                  }}
-                >
-                  Add
-                </button>
+                    <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+                      {note.text}
+                    </div>
+                  </div>
+                ))}
               </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                value={noteAuthor}
+                onChange={(e) => setNoteAuthor(e.target.value)}
+                placeholder="Your name"
+                style={{
+                  width: 140,
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #d1d5db',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              />
+              <input
+                type="text"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add a review note..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && noteAuthor.trim() && noteText.trim()) {
+                    onAddNote(noteAuthor.trim(), noteText.trim());
+                    setNoteText('');
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #d1d5db',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (noteAuthor.trim() && noteText.trim()) {
+                    onAddNote(noteAuthor.trim(), noteText.trim());
+                    setNoteText('');
+                  }
+                }}
+                disabled={!noteAuthor.trim() || !noteText.trim()}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 6,
+                  background: noteAuthor.trim() && noteText.trim() ? '#111827' : '#e5e7eb',
+                  border: 'none',
+                  color: noteAuthor.trim() && noteText.trim() ? '#fff' : '#9ca3af',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: noteAuthor.trim() && noteText.trim() ? 'pointer' : 'default',
+                }}
+              >
+                Add
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* Preparation Checklist CTA */}
+      <div style={{
+        display: 'flex',
+        gap: 10,
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        marginBottom: onHandoff && !determination.isIncomplete ? 0 : 24,
+      }}>
+        <button
+          onClick={() => window.print()}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 18px',
+            borderRadius: 6,
+            background: '#111827',
+            border: 'none',
+            color: '#fff',
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="printer" size={14} color="#fff" />
+          Print Assessment Summary
+        </button>
+      </div>
+
       {onHandoff && !determination.isIncomplete && (
         <div
           data-testid="handoff-cta"
@@ -1315,67 +1347,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </button>
         </div>
       )}
-
-      {/* Feedback CTA */}
-      {onFeedback && (
-        <div
-          data-testid="feedback-cta"
-          style={{
-            padding: 'var(--space-lg)',
-            borderRadius: 'var(--radius-lg)',
-            background: 'var(--color-info-bg)',
-            border: '1px solid var(--color-info-border)',
-            marginTop: 'var(--space-lg)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 'var(--space-lg)',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div>
-            <h4 style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--color-text)',
-              margin: '0 0 var(--space-xs)',
-            }}>
-              How did this assessment work for you?
-            </h4>
-            <p style={{
-              fontSize: 13,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.5,
-              margin: 0,
-            }}>
-              Share a quick survey to help us improve — takes about 2 minutes.
-            </p>
-          </div>
-          <button
-            onClick={onFeedback}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              padding: 'var(--space-md) var(--space-lg)',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-primary)',
-              border: 'none',
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            Share Feedback
-            <Icon name="arrow" size={16} color="#fff" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };
-
-const classifySourceInline = classifySource;
