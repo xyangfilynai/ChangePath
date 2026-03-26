@@ -16,7 +16,7 @@ import {
 } from '../lib/content';
 import { changeTaxonomy } from '../lib/assessment-engine';
 import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
-import type { AssessmentStatus, ReviewerNote } from '../lib/assessment-store';
+import type { ReviewerNote } from '../lib/assessment-store';
 import { classifySource } from '../lib/source-classification';
 
 interface ReviewPanelProps {
@@ -28,10 +28,6 @@ interface ReviewPanelProps {
   onEditBlock: (blockIndex: number) => void;
   onFeedback?: () => void;
   onHandoff?: () => void;
-  onSave?: () => void;
-  assessmentName?: string;
-  assessmentStatus?: AssessmentStatus;
-  onStatusChange?: (status: AssessmentStatus) => void;
   reviewerNotes?: ReviewerNote[];
   onAddNote?: (author: string, text: string) => void;
   onRemoveNote?: (noteId: string) => void;
@@ -86,8 +82,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   onEditBlock,
   onFeedback,
   onHandoff,
-  assessmentStatus,
-  onStatusChange,
   reviewerNotes,
   onAddNote,
   onRemoveNote,
@@ -409,25 +403,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }>
             <ConfBadge level={config.confidence} />
           </span>
-          {/* Assessment status tag */}
-          {assessmentStatus && (
-            <span style={{
-              fontSize: 10,
-              fontWeight: 600,
-              padding: '3px 8px',
-              borderRadius: 4,
-              background: assessmentStatus === 'Draft' ? '#f3f4f6'
-                : assessmentStatus === 'In Review' ? '#dbeafe'
-                : '#d1fae5',
-              color: assessmentStatus === 'Draft' ? '#6b7280'
-                : assessmentStatus === 'In Review' ? '#1d4ed8'
-                : '#15803d',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}>
-              {assessmentStatus}
-            </span>
-          )}
           {/* Preliminary label when there are evidence gaps on non-incomplete */}
           {!isIncomplete && hasCriticalGaps && (
             <span style={{
@@ -1166,7 +1141,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       {/* ============================================
           REVIEW/SHARE WORKFLOW
           ============================================ */}
-      {(onStatusChange || onAddNote) && (
+      {onAddNote && (
         <div style={{
           background: '#ffffff',
           border: '1px solid #e5e7eb',
@@ -1182,61 +1157,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             letterSpacing: '0.04em',
             marginBottom: 16,
           }}>
-            Review Workflow
+            Reviewer Notes
           </div>
-
-          {/* Status selector */}
-          {onStatusChange && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
-                Assessment Status
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {(['Draft', 'In Review', 'Final Internal Memo'] as AssessmentStatus[]).map(status => (
-                  <button
-                    key={status}
-                    onClick={() => onStatusChange(status)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 6,
-                      fontSize: 13,
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      border: assessmentStatus === status ? '2px solid' : '1px solid #d1d5db',
-                      borderColor: assessmentStatus === status
-                        ? (status === 'Draft' ? '#9ca3af' : status === 'In Review' ? '#3b82f6' : '#16a34a')
-                        : '#d1d5db',
-                      background: assessmentStatus === status
-                        ? (status === 'Draft' ? '#f3f4f6' : status === 'In Review' ? '#dbeafe' : '#d1fae5')
-                        : '#fff',
-                      color: assessmentStatus === status
-                        ? (status === 'Draft' ? '#374151' : status === 'In Review' ? '#1d4ed8' : '#15803d')
-                        : '#6b7280',
-                    }}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-              {/* Hard gate warning for Final status with critical gaps */}
-              {assessmentStatus === 'Final Internal Memo' && (isIncomplete || hasCriticalGaps) && (
-                <div style={{
-                  marginTop: 8,
-                  padding: '8px 12px',
-                  borderRadius: 4,
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  fontSize: 12,
-                  color: '#991b1b',
-                  lineHeight: 1.5,
-                }}>
-                  <strong>Warning:</strong> This assessment has {isIncomplete ? 'unresolved critical questions' : 'critical evidence gaps'}.
-                  Marking as "Final Internal Memo" does not resolve these issues. All gaps and unresolved questions
-                  should be addressed before this assessment is relied upon for regulatory decisions.
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Reviewer notes */}
           {onAddNote && (

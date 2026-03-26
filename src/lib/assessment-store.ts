@@ -5,8 +5,6 @@
 
 import type { Answers } from './assessment-engine';
 
-export type AssessmentStatus = 'Draft' | 'In Review' | 'Final Internal Memo';
-
 export interface ReviewerNote {
   id: string;
   author: string;
@@ -24,7 +22,6 @@ export interface AssessmentVersion {
 export interface SavedAssessment {
   id: string;
   name: string;
-  status: AssessmentStatus;
   answers: Answers;
   blockIndex: number;
   createdAt: string;
@@ -101,7 +98,6 @@ export const assessmentStore = {
     const newAssessment: SavedAssessment = {
       id: generateId(),
       name: assessment.name || `Assessment ${all.length + 1}`,
-      status: assessment.status || 'Draft',
       answers: assessment.answers,
       blockIndex: assessment.blockIndex,
       createdAt: now,
@@ -113,16 +109,6 @@ export const assessmentStore = {
     all.push(newAssessment);
     saveAll(all);
     return newAssessment;
-  },
-
-  updateStatus(id: string, status: AssessmentStatus): void {
-    const all = loadAll();
-    const idx = all.findIndex(a => a.id === id);
-    if (idx >= 0) {
-      all[idx].status = status;
-      all[idx].updatedAt = new Date().toISOString();
-      saveAll(all);
-    }
   },
 
   addNote(id: string, author: string, text: string): void {
@@ -155,7 +141,6 @@ export const assessmentStore = {
     if (!original) return undefined;
     return assessmentStore.save({
       name: `${original.name} (Copy)`,
-      status: 'Draft',
       answers: { ...original.answers },
       blockIndex: 0,
       lastPathway: original.lastPathway,

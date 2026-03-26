@@ -19,7 +19,6 @@ describe('UI workflow', () => {
           {
             id: 'case-1',
             name: 'Chest CT model drift review',
-            status: 'In Review',
             answers: {},
             blockIndex: 2,
             lastPathway: 'New Submission Required',

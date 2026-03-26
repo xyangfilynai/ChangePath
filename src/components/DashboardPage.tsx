@@ -14,12 +14,6 @@ const hoverHandlers = (hoverBorder: string, restBorder: string) => ({
   },
 });
 
-const statusColors: Record<string, { bg: string; color: string; border: string }> = {
-  'Draft': { bg: '#f3f4f6', color: '#6b7280', border: '#d1d5db' },
-  'In Review': { bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
-  'Final Internal Memo': { bg: '#d1fae5', color: '#15803d', border: '#86efac' },
-};
-
 interface DashboardPageProps {
   onQuickReview: () => void;
   onFullAssessment: () => void;
@@ -248,7 +242,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {savedAssessments.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {savedAssessments.map(assessment => {
-                const sc = statusColors[assessment.status] || statusColors['Draft'];
                 const isConfirmingDelete = confirmDeleteId === assessment.id;
 
                 return (
@@ -266,7 +259,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <div style={{ marginBottom: 4 }}>
                         <span style={{
                           fontSize: 14,
                           fontWeight: 600,
@@ -276,20 +269,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           whiteSpace: 'nowrap',
                         }}>
                           {assessment.name}
-                        </span>
-                        <span style={{
-                          fontSize: 9,
-                          fontWeight: 700,
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          background: sc.bg,
-                          color: sc.color,
-                          border: `1px solid ${sc.border}`,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          flexShrink: 0,
-                        }}>
-                          {assessment.status}
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#9ca3af' }}>
