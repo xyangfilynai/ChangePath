@@ -425,43 +425,20 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         <div style={{ flex: 1 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            flexWrap: 'wrap',
-            marginBottom: 'var(--space-xs)',
-          }}>
+          {/* Question text + tags inline */}
+          <div style={{ lineHeight: 1.5 }}>
             <span style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '2px 7px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-bg-hover)',
-              color: 'var(--color-text-muted)',
-              letterSpacing: '0.04em',
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--color-text)',
             }}>
-              {field.id}
+              {field.q}
             </span>
-            {field.disabled && (
-              <span style={{
-                fontSize: 10,
-                color: 'var(--color-text-muted)',
-              }}>
-                Set by earlier answers
-              </span>
-            )}
-          </div>
 
-          {/* Tags */}
-          <div style={{
-            display: 'flex',
-            gap: 'var(--space-xs)',
-            marginBottom: 'var(--space-sm)',
-            flexWrap: 'wrap',
-          }}>
+            {/* Tags — inline after question text */}
             {field.pathwayCritical && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -471,12 +448,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-danger-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
               }}>
                 Required
               </span>
             )}
             {field.critical && !field.pathwayCritical && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -486,12 +467,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-warning-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
               }}>
                 Critical
               </span>
             )}
             {field.draftRef && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -501,12 +486,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-info-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
               }}>
                 Draft Guidance
               </span>
             )}
             {field.dynamic && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -516,16 +505,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
+                marginLeft: 6,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
               }}>
-                <Icon name="layers" size={10} />
                 Conditional
               </span>
             )}
             {field.disabled && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -535,12 +524,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
               }}>
                 Locked
               </span>
             )}
             {hasForcedValue && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -550,29 +543,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-info-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
+                marginLeft: 6,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
               }}>
-                <Icon name="check" size={10} />
                 Auto-set
               </span>
             )}
           </div>
-
-          {/* Primary prompt */}
-          <h4 style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            margin: 0,
-            lineHeight: 1.5,
-          }}>
-            {field.q}
-          </h4>
         </div>
 
       </div>
+
+      <div style={{ paddingLeft: 'calc(28px + var(--space-md))' }}>
 
       {hasValidationError && (
         <div style={{
@@ -864,6 +847,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           )}
         </div>
       )}
+
+      </div>
     </div>
   );
 };
