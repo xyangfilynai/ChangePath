@@ -386,7 +386,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Field header */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 'var(--space-md)',
         marginBottom: 'var(--space-md)',
       }}>
