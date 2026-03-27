@@ -75,7 +75,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             letterSpacing: '-0.02em',
             lineHeight: 1.25,
           }}>
-            Assess regulatory pathway for AI-related medical device changes
+            Assess regulatory pathway for changes to AI-enabled medical devices
           </h1>
           <p style={{
             fontSize: 15,
@@ -90,12 +90,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             display: 'inline-block',
             marginTop: 20,
             padding: '6px 12px',
-            background: 'var(--color-info-bg)',
-            border: '1px solid var(--color-info-border)',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
             borderRadius: 6,
             fontSize: 11,
             fontWeight: 600,
-            color: 'var(--color-info)',
+            color: 'var(--color-warning)',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}>
@@ -105,17 +105,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* Primary Actions Section */}
         <section style={{ marginBottom: 72 }}>
-          <h2 style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--color-text-tertiary)',
-            margin: '0 0 24px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            Choose how to begin
-          </h2>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Resume Assessment Card */}
             {hasSavedSession && (
@@ -361,17 +350,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* Saved Assessments Section */}
         {hasSavedWork && (
           <section style={{ marginBottom: 72 }}>
-            <h2 style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--color-text-tertiary)',
-              margin: '0 0 24px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              Saved assessments
-            </h2>
-
             {savedAssessments.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {savedAssessments.map(assessment => {
@@ -525,8 +503,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <h2 style={{
             fontSize: 14,
             fontWeight: 600,
-            color: 'var(--color-text-tertiary)',
-            margin: '0 0 24px',
+            color: 'var(--color-warning)',
+            margin: '0 0 16px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
@@ -534,14 +512,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </h2>
 
           <div style={{
-            padding: 24,
-            background: 'var(--color-bg-elevated)',
-            border: '1px solid var(--color-border)',
+            padding: 20,
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
             borderRadius: 'var(--radius-md)',
           }}>
             <p style={{
               fontSize: 13,
-              color: 'var(--color-text-secondary)',
+              color: 'var(--color-warning)',
               lineHeight: 1.65,
               margin: 0,
             }}>
