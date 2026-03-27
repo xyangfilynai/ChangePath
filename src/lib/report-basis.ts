@@ -11,10 +11,50 @@ export interface ReportNarrativeView {
   supportingReasoning: string[];
 }
 
+export interface AssessmentRecordFact {
+  label: string;
+  value: string;
+  isLongText?: boolean;
+  isMissing?: boolean;
+}
+
+export interface AssessmentBasisView {
+  recordFacts: AssessmentRecordFact[];
+  systemBasis: string[];
+}
+
 const getChangeCount = (answers: Answers): number | null => {
   if (answers.A8 === undefined || answers.A8 === null || answers.A8 === '') return null;
   const parsed = Number.parseInt(String(answers.A8), 10);
   return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getTextValue = (value: unknown): { value: string; isMissing: boolean } => {
+  if (typeof value === 'string' && value.trim()) {
+    return { value: value.trim(), isMissing: false };
+  }
+  if (value !== undefined && value !== null && String(value).trim()) {
+    return { value: String(value).trim(), isMissing: false };
+  }
+  return { value: 'Not provided', isMissing: true };
+};
+
+const getPCCPStatusValue = (
+  answers: Answers,
+  determination: DeterminationResult,
+): string => {
+  if (answers.A2 === Answer.Yes) {
+    if (determination.isPCCPImpl) return 'Authorized PCCP on file; current pathway depends on PCCP fit';
+    if (determination.pccpScopeFailed) return 'Authorized PCCP on file; current record does not support PCCP use';
+    if (determination.pccpIncomplete) return 'Authorized PCCP on file; PCCP scope review incomplete';
+    return 'Authorized PCCP on file';
+  }
+
+  if (answers.A2 === Answer.No) {
+    return 'No authorized PCCP on file';
+  }
+
+  return 'Not provided';
 };
 
 export const splitReportNarrative = (narrative: string[]): ReportNarrativeView => {
@@ -37,6 +77,71 @@ export const splitReportNarrative = (narrative: string[]): ReportNarrativeView =
   };
 };
 
+export const buildAssessmentRecordFacts = (
+  answers: Answers,
+  determination: DeterminationResult,
+): AssessmentRecordFact[] => {
+  const authorizationPathway = getTextValue(answers.A1);
+  const authorizationId = getTextValue(answers.A1b);
+  const baseline = getTextValue(answers.A1c);
+  const ifuAnchor = getTextValue(answers.A1d);
+  const changeCategory = getTextValue(answers.B1);
+  const changeType = getTextValue(answers.B2);
+  const changeDescription = getTextValue(answers.B4);
+  const changeCount = getChangeCount(answers);
+  const pccpStatus = getPCCPStatusValue(answers, determination);
+
+  return [
+    {
+      label: 'Authorization Pathway',
+      value: authorizationPathway.value,
+      isMissing: authorizationPathway.isMissing,
+    },
+    {
+      label: 'Authorization ID',
+      value: authorizationId.value,
+      isMissing: authorizationId.isMissing,
+    },
+    {
+      label: 'Authorized Baseline',
+      value: baseline.value,
+      isMissing: baseline.isMissing,
+    },
+    {
+      label: 'Change Category',
+      value: changeCategory.value,
+      isMissing: changeCategory.isMissing,
+    },
+    {
+      label: 'Change Type',
+      value: changeType.value,
+      isMissing: changeType.isMissing,
+    },
+    {
+      label: 'PCCP Status',
+      value: pccpStatus,
+      isMissing: pccpStatus === 'Not provided',
+    },
+    {
+      label: 'Reported Changes Since Last Submission',
+      value: changeCount === null ? 'Not provided' : String(changeCount),
+      isMissing: changeCount === null,
+    },
+    {
+      label: 'Authorized IFU / Intended Use Anchor',
+      value: ifuAnchor.value,
+      isLongText: true,
+      isMissing: ifuAnchor.isMissing,
+    },
+    {
+      label: 'Submitted Change Description',
+      value: changeDescription.value,
+      isLongText: true,
+      isMissing: changeDescription.isMissing,
+    },
+  ];
+};
+
 export const buildAssessmentBasis = (
   answers: Answers,
   determination: DeterminationResult,
@@ -48,13 +153,13 @@ export const buildAssessmentBasis = (
   if (answers.A1 === AuthPathway.PMA) {
     items.push(
       baseline
-        ? `PMA review logic was applied to${authId || ' the identified device'} using authorized baseline ${baseline} as the comparison point.`
-        : `PMA review logic was applied, but the authorized baseline was not fully defined on the current record.`,
+        ? `PMA-specific review logic was applied to${authId || ' the identified device'} using authorized baseline ${baseline} as the comparison point.`
+        : `PMA-specific review logic was applied, but the authorized baseline was not fully defined on the current record.`,
     );
   } else if (answers.A1 === AuthPathway.DeNovo) {
     items.push(
       baseline
-        ? `The De Novo device${authId} was assessed against authorized baseline ${baseline}, and the non-PMA software-change framework was applied unless a threshold issue overrode it.`
+        ? `The De Novo device${authId} was assessed against authorized baseline ${baseline}, and the non-PMA software-change framework was applied unless a threshold issue controlled the pathway first.`
         : `The De Novo device record does not include a complete authorized baseline, which weakens the comparison point for this assessment.`,
     );
   } else if (answers.A1 === AuthPathway.FiveOneZeroK) {
@@ -100,7 +205,7 @@ export const buildAssessmentBasis = (
       );
     } else {
       items.push(
-        'An authorized PCCP was on file and was checked against the change, though it did not control the final pathway.',
+        'An authorized PCCP was on file and was reviewed against the change, but it did not determine the current pathway.',
       );
     }
   } else if (answers.A2 === Answer.No) {
@@ -131,3 +236,11 @@ export const buildAssessmentBasis = (
 
   return items;
 };
+
+export const buildAssessmentBasisView = (
+  answers: Answers,
+  determination: DeterminationResult,
+): AssessmentBasisView => ({
+  recordFacts: buildAssessmentRecordFacts(answers, determination),
+  systemBasis: buildAssessmentBasis(answers, determination),
+});
