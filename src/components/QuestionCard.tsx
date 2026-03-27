@@ -426,25 +426,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         <div style={{ flex: 1 }}>
           {/* Question text + tags inline */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            flexWrap: 'wrap',
-            gap: 'var(--space-sm)',
-          }}>
-            <h4 style={{
+          <div style={{ lineHeight: 1.5 }}>
+            <span style={{
               fontSize: 15,
               fontWeight: 600,
               color: 'var(--color-text)',
-              margin: 0,
-              lineHeight: 1.5,
             }}>
               {field.q}
-            </h4>
+            </span>
 
-            {/* Tags — after the question text */}
+            {/* Tags — inline after question text */}
             {field.pathwayCritical && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -454,6 +448,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-danger-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
                 Required
@@ -461,6 +457,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             )}
             {field.critical && !field.pathwayCritical && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -470,6 +467,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-warning-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
                 Critical
@@ -477,6 +476,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             )}
             {field.draftRef && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -486,6 +486,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-info-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
                 Draft Guidance
@@ -493,6 +495,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             )}
             {field.dynamic && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -502,17 +505,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
+                marginLeft: 6,
+                verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
-                <Icon name="layers" size={10} />
                 Conditional
               </span>
             )}
             {field.disabled && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -522,6 +524,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                marginLeft: 6,
+                verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
                 Locked
@@ -529,6 +533,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             )}
             {hasForcedValue && (
               <span style={{
+                display: 'inline',
                 fontSize: 10,
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -538,12 +543,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-info-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
+                marginLeft: 6,
+                verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
-                <Icon name="check" size={10} />
                 Auto-set
               </span>
             )}
