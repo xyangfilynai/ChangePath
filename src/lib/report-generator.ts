@@ -182,7 +182,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push('');
   lines.push(`Status: ${artifact.meta.assessmentStatus}`);
   lines.push(`Generated: ${new Date(artifact.meta.generatedAt).toLocaleString()}`);
-  lines.push(`RegAccess Version: ${artifact.meta.toolVersion}`);
+  lines.push(`ChangePath Version: ${artifact.meta.toolVersion}`);
   if (assessmentName) lines.push(`Assessment: ${assessmentName}`);
   lines.push('');
 
@@ -291,9 +291,9 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push(hr);
   lines.push('DISCLAIMER');
   lines.push(hr);
-  lines.push('Decision support only — not a regulatory determination.');
-  lines.push('RegAccess supports internal change-control planning and submission strategy discussion.');
-  lines.push('Review outputs with qualified regulatory and clinical expertise before action.');
+  lines.push('Internal workflow aid only — not a regulatory determination.');
+  lines.push('ChangePath supports internal change-control planning and submission strategy discussion.');
+  lines.push('Outputs must be reviewed by qualified personnel against applicable regulations and organizational procedures before any reliance or action.');
   lines.push('');
 
   return lines.join('\n');

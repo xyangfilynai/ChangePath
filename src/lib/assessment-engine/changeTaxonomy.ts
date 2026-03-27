@@ -81,7 +81,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
       { name: "Changed severity scope", desc: "Changing the severity range the device is intended to address.", example: "Expanding from detecting moderate-severe disease to also detecting mild cases.", misclass: null, pccp: "NO", pccpNote: "Changes clinical claims and risk profile. Typically requires a new marketing submission." },
     ],
     classificationGuidance: null,
-    boundaryNote: "Changes in this category generally require a new marketing submission. PCCPs are bounded to the reviewed device scope; RegAccess does not treat intended-use changes as routine PCCP implementation. Use Q-Submission for borderline intended-use cases.",
+    boundaryNote: "Changes in this category generally require a new marketing submission. PCCPs are bounded to the reviewed device scope; ChangePath does not treat intended-use changes as routine PCCP implementation. Use Q-Submission for borderline intended-use cases.",
   },
   "Deployment & Infrastructure": {
     types: [

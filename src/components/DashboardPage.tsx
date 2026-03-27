@@ -102,7 +102,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}>
-            Prototype — decision support only
+            Prototype — internal workflow aid only
           </div>
         </div>
 
@@ -616,7 +616,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               lineHeight: 1.65,
               margin: 0,
             }}>
-              ChangePath is an early prototype intended to support structured internal assessment. It does not provide a regulatory determination and does not replace qualified regulatory, legal, clinical, quality, or engineering judgment. Outputs should be reviewed before reliance or action.
+              ChangePath is an early prototype intended to support structured internal assessment. It does not provide a regulatory determination and does not replace qualified regulatory, legal, clinical, quality, or engineering judgment. Outputs must be reviewed by qualified personnel against applicable regulations and organizational procedures before any reliance or action.
             </p>
           </div>
         </section>

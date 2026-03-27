@@ -143,7 +143,7 @@ export const docRequirements: Record<string, DocumentationRequirementSet> = {
       { doc: "Advisory committee preparation materials (for Panel-Track supplements)", source: "Organization policy" },
     ],
     basis: "21 CFR 814.39; PMA Supplement Guidance",
-    scopeNote: "Scope limitation: RegAccess identifies that a PMA supplement is required but does not list supplement-type-specific documentation. The supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) selected in field C_PMA4 drives submission format, clinical data, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order.",
+    scopeNote: "Scope limitation: ChangePath identifies that a PMA supplement is required but does not list supplement-type-specific documentation. The supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) selected in field C_PMA4 drives submission format, clinical data, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order.",
   },
   "Assessment Incomplete": {
     required: [

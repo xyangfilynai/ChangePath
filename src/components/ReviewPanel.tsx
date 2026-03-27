@@ -306,6 +306,25 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     return 'Complete remaining assessment fields before treating the determination as final';
   };
 
+  const getIncompleteHeading = (): string => {
+    if (determination.isIntendedUseUncertain) {
+      return 'Assessment incomplete — intended-use impact unresolved';
+    }
+    if (determination.pmaIncomplete) {
+      return 'Assessment incomplete — PMA significance fields remain';
+    }
+    if (determination.pccpIncomplete) {
+      return 'Assessment incomplete — PCCP scope review required';
+    }
+    if (determination.hasUncertainSignificance) {
+      return 'Assessment incomplete — significance fields unresolved';
+    }
+    if (determination.seUncertain) {
+      return 'Assessment incomplete — substantial equivalence uncertain';
+    }
+    return 'Assessment incomplete — required fields remain';
+  };
+
   const mergedBlockers = useMemo(() => {
     const deduped = new Map<string, MergedBlockerItem>();
     const addItem = (item: MergedBlockerItem) => {
@@ -468,7 +487,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             margin: '0 0 6px',
             lineHeight: 1.2,
           }}>
-            {isIncomplete ? 'Assessment cannot be finalized yet' : pathway}
+            {isIncomplete ? getIncompleteHeading() : pathway}
           </h1>
           <p style={{
             fontSize: 13,

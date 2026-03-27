@@ -487,14 +487,14 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
       eq('isIntendedUseUncertain', false),
     ),
     message:
-      "One or more significance fields were answered 'Uncertain.' RegAccess applies an internal conservative policy that treats unresolved significance uncertainty as requiring a marketing submission — this is not a direct regulatory requirement but a risk-based escalation. Resolve the uncertainty through evidence, expert review, or FDA Pre-Submission before treating the pathway as final.",
+      "One or more significance fields were answered 'Uncertain.' ChangePath applies an internal conservative policy that treats unresolved significance uncertainty as requiring a marketing submission — this is not a direct regulatory requirement but a risk-based escalation. Resolve the uncertainty through evidence, expert review, or FDA Pre-Submission before treating the pathway as final.",
   },
   {
     id: 'pma-unresolved-safety-effectiveness-uncertainty-policy',
     description: 'Unresolved PMA safety/effectiveness uncertainty triggers the internal conservative-policy warning.',
     when: all(eq('isPMA', true), eq('pmaSafetyEffectivenessUncertain', true)),
     message:
-      "The PMA safety/effectiveness field was answered 'Uncertain.' RegAccess applies an internal conservative policy that treats unresolved PMA uncertainty as requiring a supplement — not a direct regulatory mandate. Resolve the uncertainty before treating the pathway as final.",
+      "The PMA safety/effectiveness field was answered 'Uncertain.' ChangePath applies an internal conservative policy that treats unresolved PMA uncertainty as requiring a supplement — not a direct regulatory mandate. Resolve the uncertainty before treating the pathway as final.",
   },
   {
     id: 'pma-labeling-change-with-cpma1-no',

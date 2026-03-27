@@ -4,7 +4,7 @@ export const BrandMark: React.FC = () => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
     <img
       src="/logo.png"
-      alt="RegAccess Logo"
+      alt="ChangePath Logo"
       style={{ width: 36, height: 36, objectFit: 'contain' }}
     />
     <span style={{
@@ -13,7 +13,7 @@ export const BrandMark: React.FC = () => (
       color: 'var(--color-text)',
       letterSpacing: '-0.02em',
     }}>
-      RegAccess
+      ChangePath
     </span>
     <span style={{
       fontSize: 11,
