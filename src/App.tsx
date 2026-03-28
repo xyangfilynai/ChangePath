@@ -430,6 +430,7 @@ export const App: React.FC = () => {
           reviewerNotes={currentReviewerNotes}
           onAddNote={currentAssessmentId ? handleAddNote : undefined}
           onRemoveNote={currentAssessmentId ? handleRemoveNote : undefined}
+          assessmentId={currentAssessmentId}
         />
       );
     }

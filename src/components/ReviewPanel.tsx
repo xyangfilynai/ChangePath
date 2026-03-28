@@ -11,7 +11,7 @@ import {
   getSourceBadge,
 } from '../lib/content';
 import { computeEvidenceGaps } from '../lib/evidence-gaps';
-import type { ReviewerNote } from '../lib/assessment-store';
+import { assessmentStore, type ReviewerNote } from '../lib/assessment-store';
 import {
   buildEvidenceGapInsightItems,
   buildExpertReviewItems,
@@ -22,6 +22,7 @@ import {
   splitReportNarrative,
   type AssessmentRecordFact,
 } from '../lib/report-basis';
+import { buildPdfReportDocument } from '../lib/pdf-report-model';
 
 const SectionCard: React.FC<{
   children: React.ReactNode;
@@ -390,6 +391,7 @@ interface ReviewPanelProps {
   reviewerNotes?: ReviewerNote[];
   onAddNote?: (author: string, text: string) => void;
   onRemoveNote?: (noteId: string) => void;
+  assessmentId?: string | null;
 }
 
 interface MergedBlockerItem {
@@ -518,6 +520,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   reviewerNotes,
   onAddNote,
   onRemoveNote,
+  assessmentId,
 }) => {
   const pathway = determination.pathway;
   const [noteAuthor, setNoteAuthor] = useState('');
@@ -779,7 +782,24 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </div>
 
           <button
-            onClick={() => window.print()}
+            onClick={async () => {
+              const assessmentName = assessmentId
+                ? assessmentStore.get(assessmentId)?.name
+                : undefined;
+              const reportDoc = buildPdfReportDocument(
+                answers,
+                determination,
+                blocks,
+                getFieldsForBlock,
+                {
+                  assessmentId: assessmentId || undefined,
+                  assessmentName,
+                  reviewerNotes: reviewerNotes || [],
+                },
+              );
+              const { generateAndDownloadPdf } = await import('../lib/pdf-renderer');
+              generateAndDownloadPdf(reportDoc);
+            }}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -796,7 +816,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}
           >
             <Icon name="printer" size={14} color="#fff" />
-            Print Assessment Record
+            Export PDF Report
           </button>
         </div>
 
