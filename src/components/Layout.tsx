@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Block } from '../lib/assessment-engine';
 import {
   LayoutBlockHeader,
@@ -69,7 +69,15 @@ export const Layout: React.FC<LayoutProps> = ({
   const isReviewBlock = currentBlock?.id === 'review';
   const reviewReady = overallRequiredTotal > 0 && overallRequiredAnswered === overallRequiredTotal;
 
-  const handleResetRequest = () => {
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((open) => !open);
+  }, []);
+
+  const handleCloseSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const handleResetRequest = useCallback(() => {
     if (!onReset) return;
     if (
       window.confirm(
@@ -78,7 +86,7 @@ export const Layout: React.FC<LayoutProps> = ({
     ) {
       onReset();
     }
-  };
+  }, [onReset]);
 
   return (
     <div
@@ -91,7 +99,7 @@ export const Layout: React.FC<LayoutProps> = ({
     >
       <LayoutHeader
         sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen((open) => !open)}
+        onToggleSidebar={handleToggleSidebar}
         onSaveAssessment={onSaveAssessment}
         canSaveAssessment={canSaveAssessment}
         saveLabel={saveLabel}
@@ -160,7 +168,7 @@ export const Layout: React.FC<LayoutProps> = ({
         </main>
       </div>
 
-      {sidebarOpen && <LayoutMobileOverlay onClose={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <LayoutMobileOverlay onClose={handleCloseSidebar} />}
 
       <style>{`
         @media (max-width: 768px) {
