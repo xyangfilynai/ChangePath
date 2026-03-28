@@ -326,7 +326,6 @@ describe('renderPdfReport', () => {
     const pdfText = buildPdfText(reportDoc);
 
     expect(pdfText).toContain('Assessment Summary');
-    expect(pdfText).toContain('Pathway Assessment');
     expect(pdfText).toContain('Record Status');
     expect(pdfText).toContain('Conditions for Reliance');
     expect(pdfText).toContain('Document Control');
@@ -396,6 +395,7 @@ describe('renderPdfReport', () => {
     );
     expect(changeDesc).toBeTruthy();
     expect(changeDesc!.value.length).toBeGreaterThan(500);
+    expect(changeDesc!.isLongText).toBe(true);
   });
 
   /* ---------------------------------------------------------------- */

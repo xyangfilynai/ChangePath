@@ -2,7 +2,8 @@
  * PDF document renderer for regulatory assessment records.
  *
  * Converts a PdfReportDocument model into a real PDF using jsPDF.
- * Handles layout, pagination, headers/footers, and typographic hierarchy.
+ * Targets enterprise medical-device compliance formatting: dense, aligned,
+ * professional, and suitable for inclusion in QMS-controlled documentation.
  */
 
 import { jsPDF } from 'jspdf';
@@ -17,10 +18,10 @@ const PAGE = {
   height: 297,
   marginLeft: 22,
   marginRight: 22,
-  marginTop: 28,
-  marginBottom: 26,
-  headerHeight: 16,
-  footerHeight: 12,
+  marginTop: 24,
+  marginBottom: 22,
+  headerHeight: 12,
+  footerHeight: 10,
 } as const;
 
 const CONTENT_WIDTH = PAGE.width - PAGE.marginLeft - PAGE.marginRight;
@@ -28,34 +29,50 @@ const CONTENT_TOP = PAGE.marginTop + PAGE.headerHeight;
 const CONTENT_BOTTOM = PAGE.height - PAGE.marginBottom - PAGE.footerHeight;
 
 /* ------------------------------------------------------------------ */
-/*  Color palette — restrained, professional                           */
+/*  Color palette — restrained, enterprise                             */
 /* ------------------------------------------------------------------ */
 
 const COLOR = {
   text: [33, 37, 41] as [number, number, number],
-  textSecondary: [108, 117, 125] as [number, number, number],
-  textMuted: [155, 163, 172] as [number, number, number],
-  accent: [52, 58, 64] as [number, number, number],
-  border: [210, 214, 218] as [number, number, number],
-  sectionBg: [245, 247, 249] as [number, number, number],
-  missingText: [180, 180, 180] as [number, number, number],
-  tagBg: [235, 238, 242] as [number, number, number],
+  textSecondary: [100, 108, 116] as [number, number, number],
+  textMuted: [145, 152, 160] as [number, number, number],
+  accent: [44, 50, 56] as [number, number, number],
+  border: [200, 204, 210] as [number, number, number],
+  borderLight: [220, 224, 228] as [number, number, number],
+  sectionBg: [246, 248, 250] as [number, number, number],
+  missingText: [175, 175, 175] as [number, number, number],
+  tagBg: [232, 236, 240] as [number, number, number],
   white: [255, 255, 255] as [number, number, number],
-  issueDivider: [225, 228, 232] as [number, number, number],
 };
 
 /* ------------------------------------------------------------------ */
-/*  Font size constants                                                */
+/*  Font size constants — tighter scale for density                    */
 /* ------------------------------------------------------------------ */
 
 const FONT = {
-  title: 17,
-  h1: 12,
-  h2: 10.5,
-  body: 9.5,
-  small: 8.5,
-  tiny: 7.5,
-  label: 7,
+  title: 15,
+  h1: 11,
+  h2: 9.5,
+  body: 8.5,
+  small: 7.8,
+  tiny: 7,
+  label: 6.5,
+} as const;
+
+/* ------------------------------------------------------------------ */
+/*  Spacing constants — tight, enterprise-grade                        */
+/* ------------------------------------------------------------------ */
+
+const SP = {
+  sectionGapBefore: 3.5,   // space before section rule (if not at top)
+  sectionRuleToTitle: 4,    // rule → section title
+  sectionTitleToBody: 3.5,  // section title → first content
+  subheadingBefore: 2,      // space above subheading
+  subheadingAfter: 2.5,     // subheading → content
+  bodyAfter: 1.5,           // after body text block
+  listItemAfter: 1,         // after each list item
+  labelValueAfter: 0.8,     // between label-value rows
+  noteAfter: 1,             // after section notes
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -108,11 +125,11 @@ function splitLines(doc: jsPDF, text: string, maxWidth: number): string[] {
 function textHeight(doc: jsPDF, text: string, maxWidth: number, fontSize: number): number {
   doc.setFontSize(fontSize);
   const lines = splitLines(doc, text, maxWidth);
-  return lines.length * fontSize * 0.42;
+  return lines.length * lh(fontSize);
 }
 
-function lineHeight(fontSize: number): number {
-  return fontSize * 0.42;
+function lh(fontSize: number): number {
+  return fontSize * 0.40;
 }
 
 /**
@@ -123,16 +140,16 @@ function renderPaginatedLines(
   doc: jsPDF,
   cursor: Cursor,
   lines: string[],
-  lh: number,
+  lineH: number,
   x: number,
 ): void {
   let i = 0;
   while (i < lines.length) {
     const available = cursor.remaining;
-    const fitCount = Math.max(1, Math.floor(available / lh));
+    const fitCount = Math.max(1, Math.floor(available / lineH));
     const chunk = lines.slice(i, i + fitCount);
     doc.text(chunk, x, cursor.y);
-    cursor.advance(chunk.length * lh);
+    cursor.advance(chunk.length * lineH);
     i += chunk.length;
     if (i < lines.length) {
       cursor.newPage();
@@ -186,10 +203,9 @@ function renderPageHeader(doc: jsPDF, reportDoc: PdfReportDocument): void {
     : formatDateShort(reportDoc.header.generatedAt);
   doc.text(rightText, PAGE.width - PAGE.marginRight, y, { align: 'right' });
 
-  // Thin rule below header
   doc.setDrawColor(...COLOR.border);
-  doc.setLineWidth(0.3);
-  doc.line(PAGE.marginLeft, y + 3, PAGE.width - PAGE.marginRight, y + 3);
+  doc.setLineWidth(0.25);
+  doc.line(PAGE.marginLeft, y + 2.5, PAGE.width - PAGE.marginRight, y + 2.5);
 }
 
 function renderPageFooter(
@@ -201,8 +217,8 @@ function renderPageFooter(
   const y = PAGE.height - PAGE.marginBottom;
 
   doc.setDrawColor(...COLOR.border);
-  doc.setLineWidth(0.3);
-  doc.line(PAGE.marginLeft, y - 4, PAGE.width - PAGE.marginRight, y - 4);
+  doc.setLineWidth(0.25);
+  doc.line(PAGE.marginLeft, y - 3, PAGE.width - PAGE.marginRight, y - 3);
 
   doc.setFontSize(FONT.label);
   doc.setFont('helvetica', 'normal');
@@ -223,72 +239,74 @@ function renderPageFooter(
 }
 
 /* ------------------------------------------------------------------ */
-/*  Section heading                                                    */
+/*  Section heading — compact, authoritative                           */
 /* ------------------------------------------------------------------ */
 
 function renderSectionHeading(doc: jsPDF, cursor: Cursor, title: string): void {
-  cursor.ensureSpace(14);
+  cursor.ensureSpace(10);
 
-  if (cursor.y > CONTENT_TOP + 5) {
-    cursor.advance(6);
+  if (cursor.y > CONTENT_TOP + 4) {
+    cursor.advance(SP.sectionGapBefore);
   }
 
-  // Section rule
   doc.setDrawColor(...COLOR.border);
   doc.setLineWidth(0.2);
   doc.line(PAGE.marginLeft, cursor.y, PAGE.width - PAGE.marginRight, cursor.y);
-  cursor.advance(6);
+  cursor.advance(SP.sectionRuleToTitle);
 
   doc.setFontSize(FONT.h1);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLOR.accent);
   doc.text(title, PAGE.marginLeft, cursor.y);
-  cursor.advance(7);
+  cursor.advance(SP.sectionTitleToBody);
 }
 
 function renderSubheading(doc: jsPDF, cursor: Cursor, title: string): void {
-  cursor.ensureSpace(10);
-  cursor.advance(3);
+  cursor.ensureSpace(8);
+  cursor.advance(SP.subheadingBefore);
 
   doc.setFontSize(FONT.h2);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLOR.text);
   doc.text(title, PAGE.marginLeft, cursor.y);
-  cursor.advance(5);
+  cursor.advance(SP.subheadingAfter);
 }
 
 /* ------------------------------------------------------------------ */
-/*  Body text — paginated to prevent truncation                        */
+/*  Body text — paginated                                              */
 /* ------------------------------------------------------------------ */
 
 function renderBodyText(doc: jsPDF, cursor: Cursor, text: string, indent = 0): void {
   const maxW = CONTENT_WIDTH - indent;
-  const lh = lineHeight(FONT.body);
-  const minLines = 2;
-  cursor.ensureSpace(lh * minLines + 2);
+  const lineH = lh(FONT.body);
+  cursor.ensureSpace(lineH * 2 + SP.bodyAfter);
 
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLOR.text);
   const lines = splitLines(doc, text, maxW);
-  renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent);
-  cursor.advance(2);
+  renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + indent);
+  cursor.advance(SP.bodyAfter);
 }
 
 function renderBodyTextSecondary(doc: jsPDF, cursor: Cursor, text: string, indent = 0): void {
   const maxW = CONTENT_WIDTH - indent;
-  const lh = lineHeight(FONT.body);
-  const minLines = 2;
-  cursor.ensureSpace(lh * minLines + 2);
+  const lineH = lh(FONT.body);
+  cursor.ensureSpace(lineH * 2 + SP.bodyAfter);
 
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLOR.textSecondary);
   const lines = splitLines(doc, text, maxW);
-  renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent);
-  cursor.advance(2);
+  renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + indent);
+  cursor.advance(SP.bodyAfter);
 }
 
+/**
+ * Renders a label-value pair. Automatically switches to stacked layout
+ * (label on one line, value below with indent) when the label text is
+ * wider than the label column, or when explicitly requested.
+ */
 function renderLabelValue(
   doc: jsPDF,
   cursor: Cursor,
@@ -300,48 +318,75 @@ function renderLabelValue(
     labelWidth?: number;
     valueFontSize?: number;
     labelFontSize?: number;
+    stacked?: boolean;
   },
 ): void {
   const indent = options?.indent ?? 0;
-  const labelWidth = options?.labelWidth ?? 56;
+  const labelWidth = options?.labelWidth ?? 48;
   const valueFontSize = options?.valueFontSize ?? FONT.body;
   const labelFontSize = options?.labelFontSize ?? FONT.small;
-  const availableWidth = CONTENT_WIDTH - indent;
-  const valueWidth = availableWidth - labelWidth - 2;
-  const lh = lineHeight(valueFontSize);
+  const valueColor: [number, number, number] = isMissing ? COLOR.missingText : COLOR.text;
 
-  doc.setFontSize(valueFontSize);
-  const lines = splitLines(doc, value, valueWidth);
-  const valueH = lines.length * lh;
-  const rowH = Math.max(valueH, labelFontSize * 0.45) + 2;
-
-  // For short values, keep together; for long values, ensure at least 2 lines fit
-  const minH = Math.min(rowH, lh * 2 + 2);
-  cursor.ensureSpace(minH);
-
+  // Measure actual label width to decide inline vs stacked
   doc.setFontSize(labelFontSize);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLOR.textSecondary);
-  doc.text(label, PAGE.marginLeft + indent, cursor.y);
+  const actualLabelWidth = doc.getTextWidth(label);
+  const useStacked = options?.stacked || actualLabelWidth > labelWidth - 3;
 
-  doc.setFontSize(valueFontSize);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...(isMissing ? COLOR.missingText : COLOR.text));
-  renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent + labelWidth);
-  cursor.advance(2);
+  if (useStacked) {
+    // Stacked layout: label line, then indented value below
+    const labelH = lh(labelFontSize);
+    const valueMaxW = CONTENT_WIDTH - indent - 4;
+    const lineH = lh(valueFontSize);
+    cursor.ensureSpace(labelH + lineH + SP.labelValueAfter);
+
+    doc.setFontSize(labelFontSize);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLOR.textSecondary);
+    doc.text(label, PAGE.marginLeft + indent, cursor.y);
+    cursor.advance(labelH + 0.5);
+
+    doc.setFontSize(valueFontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...valueColor);
+    const lines = splitLines(doc, value, valueMaxW);
+    renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + indent + 4);
+    cursor.advance(SP.labelValueAfter + 0.5);
+  } else {
+    // Inline layout: label and value side by side
+    const valueWidth = CONTENT_WIDTH - indent - labelWidth - 2;
+    const lineH = lh(valueFontSize);
+    doc.setFontSize(valueFontSize);
+    const lines = splitLines(doc, value, valueWidth);
+    const valueH = lines.length * lineH;
+    const rowH = Math.max(valueH, lh(labelFontSize));
+    const minH = Math.min(rowH + SP.labelValueAfter, lineH * 2 + SP.labelValueAfter);
+    cursor.ensureSpace(minH);
+
+    doc.setFontSize(labelFontSize);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLOR.textSecondary);
+    doc.text(label, PAGE.marginLeft + indent, cursor.y);
+
+    doc.setFontSize(valueFontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...valueColor);
+    renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + indent + labelWidth);
+    cursor.advance(SP.labelValueAfter);
+  }
 }
 
 function renderSectionNote(doc: jsPDF, cursor: Cursor, text: string, indent = 0): void {
   const maxW = CONTENT_WIDTH - indent;
   const noteH = textHeight(doc, text, maxW, FONT.label);
-  cursor.ensureSpace(noteH + 1);
+  cursor.ensureSpace(noteH + SP.noteAfter);
 
   doc.setFontSize(FONT.label);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(...COLOR.textMuted);
   const lines = splitLines(doc, text, maxW);
   doc.text(lines, PAGE.marginLeft + indent, cursor.y);
-  cursor.advance(noteH + 1.5);
+  cursor.advance(noteH + SP.noteAfter);
 }
 
 /* ------------------------------------------------------------------ */
@@ -354,15 +399,14 @@ function renderNumberedList(
   items: string[],
   options?: { indent?: number; fontSize?: number },
 ): void {
-  const indent = options?.indent ?? 6;
+  const indent = options?.indent ?? 5;
   const fontSize = options?.fontSize ?? FONT.body;
-  const numWidth = 8;
+  const numWidth = 7;
   const textWidth = CONTENT_WIDTH - indent - numWidth;
-  const lh = lineHeight(fontSize);
+  const lineH = lh(fontSize);
 
   items.forEach((item, i) => {
-    const minH = lh * 2 + 2;
-    cursor.ensureSpace(Math.min(minH, lh + 2));
+    cursor.ensureSpace(lineH + SP.listItemAfter);
 
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', 'bold');
@@ -372,8 +416,8 @@ function renderNumberedList(
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLOR.text);
     const lines = splitLines(doc, item, textWidth);
-    renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent + numWidth);
-    cursor.advance(2);
+    renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + indent + numWidth);
+    cursor.advance(SP.listItemAfter);
   });
 }
 
@@ -381,17 +425,19 @@ function renderNumberedList(
 /*  Tag / badge                                                        */
 /* ------------------------------------------------------------------ */
 
-function renderTag(doc: jsPDF, cursor: Cursor, label: string, x?: number): void {
+function renderTag(doc: jsPDF, cursor: Cursor, label: string, x?: number): number {
   const tagX = x ?? PAGE.marginLeft;
   doc.setFontSize(FONT.label);
-  const tagWidth = doc.getTextWidth(label) + 6;
-  const tagH = 4.5;
+  doc.setFont('helvetica', 'bold');
+  const tagWidth = doc.getTextWidth(label) + 4;
+  const tagH = 3.5;
 
   doc.setFillColor(...COLOR.tagBg);
-  doc.roundedRect(tagX, cursor.y - 3, tagWidth, tagH, 1, 1, 'F');
-  doc.setFont('helvetica', 'bold');
+  doc.roundedRect(tagX, cursor.y - 2.5, tagWidth, tagH, 0.8, 0.8, 'F');
   doc.setTextColor(...COLOR.textSecondary);
-  doc.text(label, tagX + 3, cursor.y);
+  doc.text(label, tagX + 2, cursor.y);
+
+  return tagWidth;
 }
 
 /* ------------------------------------------------------------------ */
@@ -399,19 +445,21 @@ function renderTag(doc: jsPDF, cursor: Cursor, label: string, x?: number): void 
 /* ------------------------------------------------------------------ */
 
 function renderTitlePage(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
+  // Document kicker
   doc.setFontSize(FONT.label);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLOR.textSecondary);
+  doc.setTextColor(...COLOR.textMuted);
   doc.text('INTERNAL ASSESSMENT SUPPORT RECORD', PAGE.marginLeft, cursor.y);
-  cursor.advance(5);
+  cursor.advance(3.5);
 
   // Main title
   doc.setFontSize(FONT.title);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLOR.text);
   doc.text(reportDoc.header.title, PAGE.marginLeft, cursor.y);
-  cursor.advance(7);
+  cursor.advance(5);
 
+  // Subtitle
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLOR.textSecondary);
@@ -420,24 +468,25 @@ function renderTitlePage(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
     PAGE.marginLeft,
     cursor.y,
   );
-  cursor.advance(9);
+  cursor.advance(5);
 
-  // Meta info
-  const metaItems: [string, string][] = [
-    ['Record Status', reportDoc.header.assessmentStatus],
-    ['Date Generated', formatTimestamp(reportDoc.header.generatedAt)],
-  ];
-  if (reportDoc.header.assessmentId) {
-    metaItems.unshift(['Assessment ID', reportDoc.header.assessmentId]);
-  }
+  // Compact metadata table — no duplicate of Record Status
+  const metaItems: [string, string][] = [];
   if (reportDoc.header.assessmentName) {
-    metaItems.unshift(['Assessment Name', reportDoc.header.assessmentName]);
+    metaItems.push(['Assessment', reportDoc.header.assessmentName]);
   }
+  if (reportDoc.header.assessmentId) {
+    metaItems.push(['ID', reportDoc.header.assessmentId]);
+  }
+  metaItems.push(
+    ['Pathway', reportDoc.executiveSummary.pathwayLabel],
+    ['Generated', formatTimestamp(reportDoc.header.generatedAt)],
+  );
 
   metaItems.forEach(([label, value]) => {
-    renderLabelValue(doc, cursor, label, value);
+    renderLabelValue(doc, cursor, label, value, false, { labelWidth: 28 });
   });
-  cursor.advance(4);
+  cursor.advance(2);
 }
 
 function renderExecutiveSummary(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
@@ -447,31 +496,29 @@ function renderExecutiveSummary(doc: jsPDF, cursor: Cursor, reportDoc: PdfReport
   if (summary.isIncomplete) {
     const notice =
       'Record status notice: pathway-critical items remain unresolved; do not treat the current record as a supported pathway conclusion.';
+    doc.setFontSize(FONT.small);
     const noticeLines = splitLines(doc, notice, CONTENT_WIDTH - 8);
-    const boxH = noticeLines.length * FONT.small * 0.42 + 6;
-    cursor.ensureSpace(boxH + 2);
+    const boxH = noticeLines.length * lh(FONT.small) + 5;
+    cursor.ensureSpace(boxH + 1);
     doc.setFillColor(...COLOR.sectionBg);
     doc.setDrawColor(...COLOR.border);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(PAGE.marginLeft, cursor.y - 3, CONTENT_WIDTH, boxH, 1.5, 1.5, 'FD');
-    doc.setFontSize(FONT.small);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(PAGE.marginLeft, cursor.y - 2.5, CONTENT_WIDTH, boxH, 1, 1, 'FD');
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLOR.text);
-    doc.text(noticeLines, PAGE.marginLeft + 4, cursor.y + 2);
-    cursor.advance(boxH + 4);
+    doc.text(noticeLines, PAGE.marginLeft + 4, cursor.y + 1);
+    cursor.advance(boxH + 2);
   }
 
-  renderLabelValue(doc, cursor, 'Pathway Assessment', summary.pathwayLabel);
   renderLabelValue(doc, cursor, 'Record Status', summary.recordStatus);
   renderLabelValue(doc, cursor, 'Conditions for Reliance', summary.relianceQualification);
   renderLabelValue(doc, cursor, 'Recommended Next Action', summary.primaryNextAction);
 
-  cursor.advance(3);
+  cursor.advance(1.5);
   renderSubheading(doc, cursor, 'Conclusion');
   renderBodyText(doc, cursor, summary.pathwayConclusion);
 
   if (summary.summaryStatement && summary.summaryStatement !== summary.pathwayConclusion) {
-    cursor.advance(1);
     renderSubheading(doc, cursor, 'Analytical Summary');
     renderSectionNote(
       doc,
@@ -486,7 +533,6 @@ function renderAssessmentBasis(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportD
   const basis = reportDoc.assessmentBasis;
   renderSectionHeading(doc, cursor, 'Assessment Basis');
 
-  // Record facts subsection
   renderSubheading(doc, cursor, 'Record Facts');
   renderSectionNote(
     doc,
@@ -495,19 +541,19 @@ function renderAssessmentBasis(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportD
   );
 
   basis.recordFacts.forEach((fact) => {
-    renderLabelValue(doc, cursor, fact.label, fact.value, fact.isMissing);
+    renderLabelValue(doc, cursor, fact.label, fact.value, fact.isMissing, {
+      stacked: fact.isLongText,
+    });
   });
 
-  // System basis subsection
   if (basis.systemGeneratedBasis.length > 0) {
-    cursor.advance(4);
+    cursor.advance(2);
     renderSubheading(doc, cursor, 'Derived Assessment Basis');
     renderSectionNote(
       doc,
       cursor,
-      'Derived by ChangePath from the recorded answers and decision logic. This section is analytical support, not source evidence.',
+      'Derived by ChangePath from the recorded answers and decision logic. Analytical support, not source evidence.',
     );
-
     renderNumberedList(doc, cursor, basis.systemGeneratedBasis);
   }
 }
@@ -516,13 +562,11 @@ function renderDecisionTrace(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDoc
   if (reportDoc.decisionTrace.steps.length === 0) return;
 
   renderSectionHeading(doc, cursor, 'Decision Logic Trace');
-
   renderSectionNote(
     doc,
     cursor,
     'Ordered logic steps applied to the current record to arrive at the present pathway assessment.',
   );
-
   renderNumberedList(doc, cursor, reportDoc.decisionTrace.steps);
 }
 
@@ -534,7 +578,6 @@ function renderNarrative(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
   if (!hasContent) return;
 
   renderSectionHeading(doc, cursor, 'Assessment Rationale');
-
   renderSectionNote(
     doc,
     cursor,
@@ -552,7 +595,7 @@ function renderNarrative(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
   }
 
   if (narr.verificationSteps.length > 0) {
-    cursor.advance(2);
+    cursor.advance(1);
     renderSubheading(doc, cursor, narr.verificationTitle || 'Verification Focus');
     renderNumberedList(doc, cursor, narr.verificationSteps);
   }
@@ -561,13 +604,12 @@ function renderNarrative(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
 function renderOpenIssues(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
   if (reportDoc.openIssues.length === 0) return;
 
-  const issueCount = reportDoc.openIssues.length;
+  const n = reportDoc.openIssues.length;
   renderSectionHeading(doc, cursor, 'Open Issues Requiring Resolution');
-
   renderSectionNote(
     doc,
     cursor,
-    `${issueCount} open item${issueCount === 1 ? '' : 's'} that limit${issueCount === 1 ? 's' : ''} reliance on the current pathway assessment until resolved or supplemented.`,
+    `${n} open item${n === 1 ? '' : 's'} that limit${n === 1 ? 's' : ''} reliance on the current pathway assessment until resolved or supplemented.`,
   );
 
   reportDoc.openIssues.forEach((issue: PdfOpenIssue, index: number) => {
@@ -582,74 +624,50 @@ function renderOpenIssueItem(
   index: number,
   showDivider: boolean,
 ): void {
-  const detailLabelWidth = 36;
-  const titleH = textHeight(doc, issue.title, CONTENT_WIDTH - 10, FONT.body);
-  const kindLabel = issue.kind === 'expert-review'
-    ? 'Expert Review Required'
-    : 'Evidence Gap';
+  const detailLabelWidth = 30;
+  const kindLabel = issue.kind === 'expert-review' ? 'Expert Review' : 'Evidence Gap';
 
-  // Ensure at least the title + first detail line fit together
-  cursor.ensureSpace(titleH + 14);
+  // Ensure at least tag row + title + one detail line fit together
+  cursor.ensureSpace(lh(FONT.body) * 3 + 8);
 
-  // Issue number tag + title
-  const issueTag = `Issue ${index + 1}`;
-  renderTag(doc, cursor, issueTag);
-  doc.setFontSize(FONT.label);
-  const tagWidth = doc.getTextWidth(issueTag) + 8;
+  // Tags: issue number + kind
+  const tagW = renderTag(doc, cursor, `Issue ${index + 1}`);
+  renderTag(doc, cursor, kindLabel, PAGE.marginLeft + tagW + 2);
+  cursor.advance(4);
 
-  // Kind tag next to issue number
-  renderTag(doc, cursor, kindLabel, PAGE.marginLeft + tagWidth);
-  cursor.advance(5);
-
+  // Issue title
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLOR.text);
-  const titleLines = splitLines(doc, issue.title, CONTENT_WIDTH - 6);
-  renderPaginatedLines(doc, cursor, titleLines, lineHeight(FONT.body), PAGE.marginLeft + 4);
-  cursor.advance(2);
+  const titleLines = splitLines(doc, issue.title, CONTENT_WIDTH - 4);
+  renderPaginatedLines(doc, cursor, titleLines, lh(FONT.body), PAGE.marginLeft + 4);
+  cursor.advance(1.5);
+
+  const detailOpts = {
+    indent: 4,
+    labelWidth: detailLabelWidth,
+    valueFontSize: FONT.small as number,
+    labelFontSize: FONT.label as number,
+  };
 
   if (issue.meta) {
-    renderLabelValue(doc, cursor, 'Context', issue.meta, false, {
-      indent: 6,
-      labelWidth: detailLabelWidth,
-      valueFontSize: FONT.small,
-      labelFontSize: FONT.label,
-    });
+    renderLabelValue(doc, cursor, 'Context', issue.meta, false, detailOpts);
   }
-
-  renderLabelValue(doc, cursor, 'Record Impact', issue.whyItMatters, false, {
-    indent: 6,
-    labelWidth: detailLabelWidth,
-    valueFontSize: FONT.small,
-    labelFontSize: FONT.label,
-  });
-
-  renderLabelValue(doc, cursor, 'Required Action', `${issue.actionLabel}: ${issue.actionNeeded}`, false, {
-    indent: 6,
-    labelWidth: detailLabelWidth,
-    valueFontSize: FONT.small,
-    labelFontSize: FONT.label,
-  });
+  renderLabelValue(doc, cursor, 'Record Impact', issue.whyItMatters, false, detailOpts);
+  renderLabelValue(doc, cursor, 'Required Action', `${issue.actionLabel}: ${issue.actionNeeded}`, false, detailOpts);
 
   if (issue.sources.length > 0) {
-    const sourceText = issue.sources.join('; ');
-    renderLabelValue(doc, cursor, 'Basis Referenced', sourceText, false, {
-      indent: 6,
-      labelWidth: detailLabelWidth,
-      valueFontSize: FONT.small,
-      labelFontSize: FONT.label,
-    });
+    renderLabelValue(doc, cursor, 'Basis Referenced', issue.sources.join('; '), false, detailOpts);
   }
 
-  // Divider between issues
   if (showDivider) {
-    cursor.advance(2);
-    doc.setDrawColor(...COLOR.issueDivider);
+    cursor.advance(1.5);
+    doc.setDrawColor(...COLOR.borderLight);
     doc.setLineWidth(0.15);
     doc.line(PAGE.marginLeft + 4, cursor.y, PAGE.marginLeft + CONTENT_WIDTH - 4, cursor.y);
-    cursor.advance(4);
+    cursor.advance(2.5);
   } else {
-    cursor.advance(3);
+    cursor.advance(1.5);
   }
 }
 
@@ -657,13 +675,11 @@ function renderAlternativePathways(doc: jsPDF, cursor: Cursor, reportDoc: PdfRep
   if (reportDoc.alternativePathways.length === 0) return;
 
   renderSectionHeading(doc, cursor, 'Conditions That Could Affect the Pathway');
-
   renderSectionNote(
     doc,
     cursor,
     'Conditions identified by the assessment logic that could change, qualify, or overturn the current pathway assessment.',
   );
-
   renderNumberedList(
     doc,
     cursor,
@@ -675,30 +691,29 @@ function renderSourcesCited(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocu
   if (reportDoc.sourcesCited.length === 0) return;
 
   renderSectionHeading(doc, cursor, 'Sources Cited');
-
   renderSectionNote(
     doc,
     cursor,
-    'Regulatory and standards references surfaced by the assessment logic. Citations indicate relevance to the assessment, not statement-level attribution.',
+    'Regulatory and standards references surfaced by the assessment logic. Citations indicate relevance, not statement-level attribution.',
   );
 
+  const numWidth = 7;
+  const textWidth = CONTENT_WIDTH - numWidth - 4;
+  const lineH = lh(FONT.small);
+
   reportDoc.sourcesCited.forEach((source: PdfSourceCitation, i: number) => {
-    const lh = lineHeight(FONT.small);
-    const numPrefix = `${i + 1}. `;
-    const numWidth = 8;
-    const textWidth = CONTENT_WIDTH - numWidth - 4;
-    cursor.ensureSpace(lh + 2);
+    cursor.ensureSpace(lineH + 1);
 
     doc.setFontSize(FONT.small);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLOR.textSecondary);
-    doc.text(numPrefix, PAGE.marginLeft + 4, cursor.y);
+    doc.text(`${i + 1}.`, PAGE.marginLeft + 4, cursor.y);
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLOR.text);
     const lines = splitLines(doc, source.badge, textWidth);
-    renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + 4 + numWidth);
-    cursor.advance(1.5);
+    renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + 4 + numWidth);
+    cursor.advance(1);
   });
 }
 
@@ -706,18 +721,16 @@ function renderReviewerNotes(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDoc
   if (reportDoc.reviewerNotes.length === 0) return;
 
   renderSectionHeading(doc, cursor, 'Reviewer Notes');
-
   renderSectionNote(
     doc,
     cursor,
-    'User-entered annotations attached to this assessment. These notes are not system-generated content.',
+    'User-entered annotations attached to this assessment. Not system-generated content.',
   );
 
+  const lineH = lh(FONT.body);
   reportDoc.reviewerNotes.forEach((note) => {
-    const lh = lineHeight(FONT.body);
-    cursor.ensureSpace(lh * 2 + 8);
+    cursor.ensureSpace(lineH * 2 + 5);
 
-    // Author and timestamp
     doc.setFontSize(FONT.label);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLOR.textSecondary);
@@ -727,61 +740,52 @@ function renderReviewerNotes(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDoc
     doc.setTextColor(...COLOR.textMuted);
     const authorW = doc.getTextWidth(note.author) + 4;
     doc.text(` — ${formatDateShort(note.timestamp)}`, PAGE.marginLeft + 4 + authorW, cursor.y);
-    cursor.advance(4);
+    cursor.advance(3);
 
-    // Note text
     doc.setFontSize(FONT.body);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLOR.text);
     const lines = splitLines(doc, note.text, CONTENT_WIDTH - 6);
-    renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + 4);
-    cursor.advance(4);
+    renderPaginatedLines(doc, cursor, lines, lineH, PAGE.marginLeft + 4);
+    cursor.advance(3);
   });
 }
 
 function renderClosing(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
-  // Estimate the total height of the Document Control section so it stays together.
-  // Metadata rows (~5 lines × ~6mm each) + disclaimer box (~20mm) + heading (~14mm).
-  const disclaimerH = textHeight(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 10, FONT.small);
-  const estimatedTotal = 14 + 5 * 6 + 4 + disclaimerH + 12;
+  // Estimate how much space the closing block needs
+  const disclaimerH = textHeight(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 8, FONT.small);
+  const metaH = 4 * (lh(FONT.body) + SP.labelValueAfter + 1); // 4 rows of metadata
+  const headingH = 10;
+  const estimatedTotal = headingH + metaH + 3 + disclaimerH + 6;
 
-  // If the whole block fits on the current page, render in place.
-  // Otherwise, start a new page to keep the section together.
-  if (cursor.remaining < estimatedTotal && cursor.y > CONTENT_TOP + 20) {
+  // Only jump to a new page if we genuinely can't fit and we're past the halfway mark
+  if (cursor.remaining < estimatedTotal && cursor.remaining < (CONTENT_BOTTOM - CONTENT_TOP) * 0.5) {
     cursor.newPage();
   }
 
   renderSectionHeading(doc, cursor, 'Document Control');
 
-  renderLabelValue(doc, cursor, 'Source', `Assessment record in ${reportDoc.closing.generatedBy}`);
-  renderLabelValue(doc, cursor, 'Generated', formatTimestamp(reportDoc.closing.timestamp));
-  renderLabelValue(doc, cursor, 'Assessment Logic', reportDoc.closing.schemaVersion);
-  renderLabelValue(doc, cursor, 'Export Format', reportDoc.closing.exportVersion);
+  renderLabelValue(doc, cursor, 'Source', `Assessment record in ${reportDoc.closing.generatedBy}`, false, { labelWidth: 34 });
+  renderLabelValue(doc, cursor, 'Generated', formatTimestamp(reportDoc.closing.timestamp), false, { labelWidth: 34 });
+  renderLabelValue(doc, cursor, 'Logic Version', reportDoc.closing.schemaVersion, false, { labelWidth: 34 });
+  renderLabelValue(doc, cursor, 'Export Format', reportDoc.closing.exportVersion, false, { labelWidth: 34 });
 
-  // Disclaimer — rendered inline without a separate subheading to avoid orphaning
-  cursor.advance(4);
-  const disclaimerBoxH = disclaimerH + 8;
-  cursor.ensureSpace(disclaimerBoxH);
+  // Disclaimer — inline without a separate heading to avoid orphaning
+  cursor.advance(2.5);
+  const boxH = disclaimerH + 5;
+  cursor.ensureSpace(boxH);
 
   doc.setFillColor(...COLOR.sectionBg);
   doc.setDrawColor(...COLOR.border);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(
-    PAGE.marginLeft,
-    cursor.y - 4,
-    CONTENT_WIDTH,
-    disclaimerBoxH,
-    1.5,
-    1.5,
-    'FD',
-  );
+  doc.setLineWidth(0.25);
+  doc.roundedRect(PAGE.marginLeft, cursor.y - 3, CONTENT_WIDTH, boxH, 1, 1, 'FD');
 
   doc.setFontSize(FONT.small);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(...COLOR.textSecondary);
-  const disclaimerLines = splitLines(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 10);
-  doc.text(disclaimerLines, PAGE.marginLeft + 5, cursor.y);
-  cursor.advance(disclaimerBoxH);
+  const disclaimerLines = splitLines(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 8);
+  doc.text(disclaimerLines, PAGE.marginLeft + 4, cursor.y);
+  cursor.advance(boxH);
 }
 
 /* ------------------------------------------------------------------ */
@@ -805,13 +809,8 @@ export function renderPdfReport(reportDoc: PdfReportDocument): jsPDF {
   doc.setFont('helvetica');
   const cursor = new Cursor(doc, reportDoc);
 
-  // Page 1 header
   renderPageHeader(doc, reportDoc);
-
-  // Title block
   renderTitlePage(doc, cursor, reportDoc);
-
-  // Sections
   renderExecutiveSummary(doc, cursor, reportDoc);
   renderAssessmentBasis(doc, cursor, reportDoc);
   renderDecisionTrace(doc, cursor, reportDoc);
@@ -822,7 +821,6 @@ export function renderPdfReport(reportDoc: PdfReportDocument): jsPDF {
   renderReviewerNotes(doc, cursor, reportDoc);
   renderClosing(doc, cursor, reportDoc);
 
-  // Stamp footers on all pages (deferred so page count is known)
   stampAllPageFooters(doc, reportDoc);
 
   return doc;
@@ -831,7 +829,6 @@ export function renderPdfReport(reportDoc: PdfReportDocument): jsPDF {
 export function generateAndDownloadPdf(reportDoc: PdfReportDocument): void {
   const doc = renderPdfReport(reportDoc);
 
-  // Build a professional filename
   const datePart = new Date().toISOString().slice(0, 10);
   const idPart = reportDoc.header.assessmentId
     ? `-${reportDoc.header.assessmentId}`
