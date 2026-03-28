@@ -78,6 +78,19 @@ describe('UI workflow', () => {
     expect(storage.loadBlockIndex()).toBe(2);
   });
 
+  it('saves the current assessment into the dashboard library', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByTestId('full-assessment-btn'));
+    fireEvent.click(screen.getByRole('button', { name: '510(k)' }));
+    fireEvent.click(screen.getByTestId('save-assessment-btn'));
+    fireEvent.click(screen.getByTitle('Return to dashboard'));
+
+    expect(screen.getByText('Saved assessments')).toBeInTheDocument();
+    expect(screen.getByText('Assessment - 510(k)')).toBeInTheDocument();
+    expect(screen.getByText(/saved library records preserve structured review context/i)).toBeInTheDocument();
+  });
+
   it('keeps supporting field context collapsed until the user asks for it', () => {
     const field: AssessmentField = {
       id: 'UX_TEST',

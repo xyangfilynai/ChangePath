@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
@@ -7,50 +7,46 @@ import { FeedbackSurvey } from './components/FeedbackSurvey';
 import { HandoffPage } from './components/HandoffPage';
 import { Icon } from './components/Icon';
 import { BlockBanners } from './components/BlockBanners';
-import { SAMPLE_CASES, SAMPLE_CASES_BY_ID } from './sample-cases';
+import { SAMPLE_CASES } from './sample-cases';
 import {
   getBlocks,
   getBlockFields,
   computeDerivedState,
   computeDetermination,
-  Answer,
   isAnsweredValue,
-  type Answers,
   type AssessmentField,
 } from './lib/assessment-engine';
-import { assessmentStore, type SavedAssessment } from './lib/assessment-store';
-import { storage } from './lib/storage';
+import { buildCaseSummary } from './lib/assessment-metadata';
 import { useCascadeClearing } from './hooks/useCascadeClearing';
 import { useAssessmentProgress, useCompletedBlocks } from './hooks/useAssessmentProgress';
-
-type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
+import { useAssessmentWorkspace } from './hooks/useAssessmentWorkspace';
 
 export const App: React.FC = () => {
-  const [screen, setScreen] = useState<Screen>('dashboard');
-  const [answers, setAnswers] = useState<Answers>(storage.loadAnswers);
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(storage.loadBlockIndex);
-  const [activeSampleCaseId, setActiveSampleCaseId] = useState<string | null>(null);
-
-  // Assessment management state
-  const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
-  const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
-  const isViewingSample = activeSampleCaseId !== null;
-
-  const refreshSavedAssessments = useCallback(() => {
-    setSavedAssessments(assessmentStore.list());
-  }, []);
-
-  // Persist answers to localStorage
-  useEffect(() => {
-    if (isViewingSample) return;
-    storage.saveAnswers(answers);
-  }, [answers, isViewingSample]);
-
-  // Persist block index to localStorage
-  useEffect(() => {
-    if (isViewingSample) return;
-    storage.saveBlockIndex(currentBlockIndex);
-  }, [currentBlockIndex, isViewingSample]);
+  const {
+    screen,
+    setScreen,
+    answers,
+    setAnswers,
+    currentBlockIndex,
+    setCurrentBlockIndex,
+    currentAssessmentId,
+    savedAssessments,
+    validationErrors,
+    setValidationErrors,
+    hasSavedSession,
+    currentReviewerNotes,
+    handleReset,
+    handleLoadAssessment,
+    handleDuplicateAssessment,
+    handleDeleteAssessment,
+    handleAddNote,
+    handleRemoveNote,
+    handleSaveAssessment,
+    handleHome,
+    handleOpenSampleCase,
+    handleFullAssessment,
+    handleResume,
+  } = useAssessmentWorkspace();
 
   // Compute derived state from answers
   const derivedState = useMemo(() => computeDerivedState(answers), [answers]);
@@ -67,7 +63,7 @@ export const App: React.FC = () => {
     if (currentBlockIndex > blocks.length - 1) {
       setCurrentBlockIndex(Math.max(0, blocks.length - 1));
     }
-  }, [blocks.length, currentBlockIndex]);
+  }, [blocks.length, currentBlockIndex, setCurrentBlockIndex]);
 
   const currentBlock = blocks[currentBlockIndex];
   const currentBlockFields = useMemo(
@@ -100,56 +96,12 @@ export const App: React.FC = () => {
     return requiredPathwayFields.every((q) => isAnsweredValue(answers[q.id]));
   }, [currentBlock, currentBlockFields, answers]);
 
-  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
-
   const currentMissingRequired = useMemo(() => {
     if (!currentBlock || currentBlock.id === 'review') return 0;
     return Math.max(0, (requiredCounts[currentBlock.id] || 0) - (requiredAnsweredCounts[currentBlock.id] || 0));
   }, [currentBlock, requiredCounts, requiredAnsweredCounts]);
 
-  type CaseSummaryTone = 'default' | 'warning' | 'success' | 'info';
-  const caseSummary = useMemo((): { label: string; value: string; tone: CaseSummaryTone }[] => {
-    return [
-      {
-        label: 'Authorization',
-        value: answers.A1 ? String(answers.A1) : 'Not provided',
-        tone: answers.A1 ? 'default' : 'warning',
-      },
-      {
-        label: 'Authorization ID',
-        value: answers.A1b ? String(answers.A1b) : 'Not provided',
-        tone: !answers.A1b ? 'warning' : 'default',
-      },
-      {
-        label: 'Authorized baseline',
-        value: answers.A1c ? String(answers.A1c) : 'Not provided',
-        tone: !answers.A1c ? 'warning' : 'default',
-      },
-      {
-        label: 'Change',
-        value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not classified',
-        tone: answers.B2 || answers.B1 ? 'info' : 'default',
-      },
-      {
-        label: 'PCCP',
-        value:
-          answers.A2 === Answer.Yes
-            ? 'Authorized PCCP on file'
-            : answers.A2 === Answer.No
-              ? 'No authorized PCCP'
-              : 'Not specified',
-        tone: answers.A2 === Answer.Yes ? 'success' : 'default',
-      },
-    ];
-  }, [answers.A1, answers.A1b, answers.A1c, answers.A2, answers.B1, answers.B2]);
-
-  // Clear validation errors when answers change
-  useEffect(() => {
-    if (Object.keys(validationErrors).length > 0) {
-      setValidationErrors({});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- validationErrors excluded to prevent infinite loop
-  }, [answers]);
+  const caseSummary = useMemo(() => buildCaseSummary(answers), [answers]);
 
   // --- Navigation ---
   const handlePrevious = useCallback(() => {
@@ -159,7 +111,7 @@ export const App: React.FC = () => {
     } else {
       setScreen('dashboard');
     }
-  }, [currentBlockIndex]);
+  }, [currentBlockIndex, setCurrentBlockIndex, setScreen]);
 
   const handleNext = useCallback(() => {
     if (currentBlockIndex < blocks.length - 1) {
@@ -178,120 +130,24 @@ export const App: React.FC = () => {
       setCurrentBlockIndex(currentBlockIndex + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentBlockIndex, blocks.length, currentBlock, currentBlockComplete, currentBlockFields, answers]);
+  }, [
+    currentBlockIndex,
+    blocks.length,
+    currentBlock,
+    currentBlockComplete,
+    currentBlockFields,
+    answers,
+    setCurrentBlockIndex,
+    setValidationErrors,
+  ]);
 
-  const handleBlockSelect = useCallback((index: number) => {
-    setCurrentBlockIndex(index);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // --- Assessment lifecycle ---
-  const handleReset = useCallback(() => {
-    if (isViewingSample) {
-      setAnswers(storage.loadAnswers());
-      setCurrentBlockIndex(storage.loadBlockIndex());
-    } else {
-      setAnswers({});
-      setCurrentBlockIndex(0);
-      storage.clearSession();
-    }
-    setCurrentAssessmentId(null);
-    setActiveSampleCaseId(null);
-    setScreen('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isViewingSample]);
-
-  const handleLoadAssessment = useCallback((id: string) => {
-    const assessment = assessmentStore.get(id);
-    if (!assessment) return;
-    setAnswers(assessment.answers);
-    setCurrentBlockIndex(assessment.blockIndex);
-    setCurrentAssessmentId(assessment.id);
-    setActiveSampleCaseId(null);
-    setValidationErrors({});
-    setScreen('assess');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handleDuplicateAssessment = useCallback(
-    (id: string) => {
-      assessmentStore.duplicate(id);
-      refreshSavedAssessments();
+  const handleBlockSelect = useCallback(
+    (index: number) => {
+      setCurrentBlockIndex(index);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [refreshSavedAssessments],
+    [setCurrentBlockIndex],
   );
-
-  const handleDeleteAssessment = useCallback(
-    (id: string) => {
-      assessmentStore.delete(id);
-      refreshSavedAssessments();
-    },
-    [refreshSavedAssessments],
-  );
-
-  const handleAddNote = useCallback(
-    (author: string, text: string) => {
-      if (currentAssessmentId) {
-        assessmentStore.addNote(currentAssessmentId, author, text);
-        refreshSavedAssessments();
-      }
-    },
-    [currentAssessmentId, refreshSavedAssessments],
-  );
-
-  const handleRemoveNote = useCallback(
-    (noteId: string) => {
-      if (currentAssessmentId) {
-        assessmentStore.removeNote(currentAssessmentId, noteId);
-        refreshSavedAssessments();
-      }
-    },
-    [currentAssessmentId, refreshSavedAssessments],
-  );
-
-  const currentReviewerNotes = useMemo(() => {
-    if (!currentAssessmentId) return [];
-    const assessment = assessmentStore.get(currentAssessmentId);
-    return assessment?.reviewerNotes || [];
-    // savedAssessments included intentionally: triggers refresh when notes change via store
-  }, [currentAssessmentId, savedAssessments]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleHome = useCallback(() => {
-    setScreen('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // --- Dashboard actions ---
-  const handleOpenSampleCase = useCallback((sampleCaseId: string) => {
-    const sampleCase = SAMPLE_CASES_BY_ID[sampleCaseId];
-    if (!sampleCase) return;
-    setAnswers({ ...sampleCase.answers });
-    setCurrentBlockIndex(0);
-    setValidationErrors({});
-    setCurrentAssessmentId(null);
-    setActiveSampleCaseId(sampleCaseId);
-    setScreen('assess');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handleFullAssessment = useCallback(() => {
-    setAnswers({});
-    setCurrentBlockIndex(0);
-    setValidationErrors({});
-    setCurrentAssessmentId(null);
-    setActiveSampleCaseId(null);
-    storage.clearSession();
-    setScreen('assess');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handleResume = useCallback(() => {
-    setAnswers(storage.loadAnswers());
-    setCurrentBlockIndex(storage.loadBlockIndex());
-    setActiveSampleCaseId(null);
-    setScreen('assess');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   // --- Screen routing ---
   if (screen === 'dashboard') {
@@ -299,7 +155,7 @@ export const App: React.FC = () => {
       <DashboardPage
         onFullAssessment={handleFullAssessment}
         onResume={handleResume}
-        hasSavedSession={storage.hasSavedAnswers()}
+        hasSavedSession={hasSavedSession}
         sampleCases={SAMPLE_CASES}
         onOpenSampleCase={handleOpenSampleCase}
         savedAssessments={savedAssessments}
@@ -392,6 +248,11 @@ export const App: React.FC = () => {
       caseSummary={caseSummary}
       onReset={handleReset}
       onHome={handleHome}
+      onSaveAssessment={() => {
+        handleSaveAssessment(determination.pathway);
+      }}
+      canSaveAssessment={Object.keys(answers).length > 0}
+      saveLabel={currentAssessmentId ? 'Update library record' : 'Save to library'}
     >
       {renderBlockContent()}
 

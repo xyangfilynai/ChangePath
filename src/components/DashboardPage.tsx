@@ -496,6 +496,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* Saved Assessments Section */}
         {hasSavedWork && (
           <section style={{ marginBottom: 72 }}>
+            <h2
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--color-text-tertiary)',
+                margin: '0 0 12px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Saved assessments
+            </h2>
+            <p
+              style={{
+                fontSize: 14,
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.6,
+                margin: '0 0 20px',
+                maxWidth: 720,
+              }}
+            >
+              Saved library records preserve structured review context, pathway snapshots, and reviewer notes separately
+              from the in-browser draft.
+            </p>
             {savedAssessments.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {savedAssessments.map((assessment) => {
@@ -648,6 +672,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {savedAssessments.length === 0 && (
+              <div
+                style={{
+                  padding: '16px 18px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-bg-elevated)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: 13,
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.6,
+                }}
+              >
+                No library records saved yet. Use <strong>Save to library</strong> during an assessment when you want a
+                durable record that can be reopened, duplicated, annotated, or versioned later.
               </div>
             )}
           </section>

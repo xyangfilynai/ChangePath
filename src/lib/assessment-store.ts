@@ -4,6 +4,8 @@
  */
 
 import type { Answers } from './assessment-engine';
+import { isPlainObject, readStoredJson, writeStoredJson } from './browser-storage';
+import { isAnswersRecord } from './storage';
 
 export interface ReviewerNote {
   id: string;
@@ -38,21 +40,58 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+const isReviewerNote = (value: unknown): value is ReviewerNote =>
+  isPlainObject(value) &&
+  typeof value.id === 'string' &&
+  typeof value.author === 'string' &&
+  typeof value.text === 'string' &&
+  typeof value.timestamp === 'string';
+
+const isAssessmentVersion = (value: unknown): value is AssessmentVersion =>
+  isPlainObject(value) &&
+  typeof value.versionNumber === 'number' &&
+  isAnswersRecord(value.answers) &&
+  typeof value.timestamp === 'string' &&
+  typeof value.note === 'string';
+
+const isSavedAssessment = (value: unknown): value is SavedAssessment =>
+  isPlainObject(value) &&
+  typeof value.id === 'string' &&
+  typeof value.name === 'string' &&
+  isAnswersRecord(value.answers) &&
+  typeof value.blockIndex === 'number' &&
+  typeof value.createdAt === 'string' &&
+  typeof value.updatedAt === 'string' &&
+  Array.isArray(value.versions) &&
+  value.versions.every((entry) => isAssessmentVersion(entry)) &&
+  Array.isArray(value.reviewerNotes) &&
+  value.reviewerNotes.every((entry) => isReviewerNote(entry)) &&
+  (value.lastPathway === undefined || typeof value.lastPathway === 'string');
+
+const serializeAnswers = (answers: Answers): string =>
+  JSON.stringify(
+    Object.entries(answers)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, value]) => [key, value]),
+  );
+
+const hasMeaningfulAssessmentChange = (
+  existing: SavedAssessment,
+  next: Pick<SavedAssessment, 'name' | 'answers' | 'blockIndex' | 'lastPathway'>,
+): boolean =>
+  existing.name !== next.name ||
+  existing.blockIndex !== next.blockIndex ||
+  existing.lastPathway !== next.lastPathway ||
+  serializeAnswers(existing.answers) !== serializeAnswers(next.answers);
+
 function loadAll(): SavedAssessment[] {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  const raw = readStoredJson(STORE_KEY);
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((entry) => isSavedAssessment(entry));
 }
 
 function saveAll(assessments: SavedAssessment[]): void {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(assessments));
-  } catch {
-    // Ignore storage errors
-  }
+  writeStoredJson(STORE_KEY, assessments);
 }
 
 export const assessmentStore = {
@@ -77,20 +116,32 @@ export const assessmentStore = {
       const idx = all.findIndex((a) => a.id === assessment.id);
       if (idx >= 0) {
         const existing = all[idx];
-        // Create version snapshot of previous state
-        const newVersion: AssessmentVersion = {
-          versionNumber: existing.versions.length + 1,
-          answers: existing.answers,
-          timestamp: existing.updatedAt,
-          note: 'Snapshot saved before update',
+        const nextName = assessment.name || existing.name;
+        const nextPayload = {
+          name: nextName,
+          answers: assessment.answers,
+          blockIndex: assessment.blockIndex,
+          lastPathway: assessment.lastPathway,
         };
+        const versions = hasMeaningfulAssessmentChange(existing, nextPayload)
+          ? [
+              ...existing.versions,
+              {
+                versionNumber: existing.versions.length + 1,
+                answers: existing.answers,
+                timestamp: existing.updatedAt,
+                note: 'Snapshot saved before update',
+              },
+            ]
+          : existing.versions;
+
         all[idx] = {
           ...existing,
-          ...assessment,
+          ...nextPayload,
           id: existing.id,
           createdAt: existing.createdAt,
           updatedAt: now,
-          versions: [...existing.versions, newVersion],
+          versions,
           reviewerNotes: existing.reviewerNotes,
         };
         saveAll(all);

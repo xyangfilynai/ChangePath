@@ -6,7 +6,6 @@
  */
 
 import React from 'react';
-import { Icon } from '../Icon';
 import { GuidanceRef, HelpTextWithLinks } from '../ui';
 import { findGuidanceLink, getSourceBadge } from '../../lib/content';
 import type { MergedBlockerItem, AssessmentRecordFact } from '../../hooks/useReviewPanelData';

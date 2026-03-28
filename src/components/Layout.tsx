@@ -26,6 +26,9 @@ interface LayoutProps {
   caseSummary?: SummaryItem[];
   onReset?: () => void;
   onHome?: () => void;
+  onSaveAssessment?: () => void;
+  canSaveAssessment?: boolean;
+  saveLabel?: string;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -45,6 +48,9 @@ export const Layout: React.FC<LayoutProps> = ({
   caseSummary = [],
   onReset,
   onHome,
+  onSaveAssessment,
+  canSaveAssessment = true,
+  saveLabel = 'Save to library',
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -135,6 +141,32 @@ export const Layout: React.FC<LayoutProps> = ({
 
         {/* Header right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          {onSaveAssessment && (
+            <button
+              onClick={onSaveAssessment}
+              disabled={!canSaveAssessment}
+              data-testid="save-assessment-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-xs)',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: canSaveAssessment ? 'var(--color-primary)' : 'var(--color-bg-card)',
+                border: canSaveAssessment ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                color: canSaveAssessment ? '#fff' : 'var(--color-text-muted)',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: canSaveAssessment ? 'pointer' : 'not-allowed',
+                opacity: canSaveAssessment ? 1 : 0.7,
+                transition: 'all var(--transition-fast)',
+              }}
+              title={saveLabel}
+            >
+              <Icon name="fileText" size={14} color={canSaveAssessment ? '#fff' : 'var(--color-text-muted)'} />
+              <span className="hide-mobile">{saveLabel}</span>
+            </button>
+          )}
           {onHome && (
             <button
               onClick={onHome}

@@ -1,61 +1,47 @@
 import type { Answers } from './assessment-engine';
+import {
+  isPlainObject,
+  isStringArray,
+  readStoredValue,
+  readStoredJson,
+  removeStoredKeys,
+  writeStoredJson,
+  writeStoredValue,
+} from './browser-storage';
 
 const STORAGE_KEY = 'regassess-answers';
 const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
+const isAnswerValue = (value: unknown): value is string | string[] => typeof value === 'string' || isStringArray(value);
+
+export const isAnswersRecord = (value: unknown): value is Answers =>
+  isPlainObject(value) && Object.values(value).every((entry) => isAnswerValue(entry));
+
 export const storage = {
   loadAnswers(): Answers {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
+    const saved = readStoredJson(STORAGE_KEY);
+    return isAnswersRecord(saved) ? saved : {};
   },
 
   saveAnswers(answers: Answers): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
-    } catch {
-      // Ignore storage errors
-    }
+    writeStoredJson(STORAGE_KEY, answers);
   },
 
   loadBlockIndex(): number {
-    try {
-      const saved = localStorage.getItem(BLOCK_STORAGE_KEY);
-      const parsed = saved ? parseInt(saved, 10) : 0;
-      return Number.isNaN(parsed) ? 0 : parsed;
-    } catch {
-      return 0;
-    }
+    const saved = readStoredValue(BLOCK_STORAGE_KEY);
+    const parsed = saved ? Number.parseInt(saved, 10) : 0;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
   },
 
   saveBlockIndex(index: number): void {
-    try {
-      localStorage.setItem(BLOCK_STORAGE_KEY, String(index));
-    } catch {
-      // Ignore storage errors
-    }
+    writeStoredValue(BLOCK_STORAGE_KEY, String(index));
   },
 
   clearSession(): void {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(BLOCK_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
-    }
+    removeStoredKeys(STORAGE_KEY, BLOCK_STORAGE_KEY);
   },
 
   hasSavedAnswers(): boolean {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return false;
-      const parsed = JSON.parse(saved);
-      return Object.keys(parsed).length > 0;
-    } catch {
-      return false;
-    }
+    return Object.keys(this.loadAnswers()).length > 0;
   },
 };
