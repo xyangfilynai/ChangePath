@@ -24,8 +24,8 @@ describe('Evidence-gap credibility fixes', () => {
     const determination = computeDetermination(answers);
     const gaps = computeEvidenceGaps(answers, determination);
 
-    expect(gaps.some(g => g.id === 'GAP-TRAINING-REPR')).toBe(false);
-    expect(gaps.some(g => g.id === 'GAP-SUBGROUP')).toBe(false);
+    expect(gaps.some((g) => g.id === 'GAP-TRAINING-REPR')).toBe(false);
+    expect(gaps.some((g) => g.id === 'GAP-SUBGROUP')).toBe(false);
   });
 
   it('flags representativeness and subgroup gaps when E1/E2 show incomplete equity evidence', () => {
@@ -36,15 +36,15 @@ describe('Evidence-gap credibility fixes', () => {
     const determination = computeDetermination(answers);
     const gaps = computeEvidenceGaps(answers, determination);
 
-    expect(gaps.some(g => g.id === 'GAP-TRAINING-REPR')).toBe(true);
-    expect(gaps.some(g => g.id === 'GAP-SUBGROUP')).toBe(true);
+    expect(gaps.some((g) => g.id === 'GAP-TRAINING-REPR')).toBe(true);
+    expect(gaps.some((g) => g.id === 'GAP-SUBGROUP')).toBe(true);
   });
 });
 
 describe('PCCP field sequencing credibility fixes', () => {
   const findQ = (answers: Answers, id: string) => {
     const ds = computeDerivedState(answers);
-    return getBlockFields('P', answers, ds).find(q => q.id === id);
+    return getBlockFields('P', answers, ds).find((q) => q.id === id);
   };
 
   it('keeps downstream PCCP fields hidden until modification-boundary fit is answered Yes', () => {
@@ -62,22 +62,19 @@ describe('Authority/source classification credibility fixes', () => {
     const determination = computeDetermination(answers);
     const ds = computeDerivedState(answers);
     const blocks = getBlocks(answers, ds);
-    const artifact = generateAssessmentArtifact(
-      answers,
-      determination,
-      blocks,
-      (blockId: string) => getBlockFields(blockId, answers, ds),
+    const artifact = generateAssessmentArtifact(answers, determination, blocks, (blockId: string) =>
+      getBlockFields(blockId, answers, ds),
     );
 
     expect(artifact.outcome.pathway).toBe(Pathway.LetterToFile);
     expect(
       artifact.documentationRequirements.required.some(
-        d => d.source.includes('ISO 14971') && d.sourceClass === 'Standard',
+        (d) => d.source.includes('ISO 14971') && d.sourceClass === 'Standard',
       ),
     ).toBe(true);
     expect(
       artifact.documentationRequirements.required.some(
-        d => d.source.includes('IEC 62304') && d.sourceClass === 'Standard',
+        (d) => d.source.includes('IEC 62304') && d.sourceClass === 'Standard',
       ),
     ).toBe(true);
   });
@@ -102,11 +99,8 @@ describe('Case-specific reasoning credibility fixes', () => {
     const determination = computeDetermination(answers);
     const ds = computeDerivedState(answers);
     const blocks = getBlocks(answers, ds);
-    const reasoning = buildCaseSpecificReasoning(
-      answers,
-      determination,
-      blocks,
-      (blockId: string) => getBlockFields(blockId, answers, ds),
+    const reasoning = buildCaseSpecificReasoning(answers, determination, blocks, (blockId: string) =>
+      getBlockFields(blockId, answers, ds),
     );
 
     expect(reasoning.primaryReason).toContain('Additional data — new clinical sites');
@@ -131,19 +125,22 @@ describe('Case-specific reasoning credibility fixes', () => {
     const determination = computeDetermination(answers);
     const ds = computeDerivedState(answers);
     const blocks = getBlocks(answers, ds);
-    const reasoning = buildCaseSpecificReasoning(
-      answers,
-      determination,
-      blocks,
-      (blockId: string) => getBlockFields(blockId, answers, ds),
+    const reasoning = buildCaseSpecificReasoning(answers, determination, blocks, (blockId: string) =>
+      getBlockFields(blockId, answers, ds),
     );
 
     expect(reasoning.verificationTitle).toBe('What supports this pathway');
     expect(reasoning.counterTitle).toBe('What would change this pathway');
     expect(reasoning.verificationSteps.some((step) => step.includes('which layers were added or removed'))).toBe(true);
-    expect(reasoning.verificationSteps.some((step) => step.includes('materially changes a risk control tied to significant harm'))).toBe(true);
     expect(
-      reasoning.counterConsiderations.some((step) => step.includes('does not materially change any risk control tied to significant harm')),
+      reasoning.verificationSteps.some((step) =>
+        step.includes('materially changes a risk control tied to significant harm'),
+      ),
+    ).toBe(true);
+    expect(
+      reasoning.counterConsiderations.some((step) =>
+        step.includes('does not materially change any risk control tied to significant harm'),
+      ),
     ).toBe(true);
   });
 });
@@ -221,11 +218,8 @@ describe('Review insight specificity fixes', () => {
     const determination = computeDetermination(answers);
     const ds = computeDerivedState(answers);
     const blocks = getBlocks(answers, ds);
-    const artifact = generateAssessmentArtifact(
-      answers,
-      determination,
-      blocks,
-      (blockId: string) => getBlockFields(blockId, answers, ds),
+    const artifact = generateAssessmentArtifact(answers, determination, blocks, (blockId: string) =>
+      getBlockFields(blockId, answers, ds),
     );
     const text = formatArtifactAsText(artifact);
 
@@ -234,7 +228,9 @@ describe('Review insight specificity fixes', () => {
     expect(text).toContain('DECISION RATIONALE');
     expect(text).toContain('NEXT STEPS');
     expect(text).toContain('PACKAGE MUST INCLUDE');
-    expect(text).toContain('The authorized Indications for Use statement was available, and the change was assessed as staying within the existing intended use and indications for use.');
+    expect(text).toContain(
+      'The authorized Indications for Use statement was available, and the change was assessed as staying within the existing intended use and indications for use.',
+    );
     expect(text).toContain('No authorized PCCP was on file, so no pre-authorized implementation path was available.');
     expect(text).toContain('Deciding When to Submit a 510(k) for a Software Change to an Existing Device');
     expect(text).not.toContain('ASSUMPTIONS');

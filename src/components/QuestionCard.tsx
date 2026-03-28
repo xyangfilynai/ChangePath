@@ -1,45 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from './Icon';
-import { HelpTextWithLinks, AuthorityTag, GuidanceRef } from './ui';
+import { HelpTextWithLinks } from './ui';
 import type { AssessmentField, AnswerValue } from '../lib/assessment-engine';
-import { Answer } from '../lib/assessment-engine';
 import { fieldReasoningLibrary } from '../lib/content';
+import {
+  NoteBox,
+  YesNoInput,
+  RadioInput,
+  CheckboxInput,
+  TextInput,
+  NumericInput,
+  SupportSection,
+} from './question-card';
 
-/** Reusable note box for contextual information (guidance, warnings, info notes). */
-const NoteBox: React.FC<{
-  variant: 'info' | 'warning' | 'success' | 'neutral';
-  icon?: string;
-  label?: string;
-  children: React.ReactNode;
-}> = ({ variant, icon, label, children }) => {
-  const variantMap = {
-    info:    { bg: 'var(--color-info-bg)',    border: 'var(--color-info-border)',    color: 'var(--color-info)' },
-    warning: { bg: 'var(--color-warning-bg)', border: 'var(--color-warning-border)', color: 'var(--color-warning)' },
-    success: { bg: 'var(--color-success-bg)', border: 'var(--color-success-border)', color: 'var(--color-success)' },
-    neutral: { bg: 'var(--color-bg-hover)',   border: 'var(--color-border)',          color: 'var(--color-text-secondary)' },
-  };
-  const v = variantMap[variant];
-  return (
-    <div style={{
-      padding: 'var(--space-md)',
-      borderRadius: 'var(--radius-md)',
-      background: v.bg,
-      border: `1px solid ${v.border}`,
-      marginBottom: 'var(--space-md)',
-      display: icon ? 'flex' : 'block',
-      gap: 'var(--space-sm)',
-      fontSize: 12,
-      color: 'var(--color-text-secondary)',
-      lineHeight: 1.6,
-    }}>
-      {icon && <Icon name={icon} size={16} color={v.color} style={{ flexShrink: 0, marginTop: 2 }} />}
-      <div>
-        {label && <><strong style={{ color: v.color }}>{label}:</strong>{' '}</>}
-        {children}
-      </div>
-    </div>
-  );
+/* ------------------------------------------------------------------ */
+/*  Field tag badge (inline after question text)                       */
+/* ------------------------------------------------------------------ */
+
+const TAG_BASE_STYLE: React.CSSProperties = {
+  display: 'inline',
+  fontSize: 10,
+  fontWeight: 600,
+  padding: '2px 8px',
+  borderRadius: 'var(--radius-sm)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.03em',
+  marginLeft: 6,
+  verticalAlign: 'middle',
+  whiteSpace: 'nowrap',
 };
+
+interface TagConfig {
+  label: string;
+  bg: string;
+  color: string;
+  border: string;
+}
+
+const FieldTag: React.FC<TagConfig> = ({ label, bg, color, border }) => (
+  <span style={{ ...TAG_BASE_STYLE, background: bg, color, border: `1px solid ${border}` }}>{label}</span>
+);
+
+/* ------------------------------------------------------------------ */
+/*  QuestionCard                                                       */
+/* ------------------------------------------------------------------ */
 
 interface QuestionCardProps {
   field: AssessmentField;
@@ -56,20 +60,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   index,
   hasValidationError = false,
 }) => {
-  const [showSupport, setShowSupport] = useState(false);
   const [localText, setLocalText] = useState<string>(
     typeof value === 'string' || typeof value === 'number' ? String(value) : '',
   );
   const consequencePreview =
-    typeof field.consequencePreview === 'object' && field.consequencePreview !== null
-      ? field.consequencePreview
-      : null;
-  const hasForcedValue =
-    field.forcedValue !== undefined
-    && field.forcedValue !== null
-    && field.forcedValue !== '';
+    typeof field.consequencePreview === 'object' && field.consequencePreview !== null ? field.consequencePreview : null;
+  const hasForcedValue = field.forcedValue !== undefined && field.forcedValue !== null && field.forcedValue !== '';
 
-  // Field-specific reasoning from library (keys match assessment item ids)
   const qReasoning = fieldReasoningLibrary[field.id];
 
   useEffect(() => {
@@ -79,40 +76,48 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   // Section divider rendering
   if (field.sectionDivider) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-md)',
-        padding: 'var(--space-lg) 0',
-        marginBottom: 'var(--space-md)',
-        borderBottom: '1px solid var(--color-border)',
-      }}>
-        <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-primary-muted)',
+      <div
+        style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+          gap: 'var(--space-md)',
+          padding: 'var(--space-lg) 0',
+          marginBottom: 'var(--space-md)',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-primary-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Icon name={field.icon || 'info'} size={18} color="var(--color-primary)" />
         </div>
         <div>
-          <h3 style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            margin: 0,
-          }}>
+          <h3
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--color-text)',
+              margin: 0,
+            }}
+          >
             {field.label}
           </h3>
           {field.sublabel && (
-            <p style={{
-              fontSize: 12,
-              color: 'var(--color-text-muted)',
-              margin: '4px 0 0 0',
-            }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: 'var(--color-text-muted)',
+                margin: '4px 0 0 0',
+              }}
+            >
               {field.sublabel}
             </p>
           )}
@@ -128,6 +133,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '');
+
   const hasSupportingContext = Boolean(
     field.help ||
     qReasoning ||
@@ -136,7 +142,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     field.classificationGuidance ||
     field.selectedTypeData ||
     field.autoWarn ||
-    field.boundaryNote
+    field.boundaryNote,
   );
 
   // Commit text value on blur
@@ -150,186 +156,41 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const renderInput = () => {
     switch (field.type) {
       case 'yesno':
-      case 'yesnouncertain': {
-        const options = field.type === 'yesno'
-          ? [Answer.Yes, Answer.No]
-          : [Answer.Yes, Answer.No, Answer.Uncertain];
+      case 'yesnouncertain':
         return (
-          <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-            {options.map((opt) => (
-              <button
-                key={opt}
-                onClick={() => onChange(opt)}
-                disabled={field.disabled}
-                style={{
-                  flex: 1,
-                  padding: 'var(--space-md)',
-                  borderRadius: 'var(--radius-md)',
-                  border: value === opt
-                    ? '2px solid var(--color-primary)'
-                    : '1px solid var(--color-border)',
-                  background: value === opt
-                    ? 'var(--color-primary-muted)'
-                    : 'var(--color-bg-card)',
-                  color: value === opt
-                    ? 'var(--color-primary)'
-                    : 'var(--color-text)',
-                  fontWeight: 600,
-                  fontSize: 14,
-                  cursor: field.disabled ? 'not-allowed' : 'pointer',
-                  opacity: field.disabled ? 0.5 : 1,
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
+          <YesNoInput
+            value={value}
+            onChange={onChange}
+            includeUncertain={field.type === 'yesnouncertain'}
+            disabled={field.disabled}
+          />
         );
-      }
 
       case 'single':
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {(field.options || []).map((opt) => (
-              <button
-                key={opt}
-                onClick={() => onChange(opt)}
-                disabled={field.disabled}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-md)',
-                  padding: 'var(--space-md)',
-                  borderRadius: 'var(--radius-md)',
-                  border: value === opt 
-                    ? '2px solid var(--color-primary)' 
-                    : '1px solid var(--color-border)',
-                  background: value === opt 
-                    ? 'var(--color-primary-muted)' 
-                    : 'var(--color-bg-card)',
-                  color: 'var(--color-text)',
-                  textAlign: 'left',
-                  cursor: field.disabled ? 'not-allowed' : 'pointer',
-                  opacity: field.disabled ? 0.5 : 1,
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                <div style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  border: value === opt 
-                    ? '5px solid var(--color-primary)' 
-                    : '2px solid var(--color-border)',
-                  flexShrink: 0,
-                  transition: 'all var(--transition-fast)',
-                }} />
-                <span style={{ fontSize: 14 }}>{opt}</span>
-              </button>
-            ))}
-          </div>
-        );
+        return <RadioInput value={value} onChange={onChange} options={field.options || []} disabled={field.disabled} />;
 
-      case 'multi': {
-        const currentValues = Array.isArray(value) ? value : [];
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {(field.options || []).map((opt) => {
-              const isSelected = currentValues.includes(opt);
-              return (
-                <button
-                  key={opt}
-                  onClick={() => {
-                    if (isSelected) {
-                      onChange(currentValues.filter((v: string) => v !== opt));
-                    } else {
-                      onChange([...currentValues, opt]);
-                    }
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-md)',
-                    padding: 'var(--space-md)',
-                    borderRadius: 'var(--radius-md)',
-                    border: isSelected 
-                      ? '2px solid var(--color-primary)' 
-                      : '1px solid var(--color-border)',
-                    background: isSelected 
-                      ? 'var(--color-primary-muted)' 
-                      : 'var(--color-bg-card)',
-                    color: 'var(--color-text)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all var(--transition-fast)',
-                  }}
-                >
-                  <div style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 'var(--radius-sm)',
-                    border: isSelected 
-                      ? '2px solid var(--color-primary)' 
-                      : '2px solid var(--color-border)',
-                    background: isSelected ? 'var(--color-primary)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    transition: 'all var(--transition-fast)',
-                  }}>
-                    {isSelected && <Icon name="check" size={12} color="#fff" />}
-                  </div>
-                  <span style={{ fontSize: 14 }}>{opt}</span>
-                </button>
-              );
-            })}
-          </div>
-        );
-      }
+      case 'multi':
+        return <CheckboxInput value={value} onChange={onChange} options={field.options || []} />;
 
       case 'text':
         return (
-          <textarea
-            value={localText}
-            onChange={(e) => setLocalText(e.target.value)}
+          <TextInput
+            localText={localText}
+            onLocalTextChange={setLocalText}
             onBlur={commitText}
-            placeholder={field.q?.includes('Paste') ? 'Paste or type your answer...' : 'Enter your answer...'}
-            rows={4}
-            style={{
-              width: '100%',
-              padding: 'var(--space-md)',
-              borderRadius: 'var(--radius-md)',
-              border: hasValidationError ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
-              background: 'var(--color-bg-card)',
-              color: 'var(--color-text)',
-              fontSize: 14,
-              lineHeight: 1.6,
-              resize: 'vertical',
-              minHeight: 100,
-            }}
+            hasValidationError={hasValidationError}
+            placeholder={field.q?.includes('Paste') ? 'Paste or type your answer...' : undefined}
           />
         );
 
       case 'numeric':
         return (
-          <input
-            type="number"
-            min="0"
-            value={localText}
-            onChange={(e) => setLocalText(e.target.value)}
+          <NumericInput
+            localText={localText}
+            onLocalTextChange={setLocalText}
             onBlur={commitText}
-            placeholder={field.id === 'A8' ? 'e.g., 0, 5, 12' : 'Enter a number'}
-            style={{
-              width: 160,
-              padding: 'var(--space-md)',
-              borderRadius: 'var(--radius-md)',
-              border: hasValidationError ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
-              background: 'var(--color-bg-card)',
-              color: 'var(--color-text)',
-              fontSize: 14,
-            }}
+            hasValidationError={hasValidationError}
+            placeholder={field.id === 'A8' ? 'e.g., 0, 5, 12' : undefined}
           />
         );
 
@@ -339,7 +200,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <div 
+    <div
       className="animate-fade-in-up"
       style={{
         padding: 'var(--space-lg)',
@@ -349,9 +210,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           : hasValidationError
             ? '1px solid var(--color-danger)'
             : '1px solid var(--color-border)',
-        background: field.disabled 
-          ? '#f8fafc' 
-          : '#ffffff',
+        background: field.disabled ? '#f8fafc' : '#ffffff',
         marginBottom: 'var(--space-md)',
         animationDelay: `${index * 50}ms`,
         animationFillMode: 'backwards',
@@ -366,489 +225,302 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     >
       {/* Disabled overlay */}
       {field.disabled && (
-        <div style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: '4px 8px',
-          borderRadius: 'var(--radius-sm)',
-          background: 'var(--color-bg-card)',
-          border: '1px solid var(--color-border)',
-          fontSize: 10,
-          color: 'var(--color-text-muted)',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 8px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--color-bg-card)',
+            border: '1px solid var(--color-border)',
+            fontSize: 10,
+            color: 'var(--color-text-muted)',
+          }}
+        >
           <Icon name="alert" size={12} />
           Skipped — not applicable based on earlier answers
         </div>
       )}
+
       {/* Field header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 'var(--space-md)',
-        marginBottom: 'var(--space-md)',
-      }}>
-        {/* Status indicator (no item number) */}
-        <div style={{
-          width: 28,
-          height: 28,
-          borderRadius: 'var(--radius-sm)',
-          background: hasValidationError
-            ? 'var(--color-danger-bg)'
-            : hasValue
-              ? 'var(--color-success-bg)'
-              : isCritical
-                ? 'var(--color-warning-bg)'
-                : 'var(--color-bg-hover)',
-          border: `1px solid ${hasValidationError
-            ? 'var(--color-danger-border)'
-            : hasValue
-              ? 'var(--color-success-border)'
-              : isCritical
-                ? 'var(--color-warning-border)'
-                : 'var(--color-border)'}` ,
+      <div
+        style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          {hasValidationError
-            ? <Icon name="alertCircle" size={14} color="var(--color-danger)" />
-            : hasValue
-              ? <Icon name="check" size={14} color="var(--color-success)" />
-              : isCritical
-                ? <Icon name="alertCircle" size={14} color="var(--color-warning)" />
-                : <Icon name="info" size={14} color="var(--color-text-muted)" />
-          }
+          alignItems: 'flex-start',
+          gap: 'var(--space-md)',
+          marginBottom: 'var(--space-md)',
+        }}
+      >
+        {/* Status indicator */}
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 'var(--radius-sm)',
+            background: hasValidationError
+              ? 'var(--color-danger-bg)'
+              : hasValue
+                ? 'var(--color-success-bg)'
+                : isCritical
+                  ? 'var(--color-warning-bg)'
+                  : 'var(--color-bg-hover)',
+            border: `1px solid ${
+              hasValidationError
+                ? 'var(--color-danger-border)'
+                : hasValue
+                  ? 'var(--color-success-border)'
+                  : isCritical
+                    ? 'var(--color-warning-border)'
+                    : 'var(--color-border)'
+            }`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {hasValidationError ? (
+            <Icon name="alertCircle" size={14} color="var(--color-danger)" />
+          ) : hasValue ? (
+            <Icon name="check" size={14} color="var(--color-success)" />
+          ) : isCritical ? (
+            <Icon name="alertCircle" size={14} color="var(--color-warning)" />
+          ) : (
+            <Icon name="info" size={14} color="var(--color-text-muted)" />
+          )}
         </div>
 
         <div style={{ flex: 1 }}>
-          {/* Question text + tags inline */}
           <div style={{ lineHeight: 1.5 }}>
-            <span style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: 'var(--color-text)',
-            }}>
-              {field.q}
-            </span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)' }}>{field.q}</span>
 
-            {/* Tags — inline after question text */}
             {field.pathwayCritical && (
-              <span style={{
-                display: 'inline',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-danger-bg)',
-                color: 'var(--color-danger)',
-                border: '1px solid var(--color-danger-border)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginLeft: 6,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}>
-                Pathway-critical
-              </span>
+              <FieldTag
+                label="Pathway-critical"
+                bg="var(--color-danger-bg)"
+                color="var(--color-danger)"
+                border="var(--color-danger-border)"
+              />
             )}
             {field.critical && !field.pathwayCritical && (
-              <span style={{
-                display: 'inline',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-warning-bg)',
-                color: 'var(--color-warning)',
-                border: '1px solid var(--color-warning-border)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginLeft: 6,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}>
-                Critical
-              </span>
+              <FieldTag
+                label="Critical"
+                bg="var(--color-warning-bg)"
+                color="var(--color-warning)"
+                border="var(--color-warning-border)"
+              />
             )}
             {field.draftRef && (
-              <span style={{
-                display: 'inline',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-info-bg)',
-                color: 'var(--color-info)',
-                border: '1px solid var(--color-info-border)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginLeft: 6,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}>
-                Draft Guidance
-              </span>
+              <FieldTag
+                label="Draft Guidance"
+                bg="var(--color-info-bg)"
+                color="var(--color-info)"
+                border="var(--color-info-border)"
+              />
             )}
             {field.dynamic && (
-              <span style={{
-                display: 'inline',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-primary-muted)',
-                color: 'var(--color-primary)',
-                border: '1px solid var(--color-primary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginLeft: 6,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}>
-                Conditional
-              </span>
+              <FieldTag
+                label="Conditional"
+                bg="var(--color-primary-muted)"
+                color="var(--color-primary)"
+                border="var(--color-primary)"
+              />
             )}
             {field.disabled && (
-              <span style={{
-                display: 'inline',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-bg-hover)',
-                color: 'var(--color-text-muted)',
-                border: '1px solid var(--color-border)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginLeft: 6,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}>
-                Locked
-              </span>
+              <FieldTag
+                label="Locked"
+                bg="var(--color-bg-hover)"
+                color="var(--color-text-muted)"
+                border="var(--color-border)"
+              />
             )}
             {hasForcedValue && (
-              <span style={{
-                display: 'inline',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-info-bg)',
-                color: 'var(--color-info)',
-                border: '1px solid var(--color-info-border)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginLeft: 6,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}>
-                Auto-set
-              </span>
+              <FieldTag
+                label="Auto-set"
+                bg="var(--color-info-bg)"
+                color="var(--color-info)"
+                border="var(--color-info-border)"
+              />
             )}
           </div>
         </div>
-
       </div>
 
       <div style={{ paddingLeft: 'calc(28px + var(--space-md))' }}>
-
-      {hasValidationError && (
-        <div style={{
-          padding: 'var(--space-sm) var(--space-md)',
-          borderRadius: 'var(--radius-sm)',
-          background: 'var(--color-danger-bg)',
-          border: '1px solid var(--color-danger-border)',
-          marginBottom: 'var(--space-md)',
-          color: 'var(--color-danger)',
-          fontSize: 12,
-          fontWeight: 500,
-        }}>
-          This pathway-critical field must be completed before you can continue.
-        </div>
-      )}
-
-      {field.autoWarn && (
-        <NoteBox variant="warning" icon="alert">
-          <HelpTextWithLinks text={field.autoWarn} />
-        </NoteBox>
-      )}
-
-      {field.boundaryNote && (
-        <NoteBox variant="warning" label="Boundary note">
-          <HelpTextWithLinks text={field.boundaryNote} />
-        </NoteBox>
-      )}
-
-      {/* Forced value explanation — only show when forcedValue is a non-null, non-empty value */}
-      {hasForcedValue && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-info-bg)',
-          border: '1px solid var(--color-info-border)',
-          marginBottom: 'var(--space-md)',
-          display: 'flex',
-          gap: 'var(--space-sm)',
-        }}>
-          <Icon name="info" size={16} color="var(--color-info)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-          }}>
-            <strong style={{ color: 'var(--color-info)' }}>Set automatically:</strong>{' '}
-            This value is derived from earlier answers.
-            Value: <strong>{String(field.forcedValue)}</strong>
-          </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <div style={{ marginBottom: hasSupportingContext || Boolean(field.consequencePreview) || field.selectedTypeData ? 'var(--space-md)' : 0 }}>
-        {renderInput()}
-      </div>
-
-      {/* Consequence preview */}
-      {field.consequencePreview && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-info-bg)',
-          border: '1px solid var(--color-info-border)',
-          marginBottom: 'var(--space-md)',
-          fontSize: 12,
-          color: 'var(--color-text-secondary)',
-          lineHeight: 1.6,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            marginBottom: 'var(--space-xs)',
-          }}>
-            <Icon name="arrow" size={14} color="var(--color-info)" />
-            <strong style={{ color: 'var(--color-info)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Pathway effect
-            </strong>
-          </div>
-          {typeof field.consequencePreview === 'string' ? (
-            <HelpTextWithLinks text={field.consequencePreview} />
-          ) : consequencePreview ? (
-            <div>
-              {consequencePreview.yes && (
-                <div style={{ marginBottom: 'var(--space-xs)' }}>
-                  <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If Yes →</span>{' '}
-                  <HelpTextWithLinks text={consequencePreview.yes} />
-                </div>
-              )}
-              {consequencePreview.no && (
-                <div style={{ marginBottom: 'var(--space-xs)' }}>
-                  <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If No →</span>{' '}
-                  <HelpTextWithLinks text={consequencePreview.no} />
-                </div>
-              )}
-              {consequencePreview.uncertain && (
-                <div>
-                  <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>If Uncertain →</span>{' '}
-                  <HelpTextWithLinks text={consequencePreview.uncertain} />
-                </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {field.selectedTypeData && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-bg-hover)',
-          border: '1px solid var(--color-border)',
-          marginBottom: 'var(--space-md)',
-          fontSize: 12,
-          color: 'var(--color-text-secondary)',
-          lineHeight: 1.6,
-        }}>
-          <div style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: 'var(--color-text-muted)',
-            letterSpacing: '0.03em',
-            textTransform: 'uppercase',
-            marginBottom: 'var(--space-xs)',
-          }}>
-            Change-type context
-          </div>
-          <div style={{ marginBottom: field.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
-              <strong>Illustration:</strong> {field.selectedTypeData.example}
-          </div>
-          {field.selectedTypeData.misclass && (
-            <div style={{ marginBottom: field.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
-              <strong>Common misclassification:</strong> <HelpTextWithLinks text={field.selectedTypeData.misclass} />
-            </div>
-          )}
-          {field.selectedTypeData.pccpNote && (
-            <div>
-              <strong>PCCP note:</strong> <HelpTextWithLinks text={field.selectedTypeData.pccpNote} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {hasSupportingContext && (
-        <div style={{ marginTop: 'var(--space-sm)' }}>
-          <button
-            onClick={() => setShowSupport(!showSupport)}
+        {hasValidationError && (
+          <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: showSupport ? 'var(--radius-md) var(--radius-md) 0 0' : 'var(--radius-md)',
-              background: showSupport ? 'var(--color-bg-hover)' : 'var(--color-bg-card)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-secondary)',
+              padding: 'var(--space-sm) var(--space-md)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-danger-bg)',
+              border: '1px solid var(--color-danger-border)',
+              marginBottom: 'var(--space-md)',
+              color: 'var(--color-danger)',
               fontSize: 12,
-              fontWeight: 600,
-              textAlign: 'left',
+              fontWeight: 500,
             }}
           >
-            <Icon name="book" size={14} color="var(--color-primary)" />
-            <span style={{ flex: 1 }}>Rationale and verification notes</span>
-            {(qReasoning?.status || field.mlguidance) && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                {qReasoning?.status && (
-                  <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />
-                )}
-                {field.mlguidance && (
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    background: 'var(--color-info-bg)',
-                    color: 'var(--color-info)',
-                    border: '1px solid var(--color-info-border)',
-                  }}>
-                    AI/ML
-                  </span>
-                )}
-              </span>
-            )}
-            <Icon name={showSupport ? 'arrowUp' : 'arrowDown'} size={12} />
-          </button>
+            This pathway-critical field must be completed before you can continue.
+          </div>
+        )}
 
-          {showSupport && (
+        {field.autoWarn && (
+          <NoteBox variant="warning" icon="alert">
+            <HelpTextWithLinks text={field.autoWarn} />
+          </NoteBox>
+        )}
+
+        {field.boundaryNote && (
+          <NoteBox variant="warning" label="Boundary note">
+            <HelpTextWithLinks text={field.boundaryNote} />
+          </NoteBox>
+        )}
+
+        {hasForcedValue && (
+          <div
+            style={{
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-info-bg)',
+              border: '1px solid var(--color-info-border)',
+              marginBottom: 'var(--space-md)',
+              display: 'flex',
+              gap: 'var(--space-sm)',
+            }}
+          >
+            <Icon name="info" size={16} color="var(--color-info)" style={{ flexShrink: 0, marginTop: 2 }} />
             <div
-              className="animate-fade-in"
               style={{
-                padding: 'var(--space-md)',
-                borderRadius: '0 0 var(--radius-md) var(--radius-md)',
-                background: 'var(--color-bg-hover)',
-                borderLeft: '1px solid var(--color-border)',
-                borderRight: '1px solid var(--color-border)',
-                borderBottom: '1px solid var(--color-border)',
-                marginTop: -1,
+                fontSize: 12,
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.6,
               }}
             >
-              {field.help && (
-                <div style={{
-                  marginBottom: 'var(--space-md)',
-                  fontSize: 13,
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.7,
-                }}>
-                  <HelpTextWithLinks text={field.help} />
-                </div>
-              )}
-
-              {qReasoning && (
-                <div style={{ marginBottom: 'var(--space-md)' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-sm)',
-                    marginBottom: 'var(--space-sm)',
-                  }}>
-                    <strong style={{ fontSize: 12, color: 'var(--color-text)' }}>
-                      {qReasoning.title || 'Regulatory Context'}
-                    </strong>
-                    {qReasoning.status && <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-                    <HelpTextWithLinks text={qReasoning.text} />
-                  </div>
-                  {qReasoning.verify && (
-                    <div style={{
-                      marginTop: 'var(--space-sm)',
-                      padding: 'var(--space-sm) var(--space-md)',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--color-success-bg)',
-                      border: '1px solid var(--color-success-border)',
-                      fontSize: 11,
-                      color: 'var(--color-text-secondary)',
-                      lineHeight: 1.5,
-                    }}>
-                      <strong style={{ color: 'var(--color-success)' }}>Verify:</strong>{' '}
-                      <HelpTextWithLinks text={qReasoning.verify} />
-                    </div>
-                  )}
-                  {qReasoning.counter && (
-                    <div style={{
-                      marginTop: 'var(--space-sm)',
-                      padding: 'var(--space-sm) var(--space-md)',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--color-warning-bg)',
-                      border: '1px solid var(--color-warning-border)',
-                      fontSize: 11,
-                      color: 'var(--color-text-secondary)',
-                      lineHeight: 1.5,
-                    }}>
-                      <strong style={{ color: 'var(--color-warning)' }}>Counterpoint:</strong>{' '}
-                      <HelpTextWithLinks text={qReasoning.counter} />
-                    </div>
-                  )}
-                  {qReasoning.source && (
-                    <div style={{
-                      marginTop: 'var(--space-sm)',
-                      fontSize: 10,
-                      color: 'var(--color-text-muted)',
-                    }}>
-                      Source: <GuidanceRef code={qReasoning.source} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {field.mlguidance && (
-                <NoteBox variant="info" icon="cpu" label="AI/ML Guidance">
-                  <HelpTextWithLinks text={field.mlguidance} />
-                </NoteBox>
-              )}
-
-              {field.infoNote && (
-                <NoteBox variant="success" icon="info">
-                  <HelpTextWithLinks text={field.infoNote} />
-                </NoteBox>
-              )}
-
-              {field.classificationGuidance && (
-                <NoteBox variant="neutral" label="Classification Guidance">
-                  <HelpTextWithLinks text={field.classificationGuidance} />
-                </NoteBox>
-              )}
+              <strong style={{ color: 'var(--color-info)' }}>Set automatically:</strong> This value is derived from
+              earlier answers. Value: <strong>{String(field.forcedValue)}</strong>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
+        {/* Input */}
+        <div
+          style={{
+            marginBottom:
+              hasSupportingContext || Boolean(field.consequencePreview) || field.selectedTypeData
+                ? 'var(--space-md)'
+                : 0,
+          }}
+        >
+          {renderInput()}
+        </div>
+
+        {/* Consequence preview */}
+        {field.consequencePreview && (
+          <div
+            style={{
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-info-bg)',
+              border: '1px solid var(--color-info-border)',
+              marginBottom: 'var(--space-md)',
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.6,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-sm)',
+                marginBottom: 'var(--space-xs)',
+              }}
+            >
+              <Icon name="arrow" size={14} color="var(--color-info)" />
+              <strong
+                style={{
+                  color: 'var(--color-info)',
+                  fontSize: 11,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                Pathway effect
+              </strong>
+            </div>
+            {typeof field.consequencePreview === 'string' ? (
+              <HelpTextWithLinks text={field.consequencePreview} />
+            ) : consequencePreview ? (
+              <div>
+                {consequencePreview.yes && (
+                  <div style={{ marginBottom: 'var(--space-xs)' }}>
+                    <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If Yes →</span>{' '}
+                    <HelpTextWithLinks text={consequencePreview.yes} />
+                  </div>
+                )}
+                {consequencePreview.no && (
+                  <div style={{ marginBottom: 'var(--space-xs)' }}>
+                    <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If No →</span>{' '}
+                    <HelpTextWithLinks text={consequencePreview.no} />
+                  </div>
+                )}
+                {consequencePreview.uncertain && (
+                  <div>
+                    <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>If Uncertain →</span>{' '}
+                    <HelpTextWithLinks text={consequencePreview.uncertain} />
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {field.selectedTypeData && (
+          <div
+            style={{
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-bg-hover)',
+              border: '1px solid var(--color-border)',
+              marginBottom: 'var(--space-md)',
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.6,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--color-text-muted)',
+                letterSpacing: '0.03em',
+                textTransform: 'uppercase',
+                marginBottom: 'var(--space-xs)',
+              }}
+            >
+              Change-type context
+            </div>
+            <div style={{ marginBottom: field.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
+              <strong>Illustration:</strong> {field.selectedTypeData.example}
+            </div>
+            {field.selectedTypeData.misclass && (
+              <div style={{ marginBottom: field.selectedTypeData.pccpNote ? 'var(--space-sm)' : 0 }}>
+                <strong>Common misclassification:</strong> <HelpTextWithLinks text={field.selectedTypeData.misclass} />
+              </div>
+            )}
+            {field.selectedTypeData.pccpNote && (
+              <div>
+                <strong>PCCP note:</strong> <HelpTextWithLinks text={field.selectedTypeData.pccpNote} />
+              </div>
+            )}
+          </div>
+        )}
+
+        <SupportSection field={field} qReasoning={qReasoning} />
       </div>
     </div>
   );

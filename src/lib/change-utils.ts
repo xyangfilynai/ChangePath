@@ -28,9 +28,7 @@ export const getSelectedChangeContext = (answers: Answers): SelectedChangeContex
   if (!category && !typeName) return null;
 
   const categoryConfig = category ? changeTaxonomy[category] : null;
-  const typeConfig = typeName
-    ? categoryConfig?.types?.find((type: { name: string }) => type.name === typeName)
-    : null;
+  const typeConfig = typeName ? categoryConfig?.types?.find((type: { name: string }) => type.name === typeName) : null;
 
   return {
     category,

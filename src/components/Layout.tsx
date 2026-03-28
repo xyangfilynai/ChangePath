@@ -57,11 +57,9 @@ export const Layout: React.FC<LayoutProps> = ({
   }, [currentBlockIndex]);
 
   const currentBlock = blocks[currentBlockIndex];
-  const progress = overallRequiredTotal > 0
-    ? Math.round((overallRequiredAnswered / overallRequiredTotal) * 100)
-    : 0;
-  const currentRequiredAnswered = currentBlock ? (requiredAnsweredCounts[currentBlock.id] || 0) : 0;
-  const currentRequiredTotal = currentBlock ? (requiredCounts[currentBlock.id] || 0) : 0;
+  const progress = overallRequiredTotal > 0 ? Math.round((overallRequiredAnswered / overallRequiredTotal) * 100) : 0;
+  const currentRequiredAnswered = currentBlock ? requiredAnsweredCounts[currentBlock.id] || 0 : 0;
+  const currentRequiredTotal = currentBlock ? requiredCounts[currentBlock.id] || 0 : 0;
   const currentMissingRequired = Math.max(0, currentRequiredTotal - currentRequiredAnswered);
   const isReviewBlock = currentBlock?.id === 'review';
   const reviewReady = overallRequiredTotal > 0 && overallRequiredAnswered === overallRequiredTotal;
@@ -90,26 +88,30 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      background: 'var(--color-bg)',
-    }}>
-      {/* Header */}
-      <header style={{
+    <div
+      style={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 var(--space-lg)',
-        height: 64,
-        borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-bg-elevated)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-      }}>
+        flexDirection: 'column',
+        height: '100vh',
+        background: 'var(--color-bg)',
+      }}
+    >
+      {/* Header */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 var(--space-lg)',
+          height: 64,
+          borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-bg-elevated)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
           {/* Mobile menu button */}
           <button
@@ -126,7 +128,7 @@ export const Layout: React.FC<LayoutProps> = ({
           >
             <Icon name={sidebarOpen ? 'x' : 'menu'} size={20} />
           </button>
-          
+
           {/* Logo */}
           <BrandMark />
         </div>
@@ -156,29 +158,33 @@ export const Layout: React.FC<LayoutProps> = ({
               <span className="hide-mobile">Home</span>
             </button>
           )}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-card)',
-            border: '1px solid var(--color-border)',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-sm)',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-bg-card)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
             <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Pathway-critical</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
               {overallRequiredAnswered}/{overallRequiredTotal || 0}
             </span>
           </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-card)',
-            border: '1px solid var(--color-border)',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-sm)',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-bg-card)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
             <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Responses</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
               {overallAnswered}/{overallTotal || 0}
@@ -187,7 +193,11 @@ export const Layout: React.FC<LayoutProps> = ({
           {onReset && (
             <button
               onClick={() => {
-                if (window.confirm('Reset all assessment answers and return to the dashboard? Saved assessments and sample cases are not affected. This cannot be undone.')) {
+                if (
+                  window.confirm(
+                    'Reset all assessment answers and return to the dashboard? Saved assessments and sample cases are not affected. This cannot be undone.',
+                  )
+                ) {
                   onReset();
                 }
               }}
@@ -238,50 +248,63 @@ export const Layout: React.FC<LayoutProps> = ({
           className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}
         >
           {/* Progress bar */}
-          <div style={{
-            padding: 'var(--space-md)',
-            borderBottom: '1px solid var(--color-border)',
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: 'var(--space-sm)',
-            }}>
+          <div
+            style={{
+              padding: 'var(--space-md)',
+              borderBottom: '1px solid var(--color-border)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: 'var(--space-sm)',
+              }}
+            >
               <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
                 Pathway-critical completion
               </span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
-                {progress}%
-              </span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>{progress}%</span>
             </div>
-            <div style={{
-              height: 4,
-              borderRadius: 2,
-              background: 'var(--color-border)',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${progress}%`,
-                background: currentMissingRequired > 0 && !isReviewBlock
-                  ? 'var(--color-warning)'
-                  : reviewReady
-                    ? 'var(--color-success)'
-                    : 'var(--color-primary)',
+            <div
+              style={{
+                height: 4,
                 borderRadius: 2,
-                transition: 'width var(--transition-slow)',
-              }} />
+                background: 'var(--color-border)',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${progress}%`,
+                  background:
+                    currentMissingRequired > 0 && !isReviewBlock
+                      ? 'var(--color-warning)'
+                      : reviewReady
+                        ? 'var(--color-success)'
+                        : 'var(--color-primary)',
+                  borderRadius: 2,
+                  transition: 'width var(--transition-slow)',
+                }}
+              />
             </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 'var(--space-sm)',
-              marginTop: 'var(--space-sm)',
-              fontSize: 11,
-              color: 'var(--color-text-muted)',
-            }}>
-              <span>{overallRequiredAnswered}/{overallRequiredTotal || 0} pathway-critical</span>
-              <span>{overallAnswered}/{overallTotal || 0} total responses</span>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 'var(--space-sm)',
+                marginTop: 'var(--space-sm)',
+                fontSize: 11,
+                color: 'var(--color-text-muted)',
+              }}
+            >
+              <span>
+                {overallRequiredAnswered}/{overallRequiredTotal || 0} pathway-critical
+              </span>
+              <span>
+                {overallAnswered}/{overallTotal || 0} total responses
+              </span>
             </div>
           </div>
 
@@ -295,9 +318,7 @@ export const Layout: React.FC<LayoutProps> = ({
               const requiredTotal = requiredCounts[block.id] || 0;
               const missingRequired = Math.max(0, requiredTotal - requiredAnswered);
               const isReview = block.id === 'review';
-              const isCompleted = isReview
-                ? reviewReady
-                : completedBlocks.has(block.id);
+              const isCompleted = isReview ? reviewReady : completedBlocks.has(block.id);
               const canNavigate = true;
               const isStarted = answered > 0 || isCurrent || isCompleted;
               const statusLabel = isReview
@@ -316,11 +337,12 @@ export const Layout: React.FC<LayoutProps> = ({
                   : isStarted
                     ? 'var(--color-warning-bg)'
                     : 'var(--color-bg-card)';
-              const indicatorBorder = isCompleted || isCurrent
-                ? 'none'
-                : isStarted
-                  ? '1px solid var(--color-warning-border)'
-                  : '1px solid var(--color-border)';
+              const indicatorBorder =
+                isCompleted || isCurrent
+                  ? 'none'
+                  : isStarted
+                    ? '1px solid var(--color-warning-border)'
+                    : '1px solid var(--color-border)';
               const indicatorColor = isCompleted
                 ? '#fff'
                 : isCurrent
@@ -343,7 +365,11 @@ export const Layout: React.FC<LayoutProps> = ({
                     borderRadius: 'var(--radius-md)',
                     textAlign: 'left',
                     background: isCurrent ? '#ecfeff' : isStarted ? '#ffffff' : 'transparent',
-                    border: isCurrent ? '1px solid #a5f3fc' : isStarted ? '1px solid var(--color-border-subtle)' : '1px solid transparent',
+                    border: isCurrent
+                      ? '1px solid #a5f3fc'
+                      : isStarted
+                        ? '1px solid var(--color-border-subtle)'
+                        : '1px solid transparent',
                     boxShadow: isCurrent ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
                     opacity: 1,
                     cursor: 'pointer',
@@ -352,57 +378,63 @@ export const Layout: React.FC<LayoutProps> = ({
                   }}
                 >
                   {/* Step indicator */}
-                  <div style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    background: indicatorBg,
-                    border: indicatorBorder,
-                    transition: 'all var(--transition-fast)',
-                  }}>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      background: indicatorBg,
+                      border: indicatorBorder,
+                      transition: 'all var(--transition-fast)',
+                    }}
+                  >
                     {isCompleted ? (
                       <Icon name="check" size={14} color="#fff" />
                     ) : (
-                      <Icon 
-                        name={block.icon} 
-                        size={14} 
-                        color={indicatorColor} 
-                      />
+                      <Icon name={block.icon} size={14} color={indicatorColor} />
                     )}
                   </div>
 
                   {/* Block info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: isCurrent ? 'var(--color-text)' : 'var(--color-text-secondary)',
-                      marginBottom: 2,
-                      lineHeight: 1.3,
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: isCurrent ? 'var(--color-text)' : 'var(--color-text-secondary)',
+                        marginBottom: 2,
+                        lineHeight: 1.3,
+                      }}
+                    >
                       {block.shortLabel}
                     </div>
                     {!isReview && total > 0 && (
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2,
-                        fontSize: 11,
-                        color: 'var(--color-text-muted)',
-                      }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
+                          fontSize: 11,
+                          color: 'var(--color-text-muted)',
+                        }}
+                      >
                         <span>{statusLabel}</span>
-                        <span>{requiredAnswered}/{requiredTotal || 0} pathway-critical, {answered}/{total} total</span>
+                        <span>
+                          {requiredAnswered}/{requiredTotal || 0} pathway-critical, {answered}/{total} total
+                        </span>
                       </div>
                     )}
                     {isReview && (
-                      <div style={{
-                        fontSize: 11,
-                        color: 'var(--color-text-muted)',
-                      }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-muted)',
+                        }}
+                      >
                         {statusLabel}
                       </div>
                     )}
@@ -413,41 +445,51 @@ export const Layout: React.FC<LayoutProps> = ({
           </nav>
 
           {/* Sidebar footer */}
-          <div style={{
-            padding: 'var(--space-md)',
-            borderTop: '1px solid var(--color-border)',
-          }}>
-            <div style={{
+          <div
+            style={{
               padding: 'var(--space-md)',
-              borderRadius: 'var(--radius-md)',
-              background: reviewReady ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
-              border: `1px solid ${reviewReady ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`,
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                marginBottom: 'var(--space-xs)',
-              }}>
+              borderTop: '1px solid var(--color-border)',
+            }}
+          >
+            <div
+              style={{
+                padding: 'var(--space-md)',
+                borderRadius: 'var(--radius-md)',
+                background: reviewReady ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
+                border: `1px solid ${reviewReady ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-sm)',
+                  marginBottom: 'var(--space-xs)',
+                }}
+              >
                 <Icon
                   name={reviewReady ? 'checkCircle' : 'alertCircle'}
                   size={14}
                   color={reviewReady ? 'var(--color-success)' : 'var(--color-warning)'}
                 />
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: reviewReady ? 'var(--color-success)' : 'var(--color-warning)',
-                }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: reviewReady ? 'var(--color-success)' : 'var(--color-warning)',
+                  }}
+                >
                   {reviewReady ? 'Fields complete — review available' : 'Pathway-critical fields remain'}
                 </span>
               </div>
-              <p style={{
-                fontSize: 10,
-                color: 'var(--color-text-secondary)',
-                lineHeight: 1.5,
-                margin: 0,
-              }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
                 {reviewReady
                   ? 'All pathway-critical fields are answered. Review the determination, evidence gaps, and documentation needs before relying on the output.'
                   : 'Complete remaining pathway-critical fields, then perform final review before relying on the determined pathway.'}
@@ -457,69 +499,86 @@ export const Layout: React.FC<LayoutProps> = ({
         </aside>
 
         {/* Main content */}
-        <main ref={mainRef} style={{
-          flex: 1,
-          overflow: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-        }}>
+        <main
+          ref={mainRef}
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           {/* Block header */}
           {currentBlock && (
-            <div style={{
-              padding: 'var(--space-lg) var(--space-xl)',
-              borderBottom: '1px solid var(--color-border)',
-              background: 'var(--color-bg-elevated)',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                marginBottom: 'var(--space-xs)',
-              }}>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: 'var(--color-primary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}>
+            <div
+              style={{
+                padding: 'var(--space-lg) var(--space-xl)',
+                borderBottom: '1px solid var(--color-border)',
+                background: 'var(--color-bg-elevated)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-sm)',
+                  marginBottom: 'var(--space-xs)',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--color-primary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
                   Block {currentBlock.id}
                 </span>
               </div>
-              <h1 style={{
-                fontSize: 20,
-                fontWeight: 700,
-                color: 'var(--color-text)',
-                margin: 0,
-                lineHeight: 1.3,
-              }}>
+              <h1
+                style={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  margin: 0,
+                  lineHeight: 1.3,
+                }}
+              >
                 {currentBlock.label}
               </h1>
               {currentBlock.description && (
-                <p style={{
-                  fontSize: 13,
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.65,
-                  maxWidth: 840,
-                  margin: '10px 0 0',
-                }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.65,
+                    maxWidth: 840,
+                    margin: '10px 0 0',
+                  }}
+                >
                   {currentBlock.description}
                 </p>
               )}
               {isReviewBlock && (
-                <div style={{
-                  marginTop: 'var(--space-md)',
-                  padding: '12px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-bg-card)',
-                  border: '1px solid var(--color-border)',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 'var(--space-sm)',
-                    marginBottom: caseSummary.length > 0 ? 'var(--space-sm)' : 0,
-                  }}>
+                <div
+                  style={{
+                    marginTop: 'var(--space-md)',
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 'var(--space-sm)',
+                      marginBottom: caseSummary.length > 0 ? 'var(--space-sm)' : 0,
+                    }}
+                  >
                     {[
                       {
                         label: 'Pathway-critical',
@@ -534,7 +593,7 @@ export const Layout: React.FC<LayoutProps> = ({
                       {
                         label: 'Review status',
                         value: reviewReady ? 'All pathway-critical fields complete' : 'Pathway-critical fields remain',
-                        tone: reviewReady ? 'success' as const : 'warning' as const,
+                        tone: reviewReady ? ('success' as const) : ('warning' as const),
                       },
                     ].map((item) => {
                       const tone = summaryToneStyles[item.tone];
@@ -552,11 +611,13 @@ export const Layout: React.FC<LayoutProps> = ({
                           }}
                         >
                           <span style={{ fontSize: 10.5, color: 'var(--color-text-muted)' }}>{item.label}</span>
-                          <span style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: tone.color === 'var(--color-text)' ? 'var(--color-text)' : tone.color,
-                          }}>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: tone.color === 'var(--color-text)' ? 'var(--color-text)' : tone.color,
+                            }}
+                          >
                             {item.value}
                           </span>
                         </div>
@@ -564,11 +625,13 @@ export const Layout: React.FC<LayoutProps> = ({
                     })}
                   </div>
                   {caseSummary.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 'var(--space-sm)',
-                    }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 'var(--space-sm)',
+                      }}
+                    >
                       {caseSummary.map((item) => {
                         const tone = summaryToneStyles[item.tone || 'default'];
                         return (
@@ -586,12 +649,14 @@ export const Layout: React.FC<LayoutProps> = ({
                             }}
                           >
                             <span style={{ fontSize: 10.5, color: 'var(--color-text-muted)' }}>{item.label}</span>
-                            <span style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: tone.color === 'var(--color-text)' ? 'var(--color-text)' : tone.color,
-                              lineHeight: 1.4,
-                            }}>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: tone.color === 'var(--color-text)' ? 'var(--color-text)' : tone.color,
+                                lineHeight: 1.4,
+                              }}
+                            >
                               {item.value}
                             </span>
                           </div>
@@ -605,13 +670,15 @@ export const Layout: React.FC<LayoutProps> = ({
           )}
 
           {/* Content area */}
-          <div style={{
-            flex: 1,
-            padding: 'var(--space-xl)',
-            maxWidth: 800,
-            width: '100%',
-            margin: '0 auto',
-          }}>
+          <div
+            style={{
+              flex: 1,
+              padding: 'var(--space-xl)',
+              maxWidth: 800,
+              width: '100%',
+              margin: '0 auto',
+            }}
+          >
             {children}
           </div>
         </main>

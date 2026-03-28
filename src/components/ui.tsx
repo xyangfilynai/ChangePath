@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-  guidanceLinks,
-  findGuidanceLink,
-} from '../lib/content';
+import { guidanceLinks, findGuidanceLink } from '../lib/content';
 
 /* ── Shared external-link icon (used by GuidanceRef & HelpTextWithLinks) ── */
 
@@ -32,21 +29,12 @@ interface GuidanceRefProps {
   showSection?: boolean;
 }
 
-export const GuidanceRef: React.FC<GuidanceRefProps> = ({
-  code,
-  showSection = true,
-}) => {
+export const GuidanceRef: React.FC<GuidanceRefProps> = ({ code, showSection = true }) => {
   const link = findGuidanceLink(code);
-  if (!link)
-    return (
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{code}</span>
-    );
+  if (!link) return <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{code}</span>;
   const linkLabel = link.fullName || link.shortName || code;
   const shortName = link.shortName || '';
-  const section = code
-    .replace(shortName, '')
-    .replace(code.split(' ')[0], '')
-    .trim();
+  const section = code.replace(shortName, '').replace(code.split(' ')[0], '').trim();
   return (
     <a
       href={link.url}
@@ -88,9 +76,7 @@ interface HelpTextWithLinksProps {
   text: string;
 }
 
-export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({
-  text,
-}) => {
+export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({ text }) => {
   if (!text) return null;
 
   const refPatterns: RefPattern[] = [
@@ -195,14 +181,8 @@ interface AuthorityTagProps {
   compact?: boolean;
 }
 
-export const AuthorityTag: React.FC<AuthorityTagProps> = ({
-  level,
-  compact = false,
-}) => {
-  const levels: Record<
-    string,
-    { label: string; bg: string; color: string; border: string; icon: string }
-  > = {
+export const AuthorityTag: React.FC<AuthorityTagProps> = ({ level, compact = false }) => {
+  const levels: Record<string, { label: string; bg: string; color: string; border: string; icon: string }> = {
     regulation: {
       label: 'REGULATION',
       bg: '#EFF6FF',
@@ -278,4 +258,3 @@ export const AuthorityTag: React.FC<AuthorityTagProps> = ({
     </span>
   );
 };
-

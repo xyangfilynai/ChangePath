@@ -54,7 +54,9 @@ describe('buildPdfReportDocument', () => {
     expect(doc.executiveSummary.relianceQualification).toContain('qualified regulatory review');
     expect(doc.executiveSummary.primaryNextAction).toBeTruthy();
     expect(doc.executiveSummary.summaryStatement).toBeTruthy();
-    expect(doc.executiveSummary.pathwayConclusion).toContain(`supports a pathway assessment of ${Pathway.LetterToFile}`);
+    expect(doc.executiveSummary.pathwayConclusion).toContain(
+      `supports a pathway assessment of ${Pathway.LetterToFile}`,
+    );
     expect('confidenceLevel' in doc.executiveSummary).toBe(false);
 
     expect(doc.assessmentBasis.recordFacts.length).toBeGreaterThan(0);
@@ -80,20 +82,20 @@ describe('buildPdfReportDocument', () => {
   it('handles PMA pathway', () => {
     const doc = buildDoc(basePMA());
 
-    expect(doc.assessmentBasis.recordFacts.some(
-      (f) => f.label === 'Authorization Pathway' && f.value === AuthPathway.PMA,
-    )).toBe(true);
-    expect(doc.assessmentBasis.systemGeneratedBasis.some(
-      (s) => s.includes('PMA'),
-    )).toBe(true);
+    expect(
+      doc.assessmentBasis.recordFacts.some((f) => f.label === 'Authorization Pathway' && f.value === AuthPathway.PMA),
+    ).toBe(true);
+    expect(doc.assessmentBasis.systemGeneratedBasis.some((s) => s.includes('PMA'))).toBe(true);
   });
 
   it('handles De Novo pathway', () => {
     const doc = buildDoc(baseDeNovo());
 
-    expect(doc.assessmentBasis.recordFacts.some(
-      (f) => f.label === 'Authorization Pathway' && f.value === AuthPathway.DeNovo,
-    )).toBe(true);
+    expect(
+      doc.assessmentBasis.recordFacts.some(
+        (f) => f.label === 'Authorization Pathway' && f.value === AuthPathway.DeNovo,
+      ),
+    ).toBe(true);
   });
 
   it('handles sparse data gracefully (empty answers)', () => {
@@ -193,11 +195,13 @@ describe('buildPdfReportDocument', () => {
   });
 
   it('deduplicates rationale text across the PDF narrative view', () => {
-    const doc = buildDoc(base510k({
-      B1: 'Software change',
-      B2: 'Algorithm enhancement',
-      B4: 'Updated the model ranking logic while keeping the clinician-facing output structure unchanged.',
-    }));
+    const doc = buildDoc(
+      base510k({
+        B1: 'Software change',
+        B2: 'Algorithm enhancement',
+        B4: 'Updated the model ranking logic while keeping the clinician-facing output structure unchanged.',
+      }),
+    );
     const normalizedHeadline = normalizeText(doc.narrative.headlineReason);
     const normalizedSupportingPoints = doc.narrative.supportingPoints.map(normalizeText);
 
@@ -238,15 +242,11 @@ describe('buildPdfReportDocument', () => {
 
   it('passes isLongText flag through to record facts', () => {
     const doc = buildDoc(base510k({ B4: 'A detailed change description.' }));
-    const changeDesc = doc.assessmentBasis.recordFacts.find(
-      (f) => f.label === 'Submitted Change Description',
-    );
+    const changeDesc = doc.assessmentBasis.recordFacts.find((f) => f.label === 'Submitted Change Description');
     expect(changeDesc).toBeTruthy();
     expect(changeDesc!.isLongText).toBe(true);
 
-    const authPathway = doc.assessmentBasis.recordFacts.find(
-      (f) => f.label === 'Authorization Pathway',
-    );
+    const authPathway = doc.assessmentBasis.recordFacts.find((f) => f.label === 'Authorization Pathway');
     expect(authPathway).toBeTruthy();
     expect(authPathway!.isLongText).toBe(false);
   });
@@ -288,9 +288,7 @@ describe('buildDocxDocument', () => {
     const blocks = getBlocks(answers, ds);
     const getFieldsForBlock = (blockId: string) => getBlockFields(blockId, answers, ds);
     const reportDoc = buildPdfReportDocument(answers, determination, blocks, getFieldsForBlock, {
-      reviewerNotes: [
-        { id: 'n1', author: 'Tester', text: 'Looks good.', timestamp: '2025-01-15T10:00:00Z' },
-      ],
+      reviewerNotes: [{ id: 'n1', author: 'Tester', text: 'Looks good.', timestamp: '2025-01-15T10:00:00Z' }],
     });
     const doc = buildDocxDocument(reportDoc);
     expect(doc).toBeTruthy();
@@ -317,9 +315,9 @@ describe('buildDocxDocument', () => {
     const longText = 'Updated the neural network architecture to incorporate multi-head attention. '.repeat(20);
     const answers = base510k({ B4: longText });
     const reportDoc = buildDoc(answers);
-    expect(reportDoc.assessmentBasis.recordFacts.find(
-      (f) => f.label === 'Submitted Change Description',
-    )!.value.length).toBeGreaterThan(500);
+    expect(
+      reportDoc.assessmentBasis.recordFacts.find((f) => f.label === 'Submitted Change Description')!.value.length,
+    ).toBeGreaterThan(500);
 
     const doc = buildDocxDocument(reportDoc);
     expect(doc).toBeTruthy();

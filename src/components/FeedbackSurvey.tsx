@@ -25,15 +25,13 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
   const [state, setState] = useState<SurveyState>('form');
 
   const update = <K extends keyof FeedbackFormData>(key: K, value: FeedbackFormData[K]) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const toggleMulti = <T extends string>(key: 'q4_use_cases' | 'q6_followup', option: T) => {
-    setForm(prev => {
+    setForm((prev) => {
       const current = prev[key] as T[];
-      const next = current.includes(option)
-        ? current.filter(v => v !== option)
-        : [...current, option];
+      const next = current.includes(option) ? current.filter((v) => v !== option) : [...current, option];
       return { ...prev, [key]: next };
     });
   };
@@ -66,22 +64,31 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             border: '2px solid var(--color-success-border)',
           }}
         >
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            background: 'var(--color-success)',
-            marginBottom: 'var(--space-md)',
-          }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'var(--color-success)',
+              marginBottom: 'var(--space-md)',
+            }}
+          >
             <Icon name="checkCircle" size={28} color="#fff" />
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 var(--space-sm)' }}>
             Feedback received
           </h2>
-          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: '0 0 var(--space-lg)' }}>
+          <p
+            style={{
+              fontSize: 14,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.6,
+              margin: '0 0 var(--space-lg)',
+            }}
+          >
             Thank you. Your responses inform product and methodology improvements.
           </p>
           <button onClick={onBack} style={btnSecondary}>
@@ -120,7 +127,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         <fieldset style={fieldsetStyle}>
           <legend style={legendStyle}>Did the determined pathway match your expectation?</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {Q1_OPTIONS.map(option => (
+            {Q1_OPTIONS.map((option) => (
               <label key={option} style={radioLabel}>
                 <input
                   type="radio"
@@ -142,7 +149,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             <legend style={legendStyle}>How would you state the conclusion differently?</legend>
             <textarea
               value={form.q1b_qualify}
-              onChange={e => update('q1b_qualify', e.target.value)}
+              onChange={(e) => update('q1b_qualify', e.target.value)}
               placeholder="Describe the difference in conclusion or pathway..."
               style={textareaStyle}
               rows={3}
@@ -155,7 +162,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
           <legend style={legendStyle}>What in the rationale would you challenge or refine?</legend>
           <textarea
             value={form.q2_pushback}
-            onChange={e => update('q2_pushback', e.target.value)}
+            onChange={(e) => update('q2_pushback', e.target.value)}
             placeholder="Specific steps, sources, or assumptions..."
             style={textareaStyle}
             rows={3}
@@ -167,7 +174,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
           <legend style={legendStyle}>What would increase your confidence in ChangePath&apos;s output?</legend>
           <textarea
             value={form.q3_confidence}
-            onChange={e => update('q3_confidence', e.target.value)}
+            onChange={(e) => update('q3_confidence', e.target.value)}
             placeholder="Citations, comparators, data fields, workflow changes..."
             style={textareaStyle}
             rows={3}
@@ -178,7 +185,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         <fieldset style={fieldsetStyle}>
           <legend style={legendStyle}>How would you use ChangePath? (select all that apply)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {Q4_OPTIONS.map(option => (
+            {Q4_OPTIONS.map((option) => (
               <label key={option} style={radioLabel}>
                 <input
                   type="checkbox"
@@ -198,7 +205,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             <legend style={legendStyle}>Describe the &quot;Other&quot; use case</legend>
             <textarea
               value={form.q4b_other}
-              onChange={e => update('q4b_other', e.target.value)}
+              onChange={(e) => update('q4b_other', e.target.value)}
               placeholder="Brief use-case description..."
               style={textareaStyle}
               rows={2}
@@ -211,7 +218,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
           <legend style={legendStyle}>What was most and least helpful about this session?</legend>
           <textarea
             value={form.q5_helpful}
-            onChange={e => update('q5_helpful', e.target.value)}
+            onChange={(e) => update('q5_helpful', e.target.value)}
             placeholder="Workflow, clarity, gaps in context, etc."
             style={textareaStyle}
             rows={3}
@@ -222,7 +229,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         <fieldset style={fieldsetStyle}>
           <legend style={legendStyle}>Follow-up interest (select all that apply)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            {Q6_OPTIONS.map(option => (
+            {Q6_OPTIONS.map((option) => (
               <label key={option} style={radioLabel}>
                 <input
                   type="checkbox"
@@ -240,7 +247,9 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         {showQ7 && (
           <fieldset style={fieldsetStyle} data-testid="q7-section">
             <legend style={legendStyle}>Contact information</legend>
-            <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '0 0 var(--space-md)', lineHeight: 1.5 }}>
+            <p
+              style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '0 0 var(--space-md)', lineHeight: 1.5 }}
+            >
               Used only if follow-up is requested above.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -249,7 +258,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
                 <input
                   type="text"
                   value={form.q7_contact.name}
-                  onChange={e => update('q7_contact', { ...form.q7_contact, name: e.target.value })}
+                  onChange={(e) => update('q7_contact', { ...form.q7_contact, name: e.target.value })}
                   style={inputStyle}
                   placeholder="Your name"
                 />
@@ -259,7 +268,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
                 <input
                   type="email"
                   value={form.q7_contact.email}
-                  onChange={e => update('q7_contact', { ...form.q7_contact, email: e.target.value })}
+                  onChange={(e) => update('q7_contact', { ...form.q7_contact, email: e.target.value })}
                   style={inputStyle}
                   placeholder="you@example.com"
                 />
@@ -269,7 +278,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
                 <input
                   type="text"
                   value={form.q7_contact.organization}
-                  onChange={e => update('q7_contact', { ...form.q7_contact, organization: e.target.value })}
+                  onChange={(e) => update('q7_contact', { ...form.q7_contact, organization: e.target.value })}
                   style={inputStyle}
                   placeholder="Your organization"
                 />
@@ -284,7 +293,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             <legend style={legendStyle}>Referral (optional)</legend>
             <textarea
               value={form.q8_referral}
-              onChange={e => update('q8_referral', e.target.value)}
+              onChange={(e) => update('q8_referral', e.target.value)}
               placeholder="Name, email, or context (with consent to share)..."
               style={textareaStyle}
               rows={2}
@@ -293,14 +302,16 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         )}
 
         {/* Actions */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: 'var(--space-xl)',
-          paddingTop: 'var(--space-lg)',
-          borderTop: '1px solid var(--color-border)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 'var(--space-xl)',
+            paddingTop: 'var(--space-lg)',
+            borderTop: '1px solid var(--color-border)',
+          }}
+        >
           <button type="button" onClick={onBack} style={btnSecondary}>
             Skip
           </button>
@@ -319,15 +330,17 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         </div>
 
         {state === 'error' && (
-          <div style={{
-            marginTop: 'var(--space-md)',
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-danger-bg)',
-            border: '1px solid var(--color-danger-border)',
-            fontSize: 13,
-            color: 'var(--color-danger)',
-          }}>
+          <div
+            style={{
+              marginTop: 'var(--space-md)',
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-danger-bg)',
+              border: '1px solid var(--color-danger-border)',
+              fontSize: 13,
+              color: 'var(--color-danger)',
+            }}
+          >
             Submission failed. Try again.
           </div>
         )}

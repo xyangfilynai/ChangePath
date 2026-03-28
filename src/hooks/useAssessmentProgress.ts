@@ -74,10 +74,7 @@ export function useAssessmentProgress(
   answers: Answers,
   getFieldsForBlock: (blockId: string) => AssessmentField[],
 ): ProgressCounts {
-  return useMemo(
-    () => computeProgressCounts(blocks, answers, getFieldsForBlock),
-    [blocks, answers, getFieldsForBlock],
-  );
+  return useMemo(() => computeProgressCounts(blocks, answers, getFieldsForBlock), [blocks, answers, getFieldsForBlock]);
 }
 
 /**
@@ -91,7 +88,11 @@ export function useCompletedBlocks(
   return useMemo(() => {
     const completed = new Set<string>();
     blocks.forEach((block) => {
-      if (block.id !== 'review' && (requiredCounts[block.id] || 0) > 0 && requiredAnsweredCounts[block.id] === requiredCounts[block.id]) {
+      if (
+        block.id !== 'review' &&
+        (requiredCounts[block.id] || 0) > 0 &&
+        requiredAnsweredCounts[block.id] === requiredCounts[block.id]
+      ) {
         completed.add(block.id);
       }
     });

@@ -110,13 +110,10 @@ const getReasoningSectionTitles = (
   };
 };
 
-const getAnswerResolutionVerb = (answer: unknown): string => (
-  answer === Answer.Uncertain ? 'Resolve whether' : 'Support the conclusion that'
-);
+const getAnswerResolutionVerb = (answer: unknown): string =>
+  answer === Answer.Uncertain ? 'Resolve whether' : 'Support the conclusion that';
 
-const getChangeSpecificVerificationStep = (
-  changeContext: SelectedChangeContext | null,
-): string | null => {
+const getChangeSpecificVerificationStep = (changeContext: SelectedChangeContext | null): string | null => {
   if (!changeContext) return null;
 
   switch (changeContext.typeName) {
@@ -170,10 +167,7 @@ const getChangeSpecificVerificationStep = (
   }
 };
 
-const getQuestionSpecificVerificationStep = (
-  questionId: 'C3' | 'C4' | 'C5' | 'C6',
-  answer: unknown,
-): string => {
+const getQuestionSpecificVerificationStep = (questionId: 'C3' | 'C4' | 'C5' | 'C6', answer: unknown): string => {
   const prefix = getAnswerResolutionVerb(answer);
   switch (questionId) {
     case 'C3':
@@ -187,10 +181,7 @@ const getQuestionSpecificVerificationStep = (
   }
 };
 
-const getPathwayChangeConditionForQuestion = (
-  questionId: 'C3' | 'C4' | 'C5' | 'C6',
-  _pathway: string,
-): string => {
+const getPathwayChangeConditionForQuestion = (questionId: 'C3' | 'C4' | 'C5' | 'C6', _pathway: string): string => {
   switch (questionId) {
     case 'C3':
       return `This pathway could change only if the record supports concluding that the proposed change does not create a new or modified cause of harm with patient-injury potential.`;
@@ -253,7 +244,9 @@ export function buildCaseSpecificReasoning(
     const blockers: string[] = [];
 
     if (determination.isIntendedUseUncertain) {
-      blockers.push('the record does not establish whether the change stays within the authorized intended use or indications for use');
+      blockers.push(
+        'the record does not establish whether the change stays within the authorized intended use or indications for use',
+      );
       addSources(sources, '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V');
       pushUnique(
         verificationSteps,
@@ -266,7 +259,9 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.baselineIncomplete) {
-      blockers.push('the authorized baseline is incomplete because the authorization identifier, baseline version, or authorized IFU statement is not provided');
+      blockers.push(
+        'the authorized baseline is incomplete because the authorization identifier, baseline version, or authorized IFU statement is not provided',
+      );
       addSources(sources, 'FDA-SW-510K-2017; FDA-PCCP-2025 §V');
       pushUnique(
         verificationSteps,
@@ -284,7 +279,9 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.pccpIncomplete) {
-      blockers.push('the PCCP scope review is incomplete, so the case cannot be closed under the authorized PCCP pathway');
+      blockers.push(
+        'the PCCP scope review is incomplete, so the case cannot be closed under the authorized PCCP pathway',
+      );
       addSources(sources, 'FDA-PCCP-2025 §V–VIII');
       pushUnique(
         verificationSteps,
@@ -306,7 +303,9 @@ export function buildCaseSpecificReasoning(
     }
 
     if (determination.hasUncertainSignificance) {
-      blockers.push("one or more U.S. significance fields were answered 'Uncertain', so the record does not yet support a final close-out");
+      blockers.push(
+        "one or more U.S. significance fields were answered 'Uncertain', so the record does not yet support a final close-out",
+      );
       addSources(sources, 'FDA-SW-510K-2017 Q3-Q4');
       pushUnique(
         verificationSteps,
@@ -340,7 +339,9 @@ export function buildCaseSpecificReasoning(
       `The pathway is ${determination.pathway} because the change was assessed as affecting the authorized intended use or indications for use. That threshold issue has to be resolved before any exemption, significance, or PCCP logic applies.`,
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
-    decisionPath.push('The change was assessed as affecting the intended use or indications for use, so the case was treated as an intended-use change.');
+    decisionPath.push(
+      'The change was assessed as affecting the intended use or indications for use, so the case was treated as an intended-use change.',
+    );
     decisionPath.push(`Result: ${determination.pathway}.`);
     addSources(sources, '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V');
     pushUnique(
@@ -371,18 +372,20 @@ export function buildCaseSpecificReasoning(
     const triggerNarratives: string[] = [];
     const triggerDecisionSteps: string[] = [];
 
-    decisionPath.push('The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo software-change significance framework.');
+    decisionPath.push(
+      'The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo software-change significance framework.',
+    );
     addSources(sources, '21 CFR 807.81(a)(3)');
 
     if (answers.C1 === Answer.No && answers.C2 === Answer.No) {
-      decisionPath.push('The change did not qualify for either the cybersecurity-only exemption or the restore-to-specification exemption.');
+      decisionPath.push(
+        'The change did not qualify for either the cybersecurity-only exemption or the restore-to-specification exemption.',
+      );
       addSources(sources, 'FDA-SW-510K-2017 Q1; FDA-SW-510K-2017 Q2');
     }
 
     if (answers.C3 === Answer.Yes) {
-      triggerNarratives.push(
-        'the record identifies a new or modified cause of harm with patient-injury potential',
-      );
+      triggerNarratives.push('the record identifies a new or modified cause of harm with patient-injury potential');
       triggerDecisionSteps.push(
         'New or modified cause of harm: Yes. The record identifies a new or modified cause of harm with patient-injury potential.',
       );
@@ -470,9 +473,13 @@ export function buildCaseSpecificReasoning(
     }
 
     if (answers.A2 === Answer.No) {
-      decisionPath.push('No authorized PCCP is on file, so there is no pre-authorized PCCP path available for this change.');
+      decisionPath.push(
+        'No authorized PCCP is on file, so there is no pre-authorized PCCP path available for this change.',
+      );
     } else if (determination.pccpScopeFailed) {
-      decisionPath.push('An authorized PCCP exists, but the current scope review does not support implementing this change under that PCCP.');
+      decisionPath.push(
+        'An authorized PCCP exists, but the current scope review does not support implementing this change under that PCCP.',
+      );
       addSources(sources, 'FDA-PCCP-2025 §V–VI');
     }
 
@@ -502,7 +509,11 @@ export function buildCaseSpecificReasoning(
     if (answerIsOneOf(answers.C6, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C6', answers.C6));
     }
-    if (answerIsOneOf(answers.E3, [Answer.Yes, Answer.Uncertain]) || answers.E1 === Answer.Uncertain || answers.E4 === Answer.No) {
+    if (
+      answerIsOneOf(answers.E3, [Answer.Yes, Answer.Uncertain]) ||
+      answers.E1 === Answer.Uncertain ||
+      answers.E4 === Answer.No
+    ) {
       pushUnique(
         verificationSteps,
         'Update the subgroup and bias evidence package so the populations, environments, and protected groups affected by this change are explicitly covered.',
@@ -577,11 +588,15 @@ export function buildCaseSpecificReasoning(
       narrative.push(
         'The pathway is Letter to File because the change was assessed as staying within the existing intended use and indications for use, it did not qualify for a documentation-only exemption, and the risk and performance review still came back all No: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
       );
-      decisionPath.push('The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo significance framework.');
+      decisionPath.push(
+        'The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo significance framework.',
+      );
       if (answers.C1 === Answer.No && answers.C2 === Answer.No) {
         decisionPath.push('The pathway is not based on a cybersecurity-only or restore-to-specification exemption.');
       }
-      decisionPath.push('The core risk and performance reviews did not trigger a new submission on the current record.');
+      decisionPath.push(
+        'The core risk and performance reviews did not trigger a new submission on the current record.',
+      );
       addSources(sources, 'FDA-SW-510K-2017 Q3; FDA-SW-510K-2017 Q4');
       pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
@@ -623,7 +638,9 @@ export function buildCaseSpecificReasoning(
         : 'The change was still checked against the PCCP boundaries before implementation.',
     );
     decisionPath.push('An authorized PCCP is available.');
-    decisionPath.push('The PCCP scope review was satisfied across the applicable gates, so the current change remains within authorized PCCP scope.');
+    decisionPath.push(
+      'The PCCP scope review was satisfied across the applicable gates, so the current change remains within authorized PCCP scope.',
+    );
     decisionPath.push(`Result: ${determination.pathway}.`);
 
     pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
@@ -669,7 +686,9 @@ export function buildCaseSpecificReasoning(
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
 
-    decisionPath.push('The device is PMA-approved, so the assessment applied the PMA safety/effectiveness threshold rather than the 510(k) significance framework.');
+    decisionPath.push(
+      'The device is PMA-approved, so the assessment applied the PMA safety/effectiveness threshold rather than the 510(k) significance framework.',
+    );
     decisionPath.push(...pmaDrivers.map((driver) => `${driver.charAt(0).toUpperCase() + driver.slice(1)}.`));
     decisionPath.push(`Result: ${determination.pathway}.`);
 
@@ -703,7 +722,9 @@ export function buildCaseSpecificReasoning(
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
 
     decisionPath.push('The device is PMA-approved, so the assessment used the PMA safety/effectiveness threshold.');
-    decisionPath.push('The safety-and-effectiveness review was answered No, so the current record does not support a PMA supplement trigger.');
+    decisionPath.push(
+      'The safety-and-effectiveness review was answered No, so the current record does not support a PMA supplement trigger.',
+    );
     decisionPath.push(`Result: ${determination.pathway}.`);
 
     addSources(sources, '21 CFR 814.39(b); 21 CFR 814.84');

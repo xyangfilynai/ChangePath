@@ -10,21 +10,12 @@ import type { Answers, Block, DeterminationResult, AssessmentField } from './ass
 import { Pathway } from './assessment-engine';
 import type { ReviewerNote } from './assessment-store';
 import { generateAssessmentArtifact, type AssessmentArtifact } from './report-generator';
-import {
-  buildAssessmentBasisView,
-  splitReportNarrative,
-  type AssessmentBasisView,
-} from './report-basis';
+import { buildAssessmentBasisView, splitReportNarrative, type AssessmentBasisView } from './report-basis';
 import { findGuidanceLink, getSourceBadge } from './content';
 
 const PDF_EXPORT_VERSION = 'pdf-v2';
 const PREPARED_FROM = 'Assessment record in ChangePath';
-const GROUPED_SOURCE_PREFIXES = [
-  'FDA-SW-510K-2017',
-  'FDA-PCCP-2025',
-  'FDA-LIFECYCLE-2025',
-  'FDA-CYBER-2026',
-] as const;
+const GROUPED_SOURCE_PREFIXES = ['FDA-SW-510K-2017', 'FDA-PCCP-2025', 'FDA-LIFECYCLE-2025', 'FDA-CYBER-2026'] as const;
 
 /* ------------------------------------------------------------------ */
 /*  Document model types                                               */
@@ -151,10 +142,7 @@ function deduplicateText(items: string[], excluded: string[] = []): string[] {
   return deduped;
 }
 
-function buildRecordStatus(
-  artifact: AssessmentArtifact,
-  mergedIssueCount: number,
-): string {
+function buildRecordStatus(artifact: AssessmentArtifact, mergedIssueCount: number): string {
   if (artifact.outcome.isIncomplete) {
     return 'Incomplete — pathway-critical items unresolved';
   }
@@ -164,10 +152,7 @@ function buildRecordStatus(
   return 'Complete — pending qualified review';
 }
 
-function buildRelianceQualification(
-  artifact: AssessmentArtifact,
-  mergedIssueCount: number,
-): string {
+function buildRelianceQualification(artifact: AssessmentArtifact, mergedIssueCount: number): string {
   if (artifact.outcome.isIncomplete) {
     return 'Not suitable for reliance. Pathway-critical items remain unresolved on the current record.';
   }
@@ -177,11 +162,7 @@ function buildRelianceQualification(
   return 'Use only after qualified regulatory review and normal QMS controls are completed.';
 }
 
-function buildConclusionStatement(
-  pathway: string,
-  artifact: AssessmentArtifact,
-  mergedIssueCount: number,
-): string {
+function buildConclusionStatement(pathway: string, artifact: AssessmentArtifact, mergedIssueCount: number): string {
   if (artifact.outcome.isIncomplete) {
     return 'No pathway conclusion should be treated as supported on the current record. Complete the pathway-critical items and threshold reviews identified in this document before relying on any downstream pathway.';
   }
@@ -237,9 +218,10 @@ function softenSummaryStatement(
   }
 
   if (/^The pathway is .+ because/i.test(normalized)) {
-    const prefix = artifact.outcome.isIncomplete || mergedIssueCount > 0
-      ? `The current record provisionally supports a pathway assessment of ${pathway} because`
-      : `The current record supports a pathway assessment of ${pathway} because`;
+    const prefix =
+      artifact.outcome.isIncomplete || mergedIssueCount > 0
+        ? `The current record provisionally supports a pathway assessment of ${pathway} because`
+        : `The current record supports a pathway assessment of ${pathway} because`;
 
     return normalized.replace(/^The pathway is .+? because/i, prefix);
   }
@@ -271,7 +253,10 @@ function getSourceGrouping(sourceRef: string): {
 
   const aliasMappings: Array<{ key: (typeof GROUPED_SOURCE_PREFIXES)[number] | '21 CFR Part 820'; pattern: RegExp }> = [
     { key: 'FDA-SW-510K-2017', pattern: /Deciding When to Submit a 510\(k\)|Applied by analogy/i },
-    { key: 'FDA-PCCP-2025', pattern: /Marketing Submission Recommendations|PCCP for AI-Enabled|PCCP for Artificial Intelligence/i },
+    {
+      key: 'FDA-PCCP-2025',
+      pattern: /Marketing Submission Recommendations|PCCP for AI-Enabled|PCCP for Artificial Intelligence/i,
+    },
     { key: 'FDA-LIFECYCLE-2025', pattern: /AI-Enabled Device Software Functions|AI-DSF|Lifecycle Management/i },
     { key: 'FDA-CYBER-2026', pattern: /Cybersecurity in Medical Devices/i },
     { key: '21 CFR Part 820', pattern: /^QMSR\b|21 CFR Part 820/i },
@@ -312,11 +297,9 @@ function getSourceGrouping(sourceRef: string): {
 }
 
 function condenseSections(sections: string[]): string[] {
-  const uniqueSections = Array.from(new Set(
-    sections
-      .map((section) => normalizeWhitespace(section).replace(/-/g, '–'))
-      .filter(Boolean),
-  ));
+  const uniqueSections = Array.from(
+    new Set(sections.map((section) => normalizeWhitespace(section).replace(/-/g, '–')).filter(Boolean)),
+  );
   const sectionSet = new Set(uniqueSections);
 
   return uniqueSections
@@ -336,13 +319,16 @@ function condenseSections(sections: string[]): string[] {
 }
 
 function normalizeSourceCitations(sourceRefs: string[]): PdfSourceCitation[] {
-  const grouped = new Map<string, {
-    key: string;
-    fullLabel: string;
-    shortLabel: string;
-    sections: string[];
-    order: number;
-  }>();
+  const grouped = new Map<
+    string,
+    {
+      key: string;
+      fullLabel: string;
+      shortLabel: string;
+      sections: string[];
+      order: number;
+    }
+  >();
 
   sourceRefs.forEach((sourceRef, index) => {
     const grouping = getSourceGrouping(sourceRef);
@@ -383,7 +369,10 @@ function deduplicateAndMergeIssues(
   const seen = new Map<string, Omit<PdfOpenIssue, 'sources'> & { sourceRefs: string[]; sources: string[] }>();
 
   for (const item of artifact.expertReviewItems) {
-    const key = item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const key = item.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
     if (!seen.has(key)) {
       seen.set(key, {
         title: item.title,
@@ -403,7 +392,10 @@ function deduplicateAndMergeIssues(
   }
 
   for (const item of artifact.evidenceGapItems) {
-    const key = item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const key = item.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
     if (!seen.has(key)) {
       seen.set(key, {
         title: item.title,
@@ -479,10 +471,7 @@ export function buildPdfReportDocument(
   // Collect sources using exact-match dedup (matching ReviewPanel's pushUnique behavior)
   const citedSourceRefs: string[] = [];
   const seenSources = new Set<string>();
-  for (const ref of [
-    ...artifact.rationale.sources,
-    ...openIssues.flatMap((issue) => issue.sourceRefs),
-  ]) {
+  for (const ref of [...artifact.rationale.sources, ...openIssues.flatMap((issue) => issue.sourceRefs)]) {
     const trimmed = ref.trim();
     if (trimmed && !seenSources.has(trimmed)) {
       seenSources.add(trimmed);
@@ -493,9 +482,11 @@ export function buildPdfReportDocument(
   // Alternative pathways — only include if counter-considerations exist and assessment is not incomplete
   const alternativePathways: PdfAlternativePathway[] = [];
   if (!artifact.outcome.isIncomplete && artifact.rationale.counterConsiderations.length > 0) {
-    deduplicateText(artifact.rationale.counterConsiderations).slice(0, 4).forEach((desc) => {
-      alternativePathways.push({ description: desc });
-    });
+    deduplicateText(artifact.rationale.counterConsiderations)
+      .slice(0, 4)
+      .forEach((desc) => {
+        alternativePathways.push({ description: desc });
+      });
   }
 
   return {
