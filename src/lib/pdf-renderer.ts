@@ -41,6 +41,7 @@ const COLOR = {
   missingText: [180, 180, 180] as [number, number, number],
   tagBg: [235, 238, 242] as [number, number, number],
   white: [255, 255, 255] as [number, number, number],
+  issueDivider: [225, 228, 232] as [number, number, number],
 };
 
 /* ------------------------------------------------------------------ */
@@ -48,9 +49,9 @@ const COLOR = {
 /* ------------------------------------------------------------------ */
 
 const FONT = {
-  title: 18,
-  h1: 14,
-  h2: 11,
+  title: 17,
+  h1: 12,
+  h2: 10.5,
   body: 9.5,
   small: 8.5,
   tiny: 7.5,
@@ -72,6 +73,10 @@ class Cursor {
     this.reportDoc = reportDoc;
     this.y = CONTENT_TOP;
     this.page = 1;
+  }
+
+  get remaining(): number {
+    return CONTENT_BOTTOM - this.y;
   }
 
   ensureSpace(needed: number): void {
@@ -104,6 +109,35 @@ function textHeight(doc: jsPDF, text: string, maxWidth: number, fontSize: number
   doc.setFontSize(fontSize);
   const lines = splitLines(doc, text, maxWidth);
   return lines.length * fontSize * 0.42;
+}
+
+function lineHeight(fontSize: number): number {
+  return fontSize * 0.42;
+}
+
+/**
+ * Renders pre-split lines with automatic page-break handling.
+ * Ensures long text is never clipped or truncated at page boundaries.
+ */
+function renderPaginatedLines(
+  doc: jsPDF,
+  cursor: Cursor,
+  lines: string[],
+  lh: number,
+  x: number,
+): void {
+  let i = 0;
+  while (i < lines.length) {
+    const available = cursor.remaining;
+    const fitCount = Math.max(1, Math.floor(available / lh));
+    const chunk = lines.slice(i, i + fitCount);
+    doc.text(chunk, x, cursor.y);
+    cursor.advance(chunk.length * lh);
+    i += chunk.length;
+    if (i < lines.length) {
+      cursor.newPage();
+    }
+  }
 }
 
 function formatTimestamp(iso: string): string {
@@ -160,7 +194,7 @@ function renderPageHeader(doc: jsPDF, reportDoc: PdfReportDocument): void {
 
 function renderPageFooter(
   doc: jsPDF,
-  reportDoc: PdfReportDocument,
+  _reportDoc: PdfReportDocument,
   pageNum: number,
   totalPages: number,
 ): void {
@@ -175,7 +209,7 @@ function renderPageFooter(
   doc.setTextColor(...COLOR.textMuted);
 
   doc.text(
-    'Prepared from assessment record in ChangePath — internal use only — not a regulatory determination',
+    'Internal assessment support record — not a regulatory determination',
     PAGE.marginLeft,
     y,
   );
@@ -208,8 +242,8 @@ function renderSectionHeading(doc: jsPDF, cursor: Cursor, title: string): void {
   doc.setFontSize(FONT.h1);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLOR.accent);
-  doc.text(title.toUpperCase(), PAGE.marginLeft, cursor.y);
-  cursor.advance(8);
+  doc.text(title, PAGE.marginLeft, cursor.y);
+  cursor.advance(7);
 }
 
 function renderSubheading(doc: jsPDF, cursor: Cursor, title: string): void {
@@ -224,33 +258,35 @@ function renderSubheading(doc: jsPDF, cursor: Cursor, title: string): void {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Body text                                                          */
+/*  Body text — paginated to prevent truncation                        */
 /* ------------------------------------------------------------------ */
 
 function renderBodyText(doc: jsPDF, cursor: Cursor, text: string, indent = 0): void {
   const maxW = CONTENT_WIDTH - indent;
-  const h = textHeight(doc, text, maxW, FONT.body);
-  cursor.ensureSpace(h + 2);
+  const lh = lineHeight(FONT.body);
+  const minLines = 2;
+  cursor.ensureSpace(lh * minLines + 2);
 
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLOR.text);
   const lines = splitLines(doc, text, maxW);
-  doc.text(lines, PAGE.marginLeft + indent, cursor.y);
-  cursor.advance(h + 2);
+  renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent);
+  cursor.advance(2);
 }
 
 function renderBodyTextSecondary(doc: jsPDF, cursor: Cursor, text: string, indent = 0): void {
   const maxW = CONTENT_WIDTH - indent;
-  const h = textHeight(doc, text, maxW, FONT.body);
-  cursor.ensureSpace(h + 2);
+  const lh = lineHeight(FONT.body);
+  const minLines = 2;
+  cursor.ensureSpace(lh * minLines + 2);
 
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLOR.textSecondary);
   const lines = splitLines(doc, text, maxW);
-  doc.text(lines, PAGE.marginLeft + indent, cursor.y);
-  cursor.advance(h + 2);
+  renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent);
+  cursor.advance(2);
 }
 
 function renderLabelValue(
@@ -272,9 +308,16 @@ function renderLabelValue(
   const labelFontSize = options?.labelFontSize ?? FONT.small;
   const availableWidth = CONTENT_WIDTH - indent;
   const valueWidth = availableWidth - labelWidth - 2;
-  const valueH = textHeight(doc, value, valueWidth, valueFontSize);
+  const lh = lineHeight(valueFontSize);
+
+  doc.setFontSize(valueFontSize);
+  const lines = splitLines(doc, value, valueWidth);
+  const valueH = lines.length * lh;
   const rowH = Math.max(valueH, labelFontSize * 0.45) + 2;
-  cursor.ensureSpace(rowH);
+
+  // For short values, keep together; for long values, ensure at least 2 lines fit
+  const minH = Math.min(rowH, lh * 2 + 2);
+  cursor.ensureSpace(minH);
 
   doc.setFontSize(labelFontSize);
   doc.setFont('helvetica', 'bold');
@@ -284,9 +327,8 @@ function renderLabelValue(
   doc.setFontSize(valueFontSize);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...(isMissing ? COLOR.missingText : COLOR.text));
-  const lines = splitLines(doc, value, valueWidth);
-  doc.text(lines, PAGE.marginLeft + indent + labelWidth, cursor.y);
-  cursor.advance(rowH);
+  renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent + labelWidth);
+  cursor.advance(2);
 }
 
 function renderSectionNote(doc: jsPDF, cursor: Cursor, text: string, indent = 0): void {
@@ -316,10 +358,11 @@ function renderNumberedList(
   const fontSize = options?.fontSize ?? FONT.body;
   const numWidth = 8;
   const textWidth = CONTENT_WIDTH - indent - numWidth;
+  const lh = lineHeight(fontSize);
 
   items.forEach((item, i) => {
-    const h = textHeight(doc, item, textWidth, fontSize);
-    cursor.ensureSpace(h + 2);
+    const minH = lh * 2 + 2;
+    cursor.ensureSpace(Math.min(minH, lh + 2));
 
     doc.setFontSize(fontSize);
     doc.setFont('helvetica', 'bold');
@@ -329,8 +372,8 @@ function renderNumberedList(
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLOR.text);
     const lines = splitLines(doc, item, textWidth);
-    doc.text(lines, PAGE.marginLeft + indent + numWidth, cursor.y);
-    cursor.advance(h + 2);
+    renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + indent + numWidth);
+    cursor.advance(2);
   });
 }
 
@@ -373,7 +416,7 @@ function renderTitlePage(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLOR.textSecondary);
   doc.text(
-    `Prepared from assessment record in ${reportDoc.header.subtitle}.`,
+    `Prepared from the current assessment record in ${reportDoc.header.subtitle}.`,
     PAGE.marginLeft,
     cursor.y,
   );
@@ -382,7 +425,7 @@ function renderTitlePage(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
   // Meta info
   const metaItems: [string, string][] = [
     ['Record Status', reportDoc.header.assessmentStatus],
-    ['Generated', formatTimestamp(reportDoc.header.generatedAt)],
+    ['Date Generated', formatTimestamp(reportDoc.header.generatedAt)],
   ];
   if (reportDoc.header.assessmentId) {
     metaItems.unshift(['Assessment ID', reportDoc.header.assessmentId]);
@@ -418,10 +461,10 @@ function renderExecutiveSummary(doc: jsPDF, cursor: Cursor, reportDoc: PdfReport
     cursor.advance(boxH + 4);
   }
 
-  renderLabelValue(doc, cursor, 'Current Pathway Assessment', summary.pathwayLabel);
+  renderLabelValue(doc, cursor, 'Pathway Assessment', summary.pathwayLabel);
   renderLabelValue(doc, cursor, 'Record Status', summary.recordStatus);
-  renderLabelValue(doc, cursor, 'Reliance Qualification', summary.relianceQualification);
-  renderLabelValue(doc, cursor, 'Immediate Record Action', summary.primaryNextAction);
+  renderLabelValue(doc, cursor, 'Conditions for Reliance', summary.relianceQualification);
+  renderLabelValue(doc, cursor, 'Recommended Next Action', summary.primaryNextAction);
 
   cursor.advance(3);
   renderSubheading(doc, cursor, 'Conclusion');
@@ -429,21 +472,26 @@ function renderExecutiveSummary(doc: jsPDF, cursor: Cursor, reportDoc: PdfReport
 
   if (summary.summaryStatement && summary.summaryStatement !== summary.pathwayConclusion) {
     cursor.advance(1);
-    renderSubheading(doc, cursor, 'System-Generated Synopsis');
+    renderSubheading(doc, cursor, 'Analytical Summary');
+    renderSectionNote(
+      doc,
+      cursor,
+      'System-generated summary derived from the assessment logic; review against the record facts and cited sources.',
+    );
     renderBodyText(doc, cursor, summary.summaryStatement);
   }
 }
 
 function renderAssessmentBasis(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
   const basis = reportDoc.assessmentBasis;
-  renderSectionHeading(doc, cursor, 'Assessment Record Basis');
+  renderSectionHeading(doc, cursor, 'Assessment Basis');
 
   // Record facts subsection
   renderSubheading(doc, cursor, 'Record Facts');
   renderSectionNote(
     doc,
     cursor,
-    'Copied from the assessment record as entered; missing fields are shown as "Not provided."',
+    'Copied from the assessment record as entered. Missing fields are shown as "Not provided."',
   );
 
   basis.recordFacts.forEach((fact) => {
@@ -453,11 +501,11 @@ function renderAssessmentBasis(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportD
   // System basis subsection
   if (basis.systemGeneratedBasis.length > 0) {
     cursor.advance(4);
-    renderSubheading(doc, cursor, 'System-Generated Assessment Basis');
+    renderSubheading(doc, cursor, 'Derived Assessment Basis');
     renderSectionNote(
       doc,
       cursor,
-      'Generated by ChangePath from the recorded answers and decision logic. This section is analytical support and not source evidence.',
+      'Derived by ChangePath from the recorded answers and decision logic. This section is analytical support, not source evidence.',
     );
 
     renderNumberedList(doc, cursor, basis.systemGeneratedBasis);
@@ -467,7 +515,7 @@ function renderAssessmentBasis(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportD
 function renderDecisionTrace(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
   if (reportDoc.decisionTrace.steps.length === 0) return;
 
-  renderSectionHeading(doc, cursor, 'Assessment Logic Trace');
+  renderSectionHeading(doc, cursor, 'Decision Logic Trace');
 
   renderSectionNote(
     doc,
@@ -485,7 +533,7 @@ function renderNarrative(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
     narr.verificationSteps.length > 0;
   if (!hasContent) return;
 
-  renderSectionHeading(doc, cursor, 'System-Generated Assessment Rationale');
+  renderSectionHeading(doc, cursor, 'Assessment Rationale');
 
   renderSectionNote(
     doc,
@@ -513,16 +561,17 @@ function renderNarrative(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocumen
 function renderOpenIssues(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
   if (reportDoc.openIssues.length === 0) return;
 
-  renderSectionHeading(doc, cursor, 'Open Issues Affecting Reliance');
+  const issueCount = reportDoc.openIssues.length;
+  renderSectionHeading(doc, cursor, 'Open Issues Requiring Resolution');
 
   renderSectionNote(
     doc,
     cursor,
-    'Items that limit reliance on the current pathway assessment until they are resolved or supplemented.',
+    `${issueCount} open item${issueCount === 1 ? '' : 's'} that limit${issueCount === 1 ? 's' : ''} reliance on the current pathway assessment until resolved or supplemented.`,
   );
 
   reportDoc.openIssues.forEach((issue: PdfOpenIssue, index: number) => {
-    renderOpenIssueItem(doc, cursor, issue, index);
+    renderOpenIssueItem(doc, cursor, issue, index, index < reportDoc.openIssues.length - 1);
   });
 }
 
@@ -531,38 +580,33 @@ function renderOpenIssueItem(
   cursor: Cursor,
   issue: PdfOpenIssue,
   index: number,
+  showDivider: boolean,
 ): void {
-  const detailLabelWidth = 32;
-  const titleH = textHeight(doc, issue.title, CONTENT_WIDTH, FONT.body);
-  const contextH = issue.meta
-    ? textHeight(doc, issue.meta, CONTENT_WIDTH - 6 - detailLabelWidth, FONT.small)
-    : 0;
+  const detailLabelWidth = 36;
+  const titleH = textHeight(doc, issue.title, CONTENT_WIDTH - 10, FONT.body);
   const kindLabel = issue.kind === 'expert-review'
-    ? 'Expert review item'
-    : 'Evidence gap';
-  const kindH = textHeight(doc, kindLabel, CONTENT_WIDTH - 6 - detailLabelWidth, FONT.small);
-  const whyH = textHeight(doc, issue.whyItMatters, CONTENT_WIDTH - 6 - detailLabelWidth, FONT.small);
-  const actionH = textHeight(doc, issue.actionNeeded, CONTENT_WIDTH - 6 - detailLabelWidth, FONT.small);
-  const sourceText = issue.sources.join('; ');
-  const sourceH = sourceText
-    ? textHeight(doc, sourceText, CONTENT_WIDTH - 6 - detailLabelWidth, FONT.small)
-    : 0;
-  const estimatedH = titleH + kindH + contextH + whyH + actionH + sourceH + 18;
-  cursor.ensureSpace(Math.min(estimatedH, 58));
+    ? 'Expert Review Required'
+    : 'Evidence Gap';
+
+  // Ensure at least the title + first detail line fit together
+  cursor.ensureSpace(titleH + 14);
+
+  // Issue number tag + title
+  const issueTag = `Issue ${index + 1}`;
+  renderTag(doc, cursor, issueTag);
+  doc.setFontSize(FONT.label);
+  const tagWidth = doc.getTextWidth(issueTag) + 8;
+
+  // Kind tag next to issue number
+  renderTag(doc, cursor, kindLabel, PAGE.marginLeft + tagWidth);
+  cursor.advance(5);
 
   doc.setFontSize(FONT.body);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLOR.text);
-  const titleLines = splitLines(doc, `${index + 1}. ${issue.title}`, CONTENT_WIDTH);
-  doc.text(titleLines, PAGE.marginLeft, cursor.y);
-  cursor.advance(titleH + 1.5);
-
-  renderLabelValue(doc, cursor, 'Issue Type', kindLabel, false, {
-    indent: 6,
-    labelWidth: detailLabelWidth,
-    valueFontSize: FONT.small,
-    labelFontSize: FONT.label,
-  });
+  const titleLines = splitLines(doc, issue.title, CONTENT_WIDTH - 6);
+  renderPaginatedLines(doc, cursor, titleLines, lineHeight(FONT.body), PAGE.marginLeft + 4);
+  cursor.advance(2);
 
   if (issue.meta) {
     renderLabelValue(doc, cursor, 'Context', issue.meta, false, {
@@ -580,7 +624,7 @@ function renderOpenIssueItem(
     labelFontSize: FONT.label,
   });
 
-  renderLabelValue(doc, cursor, 'Required Follow-up', `${issue.actionLabel}: ${issue.actionNeeded}`, false, {
+  renderLabelValue(doc, cursor, 'Required Action', `${issue.actionLabel}: ${issue.actionNeeded}`, false, {
     indent: 6,
     labelWidth: detailLabelWidth,
     valueFontSize: FONT.small,
@@ -588,6 +632,7 @@ function renderOpenIssueItem(
   });
 
   if (issue.sources.length > 0) {
+    const sourceText = issue.sources.join('; ');
     renderLabelValue(doc, cursor, 'Basis Referenced', sourceText, false, {
       indent: 6,
       labelWidth: detailLabelWidth,
@@ -596,18 +641,27 @@ function renderOpenIssueItem(
     });
   }
 
-  cursor.advance(3);
+  // Divider between issues
+  if (showDivider) {
+    cursor.advance(2);
+    doc.setDrawColor(...COLOR.issueDivider);
+    doc.setLineWidth(0.15);
+    doc.line(PAGE.marginLeft + 4, cursor.y, PAGE.marginLeft + CONTENT_WIDTH - 4, cursor.y);
+    cursor.advance(4);
+  } else {
+    cursor.advance(3);
+  }
 }
 
 function renderAlternativePathways(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
   if (reportDoc.alternativePathways.length === 0) return;
 
-  renderSectionHeading(doc, cursor, 'Conditions That Could Change the Current Pathway');
+  renderSectionHeading(doc, cursor, 'Conditions That Could Affect the Pathway');
 
   renderSectionNote(
     doc,
     cursor,
-    'Conditions that could change, qualify, or overturn the current pathway assessment.',
+    'Conditions identified by the assessment logic that could change, qualify, or overturn the current pathway assessment.',
   );
 
   renderNumberedList(
@@ -625,37 +679,43 @@ function renderSourcesCited(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocu
   renderSectionNote(
     doc,
     cursor,
-    'Regulatory and standards references surfaced by the current logic. Citations indicate relevance to the assessment, not statement-level attribution.',
+    'Regulatory and standards references surfaced by the assessment logic. Citations indicate relevance to the assessment, not statement-level attribution.',
   );
 
   reportDoc.sourcesCited.forEach((source: PdfSourceCitation, i: number) => {
-    const text = `${i + 1}. ${source.badge}`;
-    const h = textHeight(doc, text, CONTENT_WIDTH - 6, FONT.small);
-    cursor.ensureSpace(h + 2);
+    const lh = lineHeight(FONT.small);
+    const numPrefix = `${i + 1}. `;
+    const numWidth = 8;
+    const textWidth = CONTENT_WIDTH - numWidth - 4;
+    cursor.ensureSpace(lh + 2);
 
     doc.setFontSize(FONT.small);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLOR.textSecondary);
+    doc.text(numPrefix, PAGE.marginLeft + 4, cursor.y);
+
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLOR.text);
-    const lines = splitLines(doc, text, CONTENT_WIDTH - 6);
-    doc.text(lines, PAGE.marginLeft + 4, cursor.y);
-    cursor.advance(h + 1);
+    const lines = splitLines(doc, source.badge, textWidth);
+    renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + 4 + numWidth);
+    cursor.advance(1.5);
   });
 }
 
 function renderReviewerNotes(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
   if (reportDoc.reviewerNotes.length === 0) return;
 
-  renderSectionHeading(doc, cursor, 'Reviewer-Entered Notes');
+  renderSectionHeading(doc, cursor, 'Reviewer Notes');
 
   renderSectionNote(
     doc,
     cursor,
-    'User-entered annotations. These notes are not system-generated assessment content.',
+    'User-entered annotations attached to this assessment. These notes are not system-generated content.',
   );
 
   reportDoc.reviewerNotes.forEach((note) => {
-    const noteH = textHeight(doc, note.text, CONTENT_WIDTH - 6, FONT.body);
-    cursor.ensureSpace(noteH + 8);
+    const lh = lineHeight(FONT.body);
+    cursor.ensureSpace(lh * 2 + 8);
 
     // Author and timestamp
     doc.setFontSize(FONT.label);
@@ -674,26 +734,34 @@ function renderReviewerNotes(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDoc
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLOR.text);
     const lines = splitLines(doc, note.text, CONTENT_WIDTH - 6);
-    doc.text(lines, PAGE.marginLeft + 4, cursor.y);
-    cursor.advance(noteH + 4);
+    renderPaginatedLines(doc, cursor, lines, lh, PAGE.marginLeft + 4);
+    cursor.advance(4);
   });
 }
 
 function renderClosing(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument): void {
+  // Estimate the total height of the Document Control section so it stays together.
+  // Metadata rows (~5 lines × ~6mm each) + disclaimer box (~20mm) + heading (~14mm).
+  const disclaimerH = textHeight(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 10, FONT.small);
+  const estimatedTotal = 14 + 5 * 6 + 4 + disclaimerH + 12;
+
+  // If the whole block fits on the current page, render in place.
+  // Otherwise, start a new page to keep the section together.
+  if (cursor.remaining < estimatedTotal && cursor.y > CONTENT_TOP + 20) {
+    cursor.newPage();
+  }
+
   renderSectionHeading(doc, cursor, 'Document Control');
 
-  renderLabelValue(doc, cursor, 'Prepared From', reportDoc.closing.preparedFrom);
-  renderLabelValue(doc, cursor, 'Generated by', reportDoc.closing.generatedBy);
+  renderLabelValue(doc, cursor, 'Source', `Assessment record in ${reportDoc.closing.generatedBy}`);
   renderLabelValue(doc, cursor, 'Generated', formatTimestamp(reportDoc.closing.timestamp));
-  renderLabelValue(doc, cursor, 'Assessment Logic Version', reportDoc.closing.schemaVersion);
-  renderLabelValue(doc, cursor, 'PDF Export Version', reportDoc.closing.exportVersion);
+  renderLabelValue(doc, cursor, 'Assessment Logic', reportDoc.closing.schemaVersion);
+  renderLabelValue(doc, cursor, 'Export Format', reportDoc.closing.exportVersion);
 
+  // Disclaimer — rendered inline without a separate subheading to avoid orphaning
   cursor.advance(4);
-  renderSubheading(doc, cursor, 'Disclaimer');
-
-  // Disclaimer in a subtle box
-  const disclaimerH = textHeight(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 10, FONT.small);
-  cursor.ensureSpace(disclaimerH + 8);
+  const disclaimerBoxH = disclaimerH + 8;
+  cursor.ensureSpace(disclaimerBoxH);
 
   doc.setFillColor(...COLOR.sectionBg);
   doc.setDrawColor(...COLOR.border);
@@ -702,7 +770,7 @@ function renderClosing(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument)
     PAGE.marginLeft,
     cursor.y - 4,
     CONTENT_WIDTH,
-    disclaimerH + 8,
+    disclaimerBoxH,
     1.5,
     1.5,
     'FD',
@@ -713,7 +781,7 @@ function renderClosing(doc: jsPDF, cursor: Cursor, reportDoc: PdfReportDocument)
   doc.setTextColor(...COLOR.textSecondary);
   const disclaimerLines = splitLines(doc, reportDoc.closing.disclaimer, CONTENT_WIDTH - 10);
   doc.text(disclaimerLines, PAGE.marginLeft + 5, cursor.y);
-  cursor.advance(disclaimerH + 8);
+  cursor.advance(disclaimerBoxH);
 }
 
 /* ------------------------------------------------------------------ */
