@@ -222,7 +222,7 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
-    expect(screen.getByText('Print Assessment Record')).toBeInTheDocument();
+    expect(screen.getByText('Export PDF Report')).toBeInTheDocument();
   });
 
   it('renders evidence gaps as case-specific evidence requests instead of generic notes', () => {
