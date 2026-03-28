@@ -56,6 +56,7 @@ export interface PdfAssessmentBasisFact {
   label: string;
   value: string;
   isMissing: boolean;
+  isLongText: boolean;
 }
 
 export interface PdfAssessmentBasis {
@@ -516,6 +517,7 @@ export function buildPdfReportDocument(
         label: f.label,
         value: f.value,
         isMissing: f.isMissing ?? false,
+        isLongText: f.isLongText ?? false,
       })),
       systemGeneratedBasis: basisView.systemBasis,
     },
