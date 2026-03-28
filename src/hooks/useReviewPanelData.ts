@@ -161,7 +161,10 @@ export interface RelianceState {
 /* ------------------------------------------------------------------ */
 
 const normalizeTitle = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 
 const pushUnique = (items: string[], value: string | null | undefined) => {
   if (!value) return;
@@ -299,20 +302,11 @@ export function useReviewPanelData(
 ): ReviewPanelData {
   const pathway = determination.pathway;
 
-  const evidenceGaps = useMemo(
-    () => computeEvidenceGaps(answers, determination),
-    [answers, determination],
-  );
+  const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, determination), [answers, determination]);
 
-  const criticalGaps = useMemo(
-    () => evidenceGaps.filter((gap) => gap.severity === 'critical'),
-    [evidenceGaps],
-  );
+  const criticalGaps = useMemo(() => evidenceGaps.filter((gap) => gap.severity === 'critical'), [evidenceGaps]);
 
-  const expertReviewItems = useMemo(
-    () => buildExpertReviewItems(answers, determination),
-    [answers, determination],
-  );
+  const expertReviewItems = useMemo(() => buildExpertReviewItems(answers, determination), [answers, determination]);
 
   const evidenceGapItems = useMemo(
     () => buildEvidenceGapInsightItems(answers, determination, evidenceGaps),
@@ -324,15 +318,9 @@ export function useReviewPanelData(
     [answers, determination, blocks, getFieldsForBlock],
   );
 
-  const assessmentBasisView = useMemo(
-    () => buildAssessmentBasisView(answers, determination),
-    [answers, determination],
-  );
+  const assessmentBasisView = useMemo(() => buildAssessmentBasisView(answers, determination), [answers, determination]);
 
-  const reportNarrative = useMemo(
-    () => splitReportNarrative(caseReasoning.narrative || []),
-    [caseReasoning],
-  );
+  const reportNarrative = useMemo(() => splitReportNarrative(caseReasoning.narrative || []), [caseReasoning]);
 
   const mergedBlockers = useMemo(
     () => mergeBlockers(expertReviewItems, evidenceGapItems),
@@ -340,27 +328,32 @@ export function useReviewPanelData(
   );
 
   // PCCP
-  const selectedChangeType = (answers.B1 && answers.B2)
-    ? changeTaxonomy[answers.B1 as string]?.types?.find((item) => item.name === answers.B2)
-    : null;
+  const selectedChangeType =
+    answers.B1 && answers.B2
+      ? changeTaxonomy[answers.B1 as string]?.types?.find((item) => item.name === answers.B2)
+      : null;
   const pccpEligibility = selectedChangeType?.pccp;
   const showPCCPRecommendation = Boolean(
-    determination.pccpRecommendation?.shouldRecommend
-    && answers.A2 !== Answer.Yes
-    && determination.isNewSub
-    && pccpEligibility
-    && ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility),
+    determination.pccpRecommendation?.shouldRecommend &&
+    answers.A2 !== Answer.Yes &&
+    determination.isNewSub &&
+    pccpEligibility &&
+    ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility),
   );
 
-  const pccpHeroSummary: PCCPHeroSummary | null = showPCCPRecommendation ? {
-    heading: pccpEligibility === 'TYPICAL'
-      ? 'Consider a PCCP in the next marketing submission'
-      : 'Evaluate PCCP feasibility in the next marketing submission',
-    summary: pccpEligibility === 'TYPICAL'
-      ? 'For this change pattern, PCCP is often a reasonable mechanism when modifications are pre-described, bounded, and validated prospectively. This assessment already maps to a new submission and no authorized PCCP is on file, so the next submission is a practical point to request PCCP coverage if scope and evidence support it.'
-      : 'PCCP may apply only when future changes are tightly bounded and supported by prospective validation. This assessment maps to a new submission with no authorized PCCP on file; use the next submission to assess whether PCCP is viable for your program, subject to RA judgment and any FDA interaction.',
-    detail: selectedChangeType?.pccpNote || null,
-  } : null;
+  const pccpHeroSummary: PCCPHeroSummary | null = showPCCPRecommendation
+    ? {
+        heading:
+          pccpEligibility === 'TYPICAL'
+            ? 'Consider a PCCP in the next marketing submission'
+            : 'Evaluate PCCP feasibility in the next marketing submission',
+        summary:
+          pccpEligibility === 'TYPICAL'
+            ? 'For this change pattern, PCCP is often a reasonable mechanism when modifications are pre-described, bounded, and validated prospectively. This assessment already maps to a new submission and no authorized PCCP is on file, so the next submission is a practical point to request PCCP coverage if scope and evidence support it.'
+            : 'PCCP may apply only when future changes are tightly bounded and supported by prospective validation. This assessment maps to a new submission with no authorized PCCP on file; use the next submission to assess whether PCCP is viable for your program, subject to RA judgment and any FDA interaction.',
+        detail: selectedChangeType?.pccpNote || null,
+      }
+    : null;
 
   // Derived display flags
   const consistencyIssues = determination.consistencyIssues || [];
@@ -393,7 +386,8 @@ export function useReviewPanelData(
     }
     return {
       label: 'Ready for review',
-      detail: 'No open issues are listed on the current record. Continue with standard expert review and QMS controls before action.',
+      detail:
+        'No open issues are listed on the current record. Continue with standard expert review and QMS controls before action.',
       bg: 'var(--color-success-bg)',
       border: 'var(--color-success-border)',
       text: 'var(--color-success)',
@@ -452,7 +446,14 @@ export function useReviewPanelData(
     }
     caseReasoning.verificationSteps.forEach((step) => add(step));
     return items;
-  }, [caseReasoning.verificationSteps, determination.isDocOnly, determination.isPCCPImpl, isIncomplete, mergedBlockers, onHandoff]);
+  }, [
+    caseReasoning.verificationSteps,
+    determination.isDocOnly,
+    determination.isPCCPImpl,
+    isIncomplete,
+    mergedBlockers,
+    onHandoff,
+  ]);
 
   const showPreparationSection = Boolean(onHandoff || supportingNextSteps.length > 0);
   const preparationNeedsCaution = mergedBlockers.length > 0 || consistencyIssues.length > 0;

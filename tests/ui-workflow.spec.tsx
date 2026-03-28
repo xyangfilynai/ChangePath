@@ -41,7 +41,7 @@ describe('UI workflow', () => {
           },
         ]}
         onLoadAssessment={() => {}}
-      />
+      />,
     );
 
     const resumeButton = screen.getByTestId('resume-btn');
@@ -56,9 +56,7 @@ describe('UI workflow', () => {
     expect(screen.getAllByText('Expected outcome').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Tags').length).toBeGreaterThan(0);
     expect(screen.getByText(SAMPLE_CASES[0].tags[0])).toBeInTheDocument();
-    expect(
-      resumeButton.compareDocumentPosition(fullAssessmentButton) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(resumeButton.compareDocumentPosition(fullAssessmentButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('preserves the resumable browser draft when a sample is opened', () => {
@@ -90,14 +88,7 @@ describe('UI workflow', () => {
       pathwayCritical: true,
     };
 
-    render(
-      <QuestionCard
-        field={field}
-        value={undefined}
-        onChange={() => {}}
-        index={0}
-      />
-    );
+    render(<QuestionCard field={field} value={undefined} onChange={() => {}} index={0} />);
 
     expect(screen.getByRole('button', { name: Answer.Yes })).toBeInTheDocument();
     expect(screen.queryByText(/comparison anchor/i)).not.toBeInTheDocument();
@@ -146,7 +137,7 @@ describe('UI workflow', () => {
         ]}
       >
         <div>Assessment body</div>
-      </Layout>
+      </Layout>,
     );
 
     expect(screen.getByText('Pathway-critical')).toBeInTheDocument();
@@ -174,7 +165,7 @@ describe('UI workflow', () => {
         ]}
       >
         <div>Assessment body</div>
-      </Layout>
+      </Layout>,
     );
 
     expect(screen.getByText('Authorization')).toBeInTheDocument();
@@ -209,7 +200,7 @@ describe('UI workflow', () => {
         answers={answers}
         blocks={[]}
         getFieldsForBlock={() => []}
-      />
+      />,
     );
 
     expect(screen.getByText(/Consider a PCCP|Evaluate PCCP/i)).toBeInTheDocument();
@@ -251,16 +242,14 @@ describe('UI workflow', () => {
         answers={answers}
         blocks={[]}
         getFieldsForBlock={() => []}
-      />
+      />,
     );
 
     expect(
       screen.getAllByText(/The supporting data is not yet shown to represent the cleared population/i).length,
     ).toBeGreaterThan(0);
     expect(screen.getAllByText(/List each newly added site/i).length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(/creates a new or modified cause of harm/i).length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(/creates a new or modified cause of harm/i).length).toBeGreaterThan(0);
     expect(screen.getByText('Assessment Basis')).toBeInTheDocument();
     expect(screen.getByText('Decision Trace')).toBeInTheDocument();
     expect(screen.getByText('Open Issues')).toBeInTheDocument();

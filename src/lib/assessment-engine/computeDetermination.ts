@@ -134,10 +134,7 @@ const eq = <Facts, Key extends keyof Facts>(fact: Key, equals: Facts[Key]): Rule
   equals,
 });
 
-const matchesCondition = <Facts extends object>(
-  facts: Facts,
-  condition: RuleCondition<Facts>,
-): boolean => {
+const matchesCondition = <Facts extends object>(facts: Facts, condition: RuleCondition<Facts>): boolean => {
   if ('all' in condition) return condition.all.every((child) => matchesCondition(facts, child));
   if ('any' in condition) return condition.any.some((child) => matchesCondition(facts, child));
   if ('not' in condition) return !matchesCondition(facts, condition.not);
@@ -155,10 +152,8 @@ const selectFirstMatchingRule = <Facts extends object, Outcome>(
   return matchedRule;
 };
 
-const collectTriggeredRules = <Facts extends object>(
-  facts: Facts,
-  rules: IssueRule<Facts>[],
-): IssueRule<Facts>[] => rules.filter((rule) => matchesCondition(facts, rule.when));
+const collectTriggeredRules = <Facts extends object>(facts: Facts, rules: IssueRule<Facts>[]): IssueRule<Facts>[] =>
+  rules.filter((rule) => matchesCondition(facts, rule.when));
 
 const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
   const isIntendedUseChange = ans.B3 === Answer.Yes;
@@ -171,14 +166,8 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
   const is510k = ans.A1 === AuthPathway.FiveOneZeroK;
   const hasPCCP = ans.A2 === Answer.Yes;
 
-  const isCyberOnly =
-    isNonPMA && !isIntendedUseChange && !isIntendedUseUncertain && ans.C1 === Answer.Yes;
-  const isBugFix =
-    isNonPMA &&
-    !isIntendedUseChange &&
-    !isIntendedUseUncertain &&
-    !isCyberOnly &&
-    ans.C2 === Answer.Yes;
+  const isCyberOnly = isNonPMA && !isIntendedUseChange && !isIntendedUseUncertain && ans.C1 === Answer.Yes;
+  const isBugFix = isNonPMA && !isIntendedUseChange && !isIntendedUseUncertain && !isCyberOnly && ans.C2 === Answer.Yes;
 
   const deNovoDeviceTypeFitFailed =
     isDeNovo &&
@@ -258,9 +247,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
   const cybersecurityExemptionUncertain = isNonPMA && ans.C1 === Answer.Uncertain;
   const restoreToSpecExemptionUncertain = isNonPMA && ans.C2 === Answer.Uncertain;
   const monitoringThresholdChange =
-    ans.B1 === 'Post-Market Surveillance' &&
-    typeof ans.B2 === 'string' &&
-    ans.B2.includes('Monitoring threshold');
+    ans.B1 === 'Post-Market Surveillance' && typeof ans.B2 === 'string' && ans.B2.includes('Monitoring threshold');
   const biasMitigationChanged = ans.E5 === Answer.Yes;
   const genAIHighImpactChange = hasFoundationModelChange || hasGenAIGuardrailChange;
 
@@ -277,8 +264,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     answerIsOneOf(ans.C_PMA1, [Answer.Yes, Answer.No, Answer.Uncertain]);
   const pmaIncomplete = isPMA && !isIntendedUseChange && !isIntendedUseUncertain && !pmaThresholdFieldsAnswered;
   const pmaRequiresSupplement =
-    isPMA &&
-    (isIntendedUseChange || ans.C_PMA1 === Answer.Yes || ans.C_PMA1 === Answer.Uncertain);
+    isPMA && (isIntendedUseChange || ans.C_PMA1 === Answer.Yes || ans.C_PMA1 === Answer.Uncertain);
 
   const p3Applicable = hasPCCP && ans.P1 === Answer.Yes && ans.P2 === Answer.Yes;
   const p4Applicable = p3Applicable && ans.P3 === Answer.Yes;
@@ -416,7 +402,8 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
   },
   {
     id: 'cumulative-drift-conflicts-with-nonsignificant-us-assessment',
-    description: 'Cumulative drift warnings should surface when they conflict with an otherwise non-significant U.S. assessment.',
+    description:
+      'Cumulative drift warnings should surface when they conflict with an otherwise non-significant U.S. assessment.',
     when: all(eq('cumulativeEscalation', true), eq('allSignificanceNo', true)),
     message:
       'Cumulative drift / substantial-equivalence answers conflict with an otherwise non-significant U.S. assessment. Reassess against the last authorized baseline before finalizing.',
@@ -475,7 +462,7 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
     description: 'Incomplete baseline fields undermine determination reliability.',
     when: eq('baselineIncomplete', true),
     message:
-      "One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are not provided. The determination may be unreliable without a defined authorized baseline for comparison. Flagged for expert judgment.",
+      'One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are not provided. The determination may be unreliable without a defined authorized baseline for comparison. Flagged for expert judgment.',
   },
   {
     id: 'nonpma-unresolved-significance-uncertainty-policy',
@@ -505,7 +492,8 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
   },
   {
     id: 'pma-manufacturing-change-with-cpma1-no',
-    description: 'Manufacturing/facility changes for PMA devices should be reconciled against a No safety/effectiveness answer.',
+    description:
+      'Manufacturing/facility changes for PMA devices should be reconciled against a No safety/effectiveness answer.',
     when: all(eq('isPMA', true), eq('pmaManufacturingChange', true), eq('pmaSafetyEffectivenessNo', true)),
     message:
       'A PMA manufacturing or facility change was reported while safety/effectiveness impact was marked NO. Confirm the change is periodic-reportable under 21 CFR 814.39(b) or eligible for a 30-day notice under 21 CFR 814.39(f); otherwise a PMA supplement may still be required.',
@@ -529,7 +517,8 @@ const consistencyIssueRules: IssueRule<DeterminationFacts>[] = [
 const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   {
     id: 'pma-intended-use-change-baseline-incomplete',
-    description: 'A PMA intended-use change cannot map to a supplement pathway until the authorized baseline is complete.',
+    description:
+      'A PMA intended-use change cannot map to a supplement pathway until the authorized baseline is complete.',
     when: all(eq('isPMA', true), eq('isIntendedUseChange', true), eq('baselineIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
   },
@@ -559,7 +548,8 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'pma-authorized-pccp-verified',
-    description: 'A PMA supplement-triggering change can be implemented under an authorized PCCP when scope verification is complete.',
+    description:
+      'A PMA supplement-triggering change can be implemented under an authorized PCCP when scope verification is complete.',
     when: all(eq('isPMA', true), eq('hasPCCP', true), eq('pccpScopeVerified', true), eq('pmaRequiresSupplement', true)),
     outcome: Pathway.ImplementPCCP,
   },
@@ -583,7 +573,8 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-intended-use-change-baseline-incomplete',
-    description: 'A non-PMA intended-use change cannot map to a new submission pathway until the authorized baseline is complete.',
+    description:
+      'A non-PMA intended-use change cannot map to a new submission pathway until the authorized baseline is complete.',
     when: all(eq('isNonPMA', true), eq('isIntendedUseChange', true), eq('baselineIncomplete', true)),
     outcome: Pathway.AssessmentIncomplete,
   },
@@ -631,7 +622,8 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-significant-authorized-pccp-verified',
-    description: 'A significant non-PMA change can be implemented under an authorized PCCP when scope verification is complete.',
+    description:
+      'A significant non-PMA change can be implemented under an authorized PCCP when scope verification is complete.',
     when: all(eq('isNonPMA', true), eq('isSignificant', true), eq('hasPCCP', true), eq('pccpScopeVerified', true)),
     outcome: Pathway.ImplementPCCP,
   },
@@ -684,7 +676,8 @@ const pccpRecommendationRules: DeclarativeRule<PCCPRecommendationContext, PCCPRe
   },
   {
     id: 'recommend-pccp-for-next-submission',
-    description: 'Recommend evaluating PCCP in the upcoming submission when no PCCP is authorized and the case already maps to a new submission.',
+    description:
+      'Recommend evaluating PCCP in the upcoming submission when no PCCP is authorized and the case already maps to a new submission.',
     when: all(),
     outcome: { shouldRecommend: true },
   },
@@ -717,10 +710,7 @@ export const computeDetermination = (ans: Answers): DeterminationResult => {
     isIncomplete,
     isNewSub,
   };
-  const matchedRecommendationRule = selectFirstMatchingRule(
-    recommendationContext,
-    pccpRecommendationRules,
-  );
+  const matchedRecommendationRule = selectFirstMatchingRule(recommendationContext, pccpRecommendationRules);
 
   return {
     pathway,

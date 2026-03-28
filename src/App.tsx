@@ -18,10 +18,7 @@ import {
   type Answers,
   type AssessmentField,
 } from './lib/assessment-engine';
-import {
-  assessmentStore,
-  type SavedAssessment,
-} from './lib/assessment-store';
+import { assessmentStore, type SavedAssessment } from './lib/assessment-store';
 import { storage } from './lib/storage';
 import { useCascadeClearing } from './hooks/useCascadeClearing';
 import { useAssessmentProgress, useCompletedBlocks } from './hooks/useAssessmentProgress';
@@ -59,9 +56,12 @@ export const App: React.FC = () => {
   const derivedState = useMemo(() => computeDerivedState(answers), [answers]);
   const blocks = useMemo(() => getBlocks(answers, derivedState), [answers, derivedState]);
 
-  const getFieldsForBlock = useCallback((blockId: string): AssessmentField[] => {
-    return getBlockFields(blockId, answers, derivedState);
-  }, [answers, derivedState]);
+  const getFieldsForBlock = useCallback(
+    (blockId: string): AssessmentField[] => {
+      return getBlockFields(blockId, answers, derivedState);
+    },
+    [answers, derivedState],
+  );
 
   useEffect(() => {
     if (currentBlockIndex > blocks.length - 1) {
@@ -96,10 +96,8 @@ export const App: React.FC = () => {
   // --- Block completion & validation ---
   const currentBlockComplete = useMemo(() => {
     if (!currentBlock || currentBlock.id === 'review') return true;
-    const requiredPathwayFields = currentBlockFields.filter(q =>
-      !q.sectionDivider && !q.skip && q.pathwayCritical
-    );
-    return requiredPathwayFields.every(q => isAnsweredValue(answers[q.id]));
+    const requiredPathwayFields = currentBlockFields.filter((q) => !q.sectionDivider && !q.skip && q.pathwayCritical);
+    return requiredPathwayFields.every((q) => isAnsweredValue(answers[q.id]));
   }, [currentBlock, currentBlockFields, answers]);
 
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
@@ -134,7 +132,12 @@ export const App: React.FC = () => {
       },
       {
         label: 'PCCP',
-        value: answers.A2 === Answer.Yes ? 'Authorized PCCP on file' : answers.A2 === Answer.No ? 'No authorized PCCP' : 'Not specified',
+        value:
+          answers.A2 === Answer.Yes
+            ? 'Authorized PCCP on file'
+            : answers.A2 === Answer.No
+              ? 'No authorized PCCP'
+              : 'Not specified',
         tone: answers.A2 === Answer.Yes ? 'success' : 'default',
       },
     ];
@@ -163,8 +166,8 @@ export const App: React.FC = () => {
       if (currentBlock && currentBlock.id !== 'review' && !currentBlockComplete) {
         const errors: Record<string, boolean> = {};
         currentBlockFields
-          .filter(q => !q.sectionDivider && !q.skip && q.pathwayCritical)
-          .forEach(q => {
+          .filter((q) => !q.sectionDivider && !q.skip && q.pathwayCritical)
+          .forEach((q) => {
             if (!isAnsweredValue(answers[q.id])) {
               errors[q.id] = true;
             }
@@ -210,29 +213,41 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const handleDuplicateAssessment = useCallback((id: string) => {
-    assessmentStore.duplicate(id);
-    refreshSavedAssessments();
-  }, [refreshSavedAssessments]);
-
-  const handleDeleteAssessment = useCallback((id: string) => {
-    assessmentStore.delete(id);
-    refreshSavedAssessments();
-  }, [refreshSavedAssessments]);
-
-  const handleAddNote = useCallback((author: string, text: string) => {
-    if (currentAssessmentId) {
-      assessmentStore.addNote(currentAssessmentId, author, text);
+  const handleDuplicateAssessment = useCallback(
+    (id: string) => {
+      assessmentStore.duplicate(id);
       refreshSavedAssessments();
-    }
-  }, [currentAssessmentId, refreshSavedAssessments]);
+    },
+    [refreshSavedAssessments],
+  );
 
-  const handleRemoveNote = useCallback((noteId: string) => {
-    if (currentAssessmentId) {
-      assessmentStore.removeNote(currentAssessmentId, noteId);
+  const handleDeleteAssessment = useCallback(
+    (id: string) => {
+      assessmentStore.delete(id);
       refreshSavedAssessments();
-    }
-  }, [currentAssessmentId, refreshSavedAssessments]);
+    },
+    [refreshSavedAssessments],
+  );
+
+  const handleAddNote = useCallback(
+    (author: string, text: string) => {
+      if (currentAssessmentId) {
+        assessmentStore.addNote(currentAssessmentId, author, text);
+        refreshSavedAssessments();
+      }
+    },
+    [currentAssessmentId, refreshSavedAssessments],
+  );
+
+  const handleRemoveNote = useCallback(
+    (noteId: string) => {
+      if (currentAssessmentId) {
+        assessmentStore.removeNote(currentAssessmentId, noteId);
+        refreshSavedAssessments();
+      }
+    },
+    [currentAssessmentId, refreshSavedAssessments],
+  );
 
   const currentReviewerNotes = useMemo(() => {
     if (!currentAssessmentId) return [];
@@ -381,14 +396,16 @@ export const App: React.FC = () => {
       {renderBlockContent()}
 
       {/* Navigation buttons */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 'var(--space-xl)',
-        paddingTop: 'var(--space-lg)',
-        borderTop: '1px solid var(--color-border)',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 'var(--space-xl)',
+          paddingTop: 'var(--space-lg)',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
         <button
           onClick={handlePrevious}
           style={{
@@ -410,15 +427,19 @@ export const App: React.FC = () => {
           {currentBlockIndex === 0 ? 'Dashboard' : 'Previous'}
         </button>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-md)',
-        }}>
-          <span style={{
-            fontSize: 12,
-            color: 'var(--color-text-muted)',
-          }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-md)',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: 'var(--color-text-muted)',
+            }}
+          >
             {currentBlockIndex + 1} of {blocks.length}
           </span>
 
@@ -449,21 +470,25 @@ export const App: React.FC = () => {
 
       {/* Incomplete warning */}
       {!currentBlockComplete && currentBlock?.id !== 'review' && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-sm)',
-          marginTop: 'var(--space-md)',
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-warning-bg)',
-          border: '1px solid var(--color-warning-border)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-sm)',
+            marginTop: 'var(--space-md)',
+            padding: 'var(--space-md)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
+          }}
+        >
           <Icon name="alertCircle" size={16} color="var(--color-warning)" />
-          <span style={{
-            fontSize: 13,
-            color: 'var(--color-text-secondary)',
-          }}>
+          <span
+            style={{
+              fontSize: 13,
+              color: 'var(--color-text-secondary)',
+            }}
+          >
             Complete all required fields in this section to continue.
           </span>
         </div>

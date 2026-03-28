@@ -61,16 +61,20 @@ export const assessmentStore = {
   },
 
   get(id: string): SavedAssessment | undefined {
-    return loadAll().find(a => a.id === id);
+    return loadAll().find((a) => a.id === id);
   },
 
-  save(assessment: Omit<SavedAssessment, 'id' | 'createdAt' | 'updatedAt' | 'versions' | 'reviewerNotes'> & { id?: string }): SavedAssessment {
+  save(
+    assessment: Omit<SavedAssessment, 'id' | 'createdAt' | 'updatedAt' | 'versions' | 'reviewerNotes'> & {
+      id?: string;
+    },
+  ): SavedAssessment {
     const all = loadAll();
     const now = new Date().toISOString();
 
     if (assessment.id) {
       // Update existing
-      const idx = all.findIndex(a => a.id === assessment.id);
+      const idx = all.findIndex((a) => a.id === assessment.id);
       if (idx >= 0) {
         const existing = all[idx];
         // Create version snapshot of previous state
@@ -113,7 +117,7 @@ export const assessmentStore = {
 
   addNote(id: string, author: string, text: string): void {
     const all = loadAll();
-    const idx = all.findIndex(a => a.id === id);
+    const idx = all.findIndex((a) => a.id === id);
     if (idx >= 0) {
       all[idx].reviewerNotes.push({
         id: generateId(),
@@ -128,16 +132,16 @@ export const assessmentStore = {
 
   removeNote(assessmentId: string, noteId: string): void {
     const all = loadAll();
-    const idx = all.findIndex(a => a.id === assessmentId);
+    const idx = all.findIndex((a) => a.id === assessmentId);
     if (idx >= 0) {
-      all[idx].reviewerNotes = all[idx].reviewerNotes.filter(n => n.id !== noteId);
+      all[idx].reviewerNotes = all[idx].reviewerNotes.filter((n) => n.id !== noteId);
       all[idx].updatedAt = new Date().toISOString();
       saveAll(all);
     }
   },
 
   duplicate(id: string): SavedAssessment | undefined {
-    const original = loadAll().find(a => a.id === id);
+    const original = loadAll().find((a) => a.id === id);
     if (!original) return undefined;
     return assessmentStore.save({
       name: `${original.name} (Copy)`,
@@ -148,8 +152,7 @@ export const assessmentStore = {
   },
 
   delete(id: string): void {
-    const all = loadAll().filter(a => a.id !== id);
+    const all = loadAll().filter((a) => a.id !== id);
     saveAll(all);
   },
-
 };

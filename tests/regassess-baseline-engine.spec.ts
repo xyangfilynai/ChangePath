@@ -10,13 +10,7 @@ import { describe, expect, it } from 'vitest';
  * - computeDetermination
  * - computeDerivedState
  */
-import {
-  Answer,
-  AuthPathway,
-  Pathway,
-  computeDetermination,
-  computeDerivedState,
-} from '../src/lib/assessment-engine';
+import { Answer, AuthPathway, Pathway, computeDetermination, computeDerivedState } from '../src/lib/assessment-engine';
 import { base510k, baseDeNovo, basePMA } from './helpers';
 
 describe('computeDetermination — 510(k) / De Novo', () => {
@@ -446,12 +440,18 @@ describe('C1/C2 Uncertain handling (Finding #2)', () => {
 
   it('C1=Uncertain produces a consistency warning about exemption uncertainty', () => {
     const det = computeDetermination(base510k({ C1: Answer.Uncertain }));
-    expect(det.consistencyIssues.some((i: string) => i.includes('Cybersecurity exemption eligibility is uncertain'))).toBe(true);
+    expect(
+      det.consistencyIssues.some((i: string) => i.includes('Cybersecurity exemption eligibility is uncertain')),
+    ).toBe(true);
   });
 
   it('C2=Uncertain produces a consistency warning about exemption uncertainty', () => {
     const det = computeDetermination(base510k({ C2: Answer.Uncertain }));
-    expect(det.consistencyIssues.some((i: string) => i.includes('Restore-to-specification exemption eligibility is uncertain'))).toBe(true);
+    expect(
+      det.consistencyIssues.some((i: string) =>
+        i.includes('Restore-to-specification exemption eligibility is uncertain'),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -464,11 +464,13 @@ describe('isLetterToFile vs isPMAAnnualReport (Finding #15)', () => {
   });
 
   it('isPMAAnnualReport is true only for PMA Annual Report pathway', () => {
-    const pma = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-    }));
+    const pma = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+      }),
+    );
     expect(pma.isPMAAnnualReport).toBe(true);
     expect(pma.isLetterToFile).toBe(false);
     expect(pma.isDocOnly).toBe(true);
@@ -484,11 +486,13 @@ describe('isLetterToFile vs isPMAAnnualReport (Finding #15)', () => {
 
 describe('PMA Uncertain safety/effectiveness (Finding #7 test)', () => {
   it('maps PMA C_PMA1=Uncertain to PMA Supplement Required, not Annual Report', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.Uncertain,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.Uncertain,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+      }),
+    );
     expect(det.pathway).toBe(Pathway.PMASupplementRequired);
     expect(det.pmaRequiresSupplement).toBe(true);
   });
@@ -496,15 +500,17 @@ describe('PMA Uncertain safety/effectiveness (Finding #7 test)', () => {
 
 describe('De Novo fit failure + PCCP interaction', () => {
   it('De Novo with failed device-type fit cannot map to PCCP implementation regardless of scope verification', () => {
-    const det = computeDetermination(baseDeNovo({
-      A2: Answer.Yes,
-      C0_DN1: Answer.No,
-      P1: Answer.Yes,
-      P2: Answer.Yes,
-      P3: Answer.Yes,
-      P4: Answer.Yes,
-      P5: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      baseDeNovo({
+        A2: Answer.Yes,
+        C0_DN1: Answer.No,
+        P1: Answer.Yes,
+        P2: Answer.Yes,
+        P3: Answer.Yes,
+        P4: Answer.Yes,
+        P5: Answer.Yes,
+      }),
+    );
     // Device-type fit failure maps to NewSubmission before PCCP evaluation
     expect(det.pathway).toBe(Pathway.NewSubmission);
     expect(det.deNovoDeviceTypeFitFailed).toBe(true);
@@ -514,11 +520,13 @@ describe('De Novo fit failure + PCCP interaction', () => {
 
 describe('Cumulative escalation + SE supportable', () => {
   it('C10=Yes + C11=Yes (SE still supportable) maps to Letter to File, not New Submission', () => {
-    const det = computeDetermination(base510k({
-      A8: '3',
-      C10: Answer.Yes,
-      C11: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      base510k({
+        A8: '3',
+        C10: Answer.Yes,
+        C11: Answer.Yes,
+      }),
+    );
     expect(det.pathway).toBe(Pathway.LetterToFile);
     expect(det.cumulativeEscalation).toBe(true);
     expect(det.seNotSupportable).toBe(false);
@@ -528,10 +536,12 @@ describe('Cumulative escalation + SE supportable', () => {
 
 describe('Cumulative drift uncertainty pathway handling (Issue #1 fix)', () => {
   it('C10=Uncertain must NOT map to Letter to File — maps to Assessment Incomplete', () => {
-    const det = computeDetermination(base510k({
-      A8: '3',
-      C10: Answer.Uncertain,
-    }));
+    const det = computeDetermination(
+      base510k({
+        A8: '3',
+        C10: Answer.Uncertain,
+      }),
+    );
     expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
     expect(det.cumulativeEscalation).toBe(true);
     expect(det.cumulativeDriftUnresolved).toBe(true);
@@ -539,10 +549,12 @@ describe('Cumulative drift uncertainty pathway handling (Issue #1 fix)', () => {
   });
 
   it('De Novo C10=Yes (C11 never shown) must NOT map to Letter to File', () => {
-    const det = computeDetermination(baseDeNovo({
-      A8: '3',
-      C10: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      baseDeNovo({
+        A8: '3',
+        C10: Answer.Yes,
+      }),
+    );
     expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
     expect(det.cumulativeEscalation).toBe(true);
     expect(det.cumulativeDriftUnresolved).toBe(true);
@@ -550,10 +562,12 @@ describe('Cumulative drift uncertainty pathway handling (Issue #1 fix)', () => {
   });
 
   it('De Novo C10=Uncertain also maps to Assessment Incomplete', () => {
-    const det = computeDetermination(baseDeNovo({
-      A8: '3',
-      C10: Answer.Uncertain,
-    }));
+    const det = computeDetermination(
+      baseDeNovo({
+        A8: '3',
+        C10: Answer.Uncertain,
+      }),
+    );
     expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
     expect(det.cumulativeEscalation).toBe(true);
     expect(det.cumulativeDriftUnresolved).toBe(true);
@@ -582,23 +596,27 @@ describe('dead code removal (Finding #3)', () => {
 
 describe('PMA devices must not use 510(k) exemption flags', () => {
   it('PMA device with C1=Yes does not set isCyberOnly (510(k) exemption does not apply to PMA)', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      C1: Answer.Yes, // stale or coincidental
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        C1: Answer.Yes, // stale or coincidental
+      }),
+    );
     expect(det.isCyberOnly).toBe(false);
     expect(det.pathway).toBe(Pathway.PMAAnnualReport);
   });
 
   it('PMA device with C2=Yes does not set isBugFix (510(k) exemption does not apply to PMA)', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      C2: Answer.Yes, // stale or coincidental
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        C2: Answer.Yes, // stale or coincidental
+      }),
+    );
     expect(det.isBugFix).toBe(false);
     expect(det.pathway).toBe(Pathway.PMAAnnualReport);
   });
@@ -606,14 +624,16 @@ describe('PMA devices must not use 510(k) exemption flags', () => {
 
 describe('PCCP scope verification requires active PCCP (A2=Yes)', () => {
   it('stale P-block answers do not trigger pccpScopeVerified when A2=No', () => {
-    const det = computeDetermination(base510k({
-      A2: Answer.No, // no PCCP
-      P1: Answer.Yes,
-      P2: Answer.Yes,
-      P3: Answer.Yes,
-      P4: Answer.Yes,
-      P5: Answer.Yes, // stale from previous session
-    }));
+    const det = computeDetermination(
+      base510k({
+        A2: Answer.No, // no PCCP
+        P1: Answer.Yes,
+        P2: Answer.Yes,
+        P3: Answer.Yes,
+        P4: Answer.Yes,
+        P5: Answer.Yes, // stale from previous session
+      }),
+    );
     expect(det.pccpScopeVerified).toBe(false);
     expect(det.pccpScopeFailed).toBe(false);
     expect(det.pccpIncomplete).toBe(false);
@@ -621,11 +641,13 @@ describe('PCCP scope verification requires active PCCP (A2=Yes)', () => {
   });
 
   it('stale P-block answers do not trigger pccpScopeFailed when A2=No', () => {
-    const det = computeDetermination(base510k({
-      A2: Answer.No,
-      C3: Answer.Yes, // significant
-      P1: Answer.No, // stale
-    }));
+    const det = computeDetermination(
+      base510k({
+        A2: Answer.No,
+        C3: Answer.Yes, // significant
+        P1: Answer.No, // stale
+      }),
+    );
     expect(det.pccpScopeFailed).toBe(false);
     expect(det.pathway).toBe(Pathway.NewSubmission);
   });
@@ -633,32 +655,40 @@ describe('PCCP scope verification requires active PCCP (A2=Yes)', () => {
 
 describe('PMA GenAI consistency checks', () => {
   it('PMA device with D4=Yes (guardrail change) + C_PMA1=No produces consistency warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      D4: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        D4: Answer.Yes,
+      }),
+    );
     expect(det.consistencyIssues.some((i: string) => i.includes('guardrail') && i.includes('C_PMA1'))).toBe(true);
   });
 
   it('PMA device with D1=Yes (base model swap) + C_PMA1=No produces consistency warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      D1: Answer.Yes,
-    }));
-    expect(det.consistencyIssues.some((i: string) => i.includes('foundation/base model') && i.includes('C_PMA1'))).toBe(true);
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        D1: Answer.Yes,
+      }),
+    );
+    expect(det.consistencyIssues.some((i: string) => i.includes('foundation/base model') && i.includes('C_PMA1'))).toBe(
+      true,
+    );
   });
 
   it('PMA GenAI high-impact flag fires for PMA devices', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      D1: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        D1: Answer.Yes,
+      }),
+    );
     expect(det.genAIHighImpactChange).toBe(true);
   });
 });
@@ -669,11 +699,13 @@ describe('PMA GenAI consistency checks', () => {
 
 describe('Stale C10/C11 answers after A8 correction to 0', () => {
   it('stale C10=Yes with A8=0 does not trigger cumulative drift escalation', () => {
-    const det = computeDetermination(base510k({
-      A8: '0',
-      C10: Answer.Yes, // stale from when A8 was > 0
-      C11: Answer.No,  // stale
-    }));
+    const det = computeDetermination(
+      base510k({
+        A8: '0',
+        C10: Answer.Yes, // stale from when A8 was > 0
+        C11: Answer.No, // stale
+      }),
+    );
     expect(det.cumulativeEscalation).toBe(false);
     expect(det.seNotSupportable).toBe(false);
     expect(det.isSignificant).toBe(false);
@@ -681,9 +713,11 @@ describe('Stale C10/C11 answers after A8 correction to 0', () => {
   });
 
   it('stale C10=Yes with A8 empty does not trigger cumulative drift escalation', () => {
-    const det = computeDetermination(base510k({
-      C10: Answer.Yes, // stale
-    }));
+    const det = computeDetermination(
+      base510k({
+        C10: Answer.Yes, // stale
+      }),
+    );
     expect(det.cumulativeEscalation).toBe(false);
     expect(det.pathway).toBe(Pathway.LetterToFile);
   });
@@ -691,71 +725,83 @@ describe('Stale C10/C11 answers after A8 correction to 0', () => {
 
 describe('C1/C2 Uncertain consistency warnings must not fire for PMA devices', () => {
   it('PMA device with stale C1=Uncertain does not produce cybersecurity exemption warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      C1: Answer.Uncertain, // stale from 510(k) session
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        C1: Answer.Uncertain, // stale from 510(k) session
+      }),
+    );
     expect(det.consistencyIssues.some((i: string) => i.includes('Cybersecurity exemption'))).toBe(false);
   });
 
   it('PMA device with stale C2=Uncertain does not produce restore-to-spec warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      C2: Answer.Uncertain, // stale from 510(k) session
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        C2: Answer.Uncertain, // stale from 510(k) session
+      }),
+    );
     expect(det.consistencyIssues.some((i: string) => i.includes('Restore-to-specification'))).toBe(false);
   });
 });
 
 describe('PMA prompt/RAG consistency check', () => {
   it('PMA device with D2=Yes (prompt change) + C_PMA1=No produces consistency warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      D2: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        D2: Answer.Yes,
+      }),
+    );
     expect(det.consistencyIssues.some((i: string) => i.includes('prompt') && i.includes('C_PMA1'))).toBe(true);
   });
 
   it('PMA device with D3=Yes (RAG change) + C_PMA1=No produces consistency warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      D3: Answer.Yes,
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        D3: Answer.Yes,
+      }),
+    );
     expect(det.consistencyIssues.some((i: string) => i.includes('RAG') && i.includes('C_PMA1'))).toBe(true);
   });
 });
 
 describe('PMA monitoring threshold consistency check', () => {
   it('PMA device with monitoring threshold change + C_PMA1=No produces consistency warning', () => {
-    const det = computeDetermination(basePMA({
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      B1: 'Post-Market Surveillance',
-      B2: 'Monitoring threshold adjustment',
-    }));
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        B1: 'Post-Market Surveillance',
+        B2: 'Monitoring threshold adjustment',
+      }),
+    );
     expect(det.consistencyIssues.some((i: string) => i.includes('monitoring') && i.includes('C_PMA1'))).toBe(true);
   });
 });
 
 describe('PCCP incomplete must not fire for PMA Annual Report pathway', () => {
   it('PMA + PCCP + no supplement needed does not set pccpIncomplete', () => {
-    const det = computeDetermination(basePMA({
-      A2: Answer.Yes,
-      C_PMA1: Answer.No,
-      C_PMA2: Answer.No,
-      C_PMA3: Answer.No,
-      P1: Answer.Yes,
-      P2: Answer.Uncertain, // partially answered
-    }));
+    const det = computeDetermination(
+      basePMA({
+        A2: Answer.Yes,
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.No,
+        C_PMA3: Answer.No,
+        P1: Answer.Yes,
+        P2: Answer.Uncertain, // partially answered
+      }),
+    );
     expect(det.pmaRequiresSupplement).toBe(false);
     expect(det.pccpIncomplete).toBe(false); // PCCP not relevant since no supplement needed
     expect(det.pathway).toBe(Pathway.PMAAnnualReport);

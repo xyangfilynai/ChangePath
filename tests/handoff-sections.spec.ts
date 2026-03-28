@@ -1,13 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import { Answer, computeDetermination } from '../src/lib/assessment-engine';
-import { getSections } from '../src/components/HandoffPage';
+import { getSections } from '../src/lib/handoff-checklist';
 import { base510k, baseDeNovo, basePMA } from './helpers';
 
 describe('getSections', () => {
   describe('PCCP Implementation pathway', () => {
     it('returns PCCP-specific sections for 510(k) PCCP implementation', () => {
-      const answers = base510k({ A2: Answer.Yes, C3: Answer.Yes, P1: Answer.Yes, P2: Answer.Yes, P3: Answer.Yes, P4: Answer.Yes, P5: Answer.Yes });
+      const answers = base510k({
+        A2: Answer.Yes,
+        C3: Answer.Yes,
+        P1: Answer.Yes,
+        P2: Answer.Yes,
+        P3: Answer.Yes,
+        P4: Answer.Yes,
+        P5: Answer.Yes,
+      });
       const det = computeDetermination(answers);
       expect(det.isPCCPImpl).toBe(true);
 

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  Answer,
-  computeDerivedState,
-  getBlockFields,
-} from '../src/lib/assessment-engine';
+import { Answer, computeDerivedState, getBlockFields } from '../src/lib/assessment-engine';
 import {
   base510k,
   baseDeNovo,
@@ -111,7 +107,7 @@ describe('PMA-only significance field visibility', () => {
 
   it('510(k) path does not show PMA-only fields', () => {
     const q = getBlockFields('C', base510k(), computeDerivedState(base510k()));
-    const ids = q.map(x => x.id);
+    const ids = q.map((x) => x.id);
     expect(ids).not.toContain('C_PMA1');
     expect(ids).not.toContain('C_PMA2');
     expect(ids).not.toContain('C_PMA3');
@@ -124,7 +120,9 @@ describe('GenAI supplemental gating', () => {
     expect(blockIds(base510k())).not.toContain('D');
     expect(blockIds(base510k({ A6: ['LLM / Foundation Model'] }))).toContain('D');
     expect(blockIds(base510k({ A6: ['Generative AI'] }))).toContain('D');
-    expect(blockIds(base510k({ A6: ['LLM / Foundation Model', 'Traditional ML (e.g., random forest, SVM)'] }))).toContain('D');
+    expect(
+      blockIds(base510k({ A6: ['LLM / Foundation Model', 'Traditional ML (e.g., random forest, SVM)'] })),
+    ).toContain('D');
   });
 });
 
@@ -132,7 +130,7 @@ describe('Dynamic change taxonomy', () => {
   it('B2 options populate from selected B1 category', () => {
     const ans = base510k({ B1: 'Training Data' });
     const ds = computeDerivedState(ans);
-    const b2 = getBlockFields('B', ans, ds).find(q => q.id === 'B2');
+    const b2 = getBlockFields('B', ans, ds).find((q) => q.id === 'B2');
     expect(b2).toBeDefined();
     expect(b2!.options!.length).toBeGreaterThan(0);
     expect(b2!.options).toContain('Additional data — same distribution');
@@ -141,7 +139,7 @@ describe('Dynamic change taxonomy', () => {
   it('B2 is disabled when B1 is empty', () => {
     const ans = base510k();
     const ds = computeDerivedState(ans);
-    const b2 = getBlockFields('B', ans, ds).find(q => q.id === 'B2');
+    const b2 = getBlockFields('B', ans, ds).find((q) => q.id === 'B2');
     expect(b2!.disabled).toBe(true);
     expect(b2!.options).toEqual([]);
   });

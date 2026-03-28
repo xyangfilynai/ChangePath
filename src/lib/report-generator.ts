@@ -73,12 +73,7 @@ export function generateAssessmentArtifact(
       ? 'Preliminary'
       : 'Complete — pending review';
 
-  const caseReasoning = buildCaseSpecificReasoning(
-    answers,
-    determination,
-    blocks,
-    getFieldsForBlock,
-  );
+  const caseReasoning = buildCaseSpecificReasoning(answers, determination, blocks, getFieldsForBlock);
   const reportNarrative = splitReportNarrative(caseReasoning.narrative);
   const assessmentBasis = buildAssessmentBasis(answers, determination);
 
@@ -92,7 +87,9 @@ export function generateAssessmentArtifact(
   if (isIncomplete) {
     nextActions.push('Resolve open required and threshold items before relying on this assessment.');
     if (determination.isIntendedUseUncertain) {
-      nextActions.push('Schedule FDA Pre-Submission (Q-Sub) or senior RA/clinical review to resolve intended-use uncertainty.');
+      nextActions.push(
+        'Schedule FDA Pre-Submission (Q-Sub) or senior RA/clinical review to resolve intended-use uncertainty.',
+      );
     }
     if (determination.hasUncertainSignificance) {
       nextActions.push('Gather evidence to resolve uncertain significance answers to Yes or No where feasible.');
@@ -103,7 +100,9 @@ export function generateAssessmentArtifact(
       nextActions.push('File per QMS (e.g., device history record).');
     }
     if (determination.isPCCPImpl) {
-      nextActions.push('Execute the authorized PCCP validation protocol; meet all acceptance criteria before implementation.');
+      nextActions.push(
+        'Execute the authorized PCCP validation protocol; meet all acceptance criteria before implementation.',
+      );
       nextActions.push('Activate the monitoring plan and update labeling when the PCCP or labeling requires it.');
     }
     if (determination.isNewSub) {
@@ -171,9 +170,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   const lines: string[] = [];
   const hr = '─'.repeat(60);
   const formatSourceRef = (sourceRef: string): string => getSourceBadge(sourceRef).full || sourceRef;
-  const immediateWork = artifact.nextActions.filter(
-    (action) => !/consistency issues flagged below/i.test(action),
-  );
+  const immediateWork = artifact.nextActions.filter((action) => !/consistency issues flagged below/i.test(action));
 
   lines.push(hr);
   lines.push('REGULATORY CHANGE ASSESSMENT REPORT');
@@ -205,7 +202,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
     lines.push('ASSESSMENT BASIS');
     lines.push(hr);
     artifact.rationale.assessmentBasis.forEach((item, i) => lines.push(`  ${i + 1}. ${item}`));
-  lines.push('');
+    lines.push('');
   }
 
   lines.push(hr);
@@ -292,7 +289,9 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push(hr);
   lines.push('Internal workflow aid only — not a regulatory determination.');
   lines.push('ChangePath supports internal change-control planning and submission strategy discussion.');
-  lines.push('Outputs must be reviewed by qualified personnel against applicable regulations and organizational procedures before any reliance or action.');
+  lines.push(
+    'Outputs must be reviewed by qualified personnel against applicable regulations and organizational procedures before any reliance or action.',
+  );
   lines.push('');
 
   return lines.join('\n');

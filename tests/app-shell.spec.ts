@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_CASES } from '../src/sample-cases';
-import {
-  computeDetermination,
-  computeDerivedState,
-  getBlocks,
-  getBlockFields,
-} from '../src/lib/assessment-engine';
+import { computeDetermination, computeDerivedState, getBlocks, getBlockFields } from '../src/lib/assessment-engine';
 
 describe('App shell sample library compatibility', () => {
   it('every source-controlled sample produces a valid determination', () => {

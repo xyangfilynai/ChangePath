@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Pathway, computeDetermination } from '../src/lib/assessment-engine';
-import {
-  getPathwayConfig,
-  getPrimaryAction,
-  getIncompleteHeading,
-} from '../src/hooks/useReviewPanelData';
+import { getPathwayConfig, getPrimaryAction, getIncompleteHeading } from '../src/hooks/useReviewPanelData';
 import { base510k, basePMA } from './helpers';
 
 describe('getPathwayConfig', () => {

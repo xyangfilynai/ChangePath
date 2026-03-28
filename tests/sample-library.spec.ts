@@ -71,9 +71,7 @@ describe('source-controlled sample library', () => {
 
   it('includes at least 2 New Submission cases that recommend PCCP', () => {
     const count = SAMPLE_CASES.filter(
-      (sampleCase) =>
-        sampleCase.expectedPathway === Pathway.NewSubmission &&
-        sampleCase.expectedPccpRecommendation,
+      (sampleCase) => sampleCase.expectedPathway === Pathway.NewSubmission && sampleCase.expectedPccpRecommendation,
     ).length;
 
     expect(count).toBeGreaterThanOrEqual(2);

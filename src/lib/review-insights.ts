@@ -84,20 +84,22 @@ const getUncertainSignificanceTitle = (answers: Answers): string => {
 
 const getSignificanceEvidenceNeed = (answers: Answers): string => {
   const uncertain = getUncertainSignificanceQuestions(answers);
-  const evidence = uncertain.map((id) => {
-    switch (id) {
-      case 'C3':
-        return 'Show whether the change creates a new cause of harm or materially changes an existing harm pathway, with the affected hazards named explicitly.';
-      case 'C4':
-        return 'Map the change to the hazardous situations in the risk-management file and show whether any new exposure scenario is introduced.';
-      case 'C5':
-        return 'Identify every threshold, guardrail, override, monitoring rule, or mitigation touched by this change and document whether any control tied to significant harm changed in design or effectiveness.';
-      case 'C6':
-        return 'Provide pre/post clinical performance evidence, including site-, subgroup-, modality-, or workflow-specific analyses that match the modified use conditions.';
-      default:
-        return null;
-    }
-  }).filter(Boolean);
+  const evidence = uncertain
+    .map((id) => {
+      switch (id) {
+        case 'C3':
+          return 'Show whether the change creates a new cause of harm or materially changes an existing harm pathway, with the affected hazards named explicitly.';
+        case 'C4':
+          return 'Map the change to the hazardous situations in the risk-management file and show whether any new exposure scenario is introduced.';
+        case 'C5':
+          return 'Identify every threshold, guardrail, override, monitoring rule, or mitigation touched by this change and document whether any control tied to significant harm changed in design or effectiveness.';
+        case 'C6':
+          return 'Provide pre/post clinical performance evidence, including site-, subgroup-, modality-, or workflow-specific analyses that match the modified use conditions.';
+        default:
+          return null;
+      }
+    })
+    .filter(Boolean);
 
   if (evidence.length === 0) {
     return 'Resolve the remaining risk or performance field with risk analysis and validation evidence specific to this change.';
@@ -157,11 +159,7 @@ const getIncompleteBaselineFields = (answers: Answers): string[] => {
   return absent;
 };
 
-const defaultReviewInsight = (
-  id: string,
-  message: string,
-  sourceRefs: string[] = [],
-): ReviewInsightItem => ({
+const defaultReviewInsight = (id: string, message: string, sourceRefs: string[] = []): ReviewInsightItem => ({
   id,
   title: 'Review flagged logic conflict before relying on this assessment',
   meta: 'Expert review item',
@@ -175,7 +173,8 @@ const defaultReviewInsight = (
 export function buildExpertReviewItems(answers: Answers, determination: DeterminationResult): ReviewInsightItem[] {
   const changeLabel = getChangeLabel(answers);
   const pathwayMeta = getPathwayMeta(determination);
-  const ruleIds: string[] = determination?.decisionTrace?.consistencyRules?.map((rule: { id: string }) => rule.id) || [];
+  const ruleIds: string[] =
+    determination?.decisionTrace?.consistencyRules?.map((rule: { id: string }) => rule.id) || [];
   const sourceByRuleId: Record<string, string[]> = {
     'nonpma-unresolved-significance-uncertainty-policy': ['FDA-SW-510K-2017 Q3-Q4'],
     'pma-unresolved-safety-effectiveness-uncertainty-policy': ['21 CFR 814.39(a)'],
@@ -220,9 +219,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Whether the change affects safety or effectiveness is still unresolved',
           meta: `Internal decision rule · ${pathwayMeta}`,
-          whyThisMatters: 'The safety-and-effectiveness review was marked Uncertain, so the record does not yet show whether the PMA-approved device is affected in safety or effectiveness terms.',
+          whyThisMatters:
+            'The safety-and-effectiveness review was marked Uncertain, so the record does not yet show whether the PMA-approved device is affected in safety or effectiveness terms.',
           actionLabel: 'Evidence needed to close this',
-          actionText: 'Document whether this change affects safety or effectiveness using pre/post evidence tied to the approved device, the approved labeling, and the specific modified design elements.',
+          actionText:
+            'Document whether this change affects safety or effectiveness using pre/post evidence tied to the approved device, the approved labeling, and the specific modified design elements.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'baseline-incomplete': {
@@ -233,7 +234,8 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           meta: `Reliability gate · ${pathwayMeta}`,
           whyThisMatters: `The record does not include ${joinWithAnd(baselineNotProvided)}. Without a complete authorized baseline, the assessment cannot show exactly what the proposed change is being compared against.`,
           actionLabel: 'What to provide',
-          actionText: 'Enter the authorization identifier, the cleared/approved baseline version, and the authorized IFU statement before using this assessment in any regulatory discussion.',
+          actionText:
+            'Enter the authorization identifier, the cleared/approved baseline version, and the authorized IFU statement before using this assessment in any regulatory discussion.',
           sourceRefs: sourceByRuleId[id],
         };
       }
@@ -242,9 +244,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Whether the change affects the intended use or indications for use is still unresolved',
           meta: `Threshold issue · ${pathwayMeta}`,
-          whyThisMatters: 'The intended-use review was marked Uncertain, so the current record does not establish whether this change stays inside the authorized intended use. Resolve that before treating significance or PCCP conclusions as reliable.',
+          whyThisMatters:
+            'The intended-use review was marked Uncertain, so the current record does not establish whether this change stays inside the authorized intended use. Resolve that before treating significance or PCCP conclusions as reliable.',
           actionLabel: 'Evidence needed to close this',
-          actionText: 'Compare the authorized IFU word-for-word against the post-change device description, clinical claims, population, and use setting. If internal review cannot close the gap, use an FDA Pre-Submission.',
+          actionText:
+            'Compare the authorized IFU word-for-word against the post-change device description, clinical claims, population, and use setting. If internal review cannot close the gap, use an FDA Pre-Submission.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'cybersecurity-exemption-uncertain':
@@ -252,9 +256,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Whether this is a cybersecurity-only update is still unresolved',
           meta: `Final guidance · ${pathwayMeta}`,
-          whyThisMatters: 'The cybersecurity-only review was marked Uncertain, so the record does not yet show whether this change is purely cybersecurity-related with zero functional impact.',
+          whyThisMatters:
+            'The cybersecurity-only review was marked Uncertain, so the record does not yet show whether this change is purely cybersecurity-related with zero functional impact.',
           actionLabel: 'Evidence needed to close this',
-          actionText: 'Document whether the change is solely cybersecurity-related, show that it does not affect device behavior or ML inference outputs, and stop treating the exemption as available unless that record is complete.',
+          actionText:
+            'Document whether the change is solely cybersecurity-related, show that it does not affect device behavior or ML inference outputs, and stop treating the exemption as available unless that record is complete.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'restore-to-spec-uncertain':
@@ -262,9 +268,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Whether this change only restores a previously authorized configuration is still unresolved',
           meta: `Final guidance · ${pathwayMeta}`,
-          whyThisMatters: 'The restore-to-specification review was marked Uncertain, so the record does not yet show whether this change truly restores the device to a previously authorized configuration.',
+          whyThisMatters:
+            'The restore-to-specification review was marked Uncertain, so the record does not yet show whether this change truly restores the device to a previously authorized configuration.',
           actionLabel: 'Evidence needed to close this',
-          actionText: 'Identify the exact authorized target state, show that the proposed fix restores the device to that state, and document that no additional functional or ML behavior changes are introduced.',
+          actionText:
+            'Identify the exact authorized target state, show that the proposed fix restores the device to that state, and document that no additional functional or ML behavior changes are introduced.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'demographic-expansion-with-b3-no':
@@ -272,9 +280,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Reconcile population expansion with the intended-use answer',
           meta: `Regulatory consistency check · ${pathwayMeta}`,
-          whyThisMatters: 'The record indicates that new demographic populations may be involved, while the intended-use review says the change stays within the current scope. That combination only holds if the change stays within the originally authorized population.',
+          whyThisMatters:
+            'The record indicates that new demographic populations may be involved, while the intended-use review says the change stays within the current scope. That combination only holds if the change stays within the originally authorized population.',
           actionLabel: 'What to confirm',
-          actionText: 'Compare the introduced population against the cleared/approved population boundary and document why the change does or does not expand clinical scope.',
+          actionText:
+            'Compare the introduced population against the cleared/approved population boundary and document why the change does or does not expand clinical scope.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'cumulative-drift-conflicts-with-nonsignificant-us-assessment':
@@ -282,9 +292,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Reconcile cumulative drift with the current non-significant answers',
           meta: `Cumulative change review · ${pathwayMeta}`,
-          whyThisMatters: 'The running change log suggests cumulative drift, but the current U.S. significance branch otherwise reads as non-significant. That combination weakens confidence in the present pathway.',
+          whyThisMatters:
+            'The running change log suggests cumulative drift, but the current U.S. significance branch otherwise reads as non-significant. That combination weakens confidence in the present pathway.',
           actionLabel: 'What to review',
-          actionText: 'Reassess the current device against the last authorized baseline and document whether the cumulative change set still supports the current pathway.',
+          actionText:
+            'Reassess the current device against the last authorized baseline and document whether the cumulative change set still supports the current pathway.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'denovo-fit-failed-with-all-significance-no':
@@ -293,9 +305,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Resolve De Novo device-type fit before relying on the current pathway',
           meta: `Device-type fit check · ${pathwayMeta}`,
-          whyThisMatters: 'The current record does not clearly show that the modified device still fits the De Novo device type and special controls after this change. That threshold issue takes priority over a routine significance close-out.',
+          whyThisMatters:
+            'The current record does not clearly show that the modified device still fits the De Novo device type and special controls after this change. That threshold issue takes priority over a routine significance close-out.',
           actionLabel: 'What to review',
-          actionText: 'Compare the modified device against the De Novo classification order and each special control. If the fit remains uncertain, use an FDA Pre-Submission.',
+          actionText:
+            'Compare the modified device against the De Novo classification order and each special control. If the fit remains uncertain, use an FDA Pre-Submission.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'nonpma-genai-guardrail-c5-conflict':
@@ -305,9 +319,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Reconcile risk-control impact with the recorded change',
           meta: `Risk-control consistency check · ${pathwayMeta}`,
-          whyThisMatters: 'The current answer set says the reported change does not affect risk-control significance, but the change description suggests it may touch an existing control or mitigation.',
+          whyThisMatters:
+            'The current answer set says the reported change does not affect risk-control significance, but the change description suggests it may touch an existing control or mitigation.',
           actionLabel: 'Evidence needed to close this',
-          actionText: 'Review whether the modified feature functions as a risk control tied to significant harm, and document the pre/post control design, effectiveness, and affected hazards before finalizing the risk-control assessment.',
+          actionText:
+            'Review whether the modified feature functions as a risk control tied to significant harm, and document the pre/post control design, effectiveness, and affected hazards before finalizing the risk-control assessment.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'pma-genai-guardrail-cpma1-conflict':
@@ -321,9 +337,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Reconcile safety/effectiveness impact with the recorded change',
           meta: `PMA consistency check · ${pathwayMeta}`,
-          whyThisMatters: 'The current answer set says the change does not affect safety or effectiveness, but the reported modification is the kind of change that can affect PMA review obligations.',
+          whyThisMatters:
+            'The current answer set says the change does not affect safety or effectiveness, but the reported modification is the kind of change that can affect PMA review obligations.',
           actionLabel: 'Evidence needed to close this',
-          actionText: 'Review the change against the PMA safety/effectiveness threshold and either document why it truly has no safety/effectiveness impact or update the PMA answer set accordingly.',
+          actionText:
+            'Review the change against the PMA safety/effectiveness threshold and either document why it truly has no safety/effectiveness impact or update the PMA answer set accordingly.',
           sourceRefs: sourceByRuleId[id],
         };
       case 'nonpma-foundation-model-all-significance-no':
@@ -332,9 +350,11 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
           id,
           title: 'Reconcile the AI/ML change description with the non-significant answer set',
           meta: `AI/ML consistency check · ${pathwayMeta}`,
-          whyThisMatters: 'The reported modification is normally expected to affect risk, performance, or scope review more than the current all-No significance branch suggests.',
+          whyThisMatters:
+            'The reported modification is normally expected to affect risk, performance, or scope review more than the current all-No significance branch suggests.',
           actionLabel: 'What to review',
-          actionText: 'Re-run the significance fields against the actual change record and document why each answer remains No, or update the answers if the change is more consequential than first recorded.',
+          actionText:
+            'Re-run the significance fields against the actual change record and document why each answer remains No, or update the answers if the change is more consequential than first recorded.',
           sourceRefs: sourceByRuleId[id],
         };
       default:
@@ -371,7 +391,8 @@ export function buildEvidenceGapInsightItems(
       severity: gap.severity,
       title: gap.description,
       meta: baseMeta,
-      whyThisMatters: 'This item is still open, so the current record does not yet fully support reliance on the assessment result.',
+      whyThisMatters:
+        'This item is still open, so the current record does not yet fully support reliance on the assessment result.',
       actionLabel: 'What to provide',
       actionText: gap.remediation,
       sourceRefs: splitSources(gap.source),
@@ -389,7 +410,8 @@ export function buildEvidenceGapInsightItems(
         return {
           ...defaultItem,
           title: 'Subgroup performance is not yet shown for the affected populations',
-          whyThisMatters: 'The subgroup-performance review was answered No, so the record does not show whether the modified device performs acceptably across the relevant demographic groups or operating subgroups.',
+          whyThisMatters:
+            'The subgroup-performance review was answered No, so the record does not show whether the modified device performs acceptably across the relevant demographic groups or operating subgroups.',
           actionText: getSubgroupNeed(answers),
         };
       case 'GAP-SIG-UNCERTAIN':
@@ -404,7 +426,8 @@ export function buildEvidenceGapInsightItems(
         return {
           ...defaultItem,
           title: 'Validation evidence is not yet documented for this change',
-          whyThisMatters: 'The current answer pattern indicates that clinical performance impact has not been clearly ruled out.',
+          whyThisMatters:
+            'The current answer pattern indicates that clinical performance impact has not been clearly ruled out.',
           actionText: getValidationNeed(answers),
         };
       case 'GAP-BASELINE': {
@@ -413,113 +436,139 @@ export function buildEvidenceGapInsightItems(
           ...defaultItem,
           title: 'The authorized baseline is still incomplete',
           whyThisMatters: `The record does not include ${joinWithAnd(baselineNotProvided)}, so the assessment cannot show exactly what the proposed change is being compared against.`,
-          actionText: 'Provide the authorization number, authorized baseline version, and authorized IFU statement before relying on any pathway conclusion.',
+          actionText:
+            'Provide the authorization number, authorized baseline version, and authorized IFU statement before relying on any pathway conclusion.',
         };
       }
       case 'GAP-IFU-UNCERTAIN':
         return {
           ...defaultItem,
           title: 'Whether the change affects the intended use or indications for use is still unresolved',
-          whyThisMatters: 'The intended-use review was marked Uncertain, so the current record does not establish whether this change stays inside the authorized intended use.',
-          actionText: 'Compare the authorized IFU against the post-change device description word-for-word. If internal review cannot close the gap, prepare an FDA Pre-Submission.',
+          whyThisMatters:
+            'The intended-use review was marked Uncertain, so the current record does not establish whether this change stays inside the authorized intended use.',
+          actionText:
+            'Compare the authorized IFU against the post-change device description word-for-word. If internal review cannot close the gap, prepare an FDA Pre-Submission.',
         };
       case 'GAP-IFU-INCOMPLETE':
         return {
           ...defaultItem,
           title: 'The intended-use assessment has not been completed',
-          whyThisMatters: 'The assessment cannot proceed credibly without a clear conclusion on whether this change affects the intended use or indications for use.',
-          actionText: 'Answer whether the change affects intended use before relying on any downstream significance or PCCP conclusion.',
+          whyThisMatters:
+            'The assessment cannot proceed credibly without a clear conclusion on whether this change affects the intended use or indications for use.',
+          actionText:
+            'Answer whether the change affects intended use before relying on any downstream significance or PCCP conclusion.',
         };
       case 'GAP-SIG-INCOMPLETE':
         return {
           ...defaultItem,
           title: 'One or more risk or performance reviews are still incomplete',
-          whyThisMatters: 'The non-PMA significance branch is not fully answered, so the current pathway cannot be treated as fully supported.',
-          actionText: 'Complete the remaining visible risk and performance reviews and document the evidence behind each answer.',
+          whyThisMatters:
+            'The non-PMA significance branch is not fully answered, so the current pathway cannot be treated as fully supported.',
+          actionText:
+            'Complete the remaining visible risk and performance reviews and document the evidence behind each answer.',
         };
       case 'GAP-POPULATION-SCOPE':
         return {
           ...defaultItem,
           title: 'The record suggests population expansion, but the authorized boundary is not yet reconciled',
           whyThisMatters: `The population-expansion review was answered ${getAnswerLabel(answers.E3)}, so the current record suggests this change may involve populations not clearly covered by the authorized baseline.`,
-          actionText: 'Document exactly which populations were introduced by this change, whether each group remains inside the authorized scope, and what subgroup evidence supports that conclusion.',
+          actionText:
+            'Document exactly which populations were introduced by this change, whether each group remains inside the authorized scope, and what subgroup evidence supports that conclusion.',
         };
       case 'GAP-BIAS-ASSESSMENT-UPDATE':
         return {
           ...defaultItem,
           title: 'The bias and equity review has not been updated for this change',
-          whyThisMatters: 'The update to the bias and equity review was answered No, so the record still relies on the original submission-era bias analysis even though the current change modifies the device record.',
-          actionText: 'Update the bias and equity assessment specifically for this change, naming the affected populations, environments, failure modes, and mitigations rather than relying on the original submission narrative.',
+          whyThisMatters:
+            'The update to the bias and equity review was answered No, so the record still relies on the original submission-era bias analysis even though the current change modifies the device record.',
+          actionText:
+            'Update the bias and equity assessment specifically for this change, naming the affected populations, environments, failure modes, and mitigations rather than relying on the original submission narrative.',
         };
       case 'GAP-BIAS-MITIGATION':
         return {
           ...defaultItem,
           title: 'The modified bias mitigation is not yet shown to remain effective',
           whyThisMatters: `The bias-mitigation review was answered ${getAnswerLabel(answers.E5)}, so the record indicates that a bias mitigation may have changed, weakened, or been removed as part of this change.`,
-          actionText: 'Document exactly what changed in the mitigation, whether it functions as a risk control, and what validation or risk analysis shows it remains effective for the affected populations.',
+          actionText:
+            'Document exactly what changed in the mitigation, whether it functions as a risk control, and what validation or risk analysis shows it remains effective for the affected populations.',
         };
       case 'GAP-CUMULATIVE':
         return {
           ...defaultItem,
           title: 'Cumulative drift since the last authorized baseline is still open',
-          whyThisMatters: 'The current record indicates cumulative drift relative to the last authorized baseline, so this change cannot be assessed in isolation.',
-          actionText: 'Review the cumulative change log against the last authorized baseline and document whether the full change set, not just this discrete change, still supports the present pathway.',
+          whyThisMatters:
+            'The current record indicates cumulative drift relative to the last authorized baseline, so this change cannot be assessed in isolation.',
+          actionText:
+            'Review the cumulative change log against the last authorized baseline and document whether the full change set, not just this discrete change, still supports the present pathway.',
         };
       case 'GAP-SE-UNCERTAIN':
         return {
           ...defaultItem,
           title: `Predicate fit / substantial equivalence is still unresolved for the cumulative record`,
-          whyThisMatters: 'The cumulative-change review still does not show whether substantial equivalence holds after this change.',
-          actionText: 'Compare the current modified device against the predicate on the full cumulative-change record and document whether substantial equivalence still holds after all accumulated changes.',
+          whyThisMatters:
+            'The cumulative-change review still does not show whether substantial equivalence holds after this change.',
+          actionText:
+            'Compare the current modified device against the predicate on the full cumulative-change record and document whether substantial equivalence still holds after all accumulated changes.',
         };
       case 'GAP-PCCP-SCOPE':
         return {
           ...defaultItem,
           title: `This change has not yet been shown to fit inside the authorized PCCP`,
-          whyThisMatters: 'An authorized PCCP may exist, but the current scope review is incomplete, so the assessment cannot show that this change fits inside the authorized PCCP boundaries.',
+          whyThisMatters:
+            'An authorized PCCP may exist, but the current scope review is incomplete, so the assessment cannot show that this change fits inside the authorized PCCP boundaries.',
           actionText: `Complete the PCCP scope review and document the specific fit for this change${changeContext?.pccpNote ? `, including this expected boundary condition: ${changeContext.pccpNote}` : ''}.`,
         };
       case 'GAP-PCCP-FAILED':
         return {
           ...defaultItem,
           title: `This change falls outside the authorized PCCP as currently recorded`,
-          whyThisMatters: 'The current PCCP scope review indicates that this change is outside at least one authorized PCCP gate or boundary.',
-          actionText: 'Identify which PCCP gate failed, document why it failed, and decide whether the correct next step is a standard submission or a future PCCP expansion request.',
+          whyThisMatters:
+            'The current PCCP scope review indicates that this change is outside at least one authorized PCCP gate or boundary.',
+          actionText:
+            'Identify which PCCP gate failed, document why it failed, and decide whether the correct next step is a standard submission or a future PCCP expansion request.',
         };
       case 'GAP-DENOVO-FIT':
         return {
           ...defaultItem,
           title: 'De Novo device-type fit is still unresolved',
-          whyThisMatters: 'The current record does not clearly show that the modified device still fits the De Novo device type and special controls after this change.',
-          actionText: 'Compare the modified device against the De Novo classification order and each special control, and use an FDA Pre-Submission if fit remains uncertain.',
+          whyThisMatters:
+            'The current record does not clearly show that the modified device still fits the De Novo device type and special controls after this change.',
+          actionText:
+            'Compare the modified device against the De Novo classification order and each special control, and use an FDA Pre-Submission if fit remains uncertain.',
         };
       case 'GAP-GENAI-HALLUCINATION':
         return {
           ...defaultItem,
           title: 'GenAI factual-accuracy / hallucination testing is not yet documented',
           whyThisMatters: `The case includes a GenAI high-impact change, but the record does not yet show hallucination/factual-accuracy testing appropriate for the modified behavior.`,
-          actionText: 'Provide the GenAI hallucination or factual-accuracy test plan, results, and pass/fail criteria specific to the modified configuration.',
+          actionText:
+            'Provide the GenAI hallucination or factual-accuracy test plan, results, and pass/fail criteria specific to the modified configuration.',
         };
       case 'GAP-GENAI-GUARDRAIL':
         return {
           ...defaultItem,
           title: 'The guardrail or safety-filter change is not yet tied to a completed risk assessment',
           whyThisMatters: `The record shows a guardrail or safety-filter modification, but the effect of that change on hazardous situations or PMA safety/effectiveness has not been fully closed.`,
-          actionText: 'Show how the guardrail change affects each relevant hazardous situation or PMA safety/effectiveness field, and document the resulting control effectiveness.',
+          actionText:
+            'Show how the guardrail change affects each relevant hazardous situation or PMA safety/effectiveness field, and document the resulting control effectiveness.',
         };
       case 'GAP-CYBER-EXEMPT':
         return {
           ...defaultItem,
           title: 'Cybersecurity-only treatment is still not supported',
-          whyThisMatters: 'The cybersecurity-only review was marked Uncertain, so the record does not yet show whether this is a pure cybersecurity change with zero functional impact.',
-          actionText: 'Document either that the change is solely cybersecurity-related with zero device-behavior impact, or that it should not be treated as exemption-eligible.',
+          whyThisMatters:
+            'The cybersecurity-only review was marked Uncertain, so the record does not yet show whether this is a pure cybersecurity change with zero functional impact.',
+          actionText:
+            'Document either that the change is solely cybersecurity-related with zero device-behavior impact, or that it should not be treated as exemption-eligible.',
         };
       case 'GAP-PMA-INCOMPLETE':
         return {
           ...defaultItem,
           title: 'The PMA safety/effectiveness review is still incomplete',
-          whyThisMatters: 'The PMA-specific review is not fully answered, so the current record does not yet show whether this change requires supplement handling.',
-          actionText: 'Complete the PMA-specific assessment and document whether the change affects safety or effectiveness, labeling, or qualifying manufacturing methods.',
+          whyThisMatters:
+            'The PMA-specific review is not fully answered, so the current record does not yet show whether this change requires supplement handling.',
+          actionText:
+            'Complete the PMA-specific assessment and document whether the change affects safety or effectiveness, labeling, or qualifying manufacturing methods.',
         };
       default:
         return defaultItem;

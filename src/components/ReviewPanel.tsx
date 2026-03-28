@@ -1,342 +1,21 @@
 import React, { useState } from 'react';
 import { Icon } from './Icon';
-import {
-  GuidanceRef,
-  HelpTextWithLinks,
-} from './ui';
+import { HelpTextWithLinks } from './ui';
 import type { Answers, Block, DeterminationResult, AssessmentField } from '../lib/assessment-engine';
-import {
-  findGuidanceLink,
-  getSourceBadge,
-} from '../lib/content';
 import { assessmentStore, type ReviewerNote } from '../lib/assessment-store';
 import { buildPdfReportDocument } from '../lib/pdf-report-model';
+import { useReviewPanelData } from '../hooks/useReviewPanelData';
 import {
-  useReviewPanelData,
-  type MergedBlockerItem,
-  type AssessmentRecordFact,
-} from '../hooks/useReviewPanelData';
-
-/* ------------------------------------------------------------------ */
-/*  Small presentational components                                    */
-/* ------------------------------------------------------------------ */
-
-const SectionCard: React.FC<{
-  children: React.ReactNode;
-  accentColor?: string;
-  background?: string;
-  borderColor?: string;
-  dataTestId?: string;
-  style?: React.CSSProperties;
-}> = ({
-  children,
-  accentColor,
-  background = 'var(--color-bg-elevated)',
-  borderColor = 'var(--color-border)',
-  dataTestId,
-  style,
-}) => (
-  <div
-    data-testid={dataTestId}
-    style={{
-      background,
-      border: `1px solid ${borderColor}`,
-      borderLeft: accentColor ? `4px solid ${accentColor}` : `1px solid ${borderColor}`,
-      borderRadius: 'var(--radius-lg)',
-      padding: 'var(--space-lg)',
-      ...style,
-    }}
-  >
-    {children}
-  </div>
-);
-
-const SectionHeading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <h2
-    style={{
-      fontSize: 18,
-      fontWeight: 700,
-      color: 'var(--color-text)',
-      margin: 0,
-      lineHeight: 1.25,
-    }}
-  >
-    {children}
-  </h2>
-);
-
-const SubsectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div
-    style={{
-      fontSize: 11,
-      fontWeight: 700,
-      color: 'var(--color-text-tertiary)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-      marginBottom: 8,
-    }}
-  >
-    {children}
-  </div>
-);
-
-const CompactBadge: React.FC<{ label: string; bg: string; border: string; text: string }> = ({
-  label,
-  bg,
-  border,
-  text,
-}) => (
-  <span
-    style={{
-      fontSize: 10,
-      fontWeight: 700,
-      padding: '3px 8px',
-      borderRadius: 999,
-      background: bg,
-      color: text,
-      border: `1px solid ${border}`,
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-      whiteSpace: 'nowrap',
-    }}
-  >
-    {label}
-  </span>
-);
-
-const SummaryField: React.FC<{
-  label: string;
-  children: React.ReactNode;
-}> = ({ label, children }) => (
-  <div
-    style={{
-      padding: '12px 14px',
-      borderRadius: 'var(--radius-md)',
-      background: 'var(--color-bg-card)',
-      border: '1px solid var(--color-border)',
-    }}
-  >
-    <SubsectionLabel>{label}</SubsectionLabel>
-    {children}
-  </div>
-);
-
-const RecordFactBlock: React.FC<{ fact: AssessmentRecordFact }> = ({ fact }) => (
-  <div
-    style={{
-      padding: fact.isLongText ? '12px 14px' : '10px 12px',
-      borderRadius: 'var(--radius-md)',
-      background: 'var(--color-bg-card)',
-      border: '1px solid var(--color-border)',
-      minWidth: 0,
-    }}
-  >
-    <div
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: 'var(--color-text-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.04em',
-        marginBottom: 6,
-      }}
-    >
-      {fact.label}
-    </div>
-    <div
-      style={{
-        fontSize: 13,
-        color: fact.isMissing ? 'var(--color-text-muted)' : 'var(--color-text)',
-        lineHeight: 1.6,
-        whiteSpace: fact.isLongText ? 'pre-wrap' : 'normal',
-        wordBreak: 'break-word',
-      }}
-    >
-      <HelpTextWithLinks text={fact.value} />
-    </div>
-  </div>
-);
-
-const TraceStep: React.FC<{
-  index: number;
-  text: string;
-}> = ({ index, text }) => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 12,
-      padding: '12px 14px',
-      borderRadius: 'var(--radius-md)',
-      background: 'var(--color-bg-card)',
-      border: '1px solid var(--color-border)',
-    }}
-  >
-    <div
-      style={{
-        width: 24,
-        height: 24,
-        borderRadius: 999,
-        background: 'var(--color-primary-muted)',
-        color: 'var(--color-primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 12,
-        fontWeight: 700,
-        flexShrink: 0,
-        marginTop: 1,
-      }}
-    >
-      {index + 1}
-    </div>
-    <div
-      style={{
-        fontSize: 13,
-        color: 'var(--color-text-secondary)',
-        lineHeight: 1.6,
-        minWidth: 0,
-      }}
-    >
-      <HelpTextWithLinks text={text} />
-    </div>
-  </div>
-);
-
-const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
-  const link = findGuidanceLink(code);
-  const sourceMeta = getSourceBadge(code);
-
-  if (link) {
-    return <GuidanceRef code={code} />;
-  }
-
-  return (
-    <span
-      style={{
-        fontSize: 12,
-        color: 'var(--color-text-secondary)',
-        lineHeight: 1.5,
-      }}
-      title={sourceMeta.full}
-    >
-      {sourceMeta.full}
-    </span>
-  );
-};
-
-const IssueCard: React.FC<{
-  item: MergedBlockerItem;
-}> = ({ item }) => {
-  const uniqueSources = Array.from(new Set(item.sourceRefs));
-  const accent = item.kind === 'expert'
-    ? {
-        bg: 'var(--color-warning-bg)',
-        border: 'var(--color-warning-border)',
-        badgeBg: '#fef3c7',
-        badgeText: '#92400e',
-      }
-    : {
-        bg: '#fff7ed',
-        border: '#fed7aa',
-        badgeBg: '#ffedd5',
-        badgeText: '#9a3412',
-      };
-
-  return (
-    <div
-      style={{
-        padding: '14px 16px',
-        borderRadius: 'var(--radius-md)',
-        background: accent.bg,
-        border: `1px solid ${accent.border}`,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 8,
-          flexWrap: 'wrap',
-          marginBottom: 6,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            lineHeight: 1.45,
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <HelpTextWithLinks text={item.title} />
-        </div>
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: accent.badgeText,
-            background: accent.badgeBg,
-            borderRadius: 999,
-            padding: '3px 8px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          {item.kind === 'expert' ? 'Expert Review' : 'Evidence Gap'}
-        </span>
-      </div>
-
-      <div
-        style={{
-          fontSize: 11.5,
-          color: 'var(--color-text-tertiary)',
-          lineHeight: 1.5,
-          marginBottom: 10,
-        }}
-      >
-        {item.meta}
-      </div>
-
-      <div style={{ display: 'grid', gap: 10 }}>
-        <div>
-          <SubsectionLabel>Why It Matters</SubsectionLabel>
-          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            <HelpTextWithLinks text={item.whyThisMatters} />
-          </div>
-        </div>
-
-        <div>
-          <SubsectionLabel>{item.actionLabel}</SubsectionLabel>
-          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            <HelpTextWithLinks text={item.actionText} />
-          </div>
-        </div>
-
-        {uniqueSources.length > 0 && (
-          <div>
-            <SubsectionLabel>Basis</SubsectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {uniqueSources.map((source) => (
-                <div
-                  key={`${item.title}-${source}`}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}
-                >
-                  <span style={{ color: 'var(--color-text-muted)', lineHeight: 1.4, flexShrink: 0 }}>•</span>
-                  <EvidenceGapSourceRef code={source} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+  SectionCard,
+  SectionHeading,
+  SubsectionLabel,
+  CompactBadge,
+  SummaryField,
+  RecordFactBlock,
+  TraceStep,
+  EvidenceGapSourceRef,
+  IssueCard,
+} from './review-panel';
 
 /* ------------------------------------------------------------------ */
 /*  ReviewPanel                                                        */
@@ -382,11 +61,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       }}
     >
       {/* === Pathway summary hero === */}
-      <SectionCard
-        accentColor={data.config.accent}
-        background={data.config.surface}
-        borderColor={data.config.border}
-      >
+      <SectionCard accentColor={data.config.accent} background={data.config.surface} borderColor={data.config.border}>
         <div
           style={{
             display: 'flex',
@@ -440,37 +115,16 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
           <button
             onClick={async () => {
-              const assessmentName = assessmentId
-                ? assessmentStore.get(assessmentId)?.name
-                : undefined;
-              const reportDoc = buildPdfReportDocument(
-                answers,
-                determination,
-                blocks,
-                getFieldsForBlock,
-                {
-                  assessmentId: assessmentId || undefined,
-                  assessmentName,
-                  reviewerNotes: reviewerNotes || [],
-                },
-              );
+              const assessmentName = assessmentId ? assessmentStore.get(assessmentId)?.name : undefined;
+              const reportDoc = buildPdfReportDocument(answers, determination, blocks, getFieldsForBlock, {
+                assessmentId: assessmentId || undefined,
+                assessmentName,
+                reviewerNotes: reviewerNotes || [],
+              });
               const { generateAndDownloadDocx } = await import('../lib/docx-renderer');
               await generateAndDownloadDocx(reportDoc);
             }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 16px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-text)',
-              border: 'none',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
+            className="btn-primary"
           >
             <Icon name="printer" size={14} color="#fff" />
             Export Report
@@ -528,7 +182,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               <HelpTextWithLinks text={data.pccpHeroSummary.summary} />
               {data.pccpHeroSummary.detail ? (
                 <>
-                  {' '}<strong style={{ color: 'var(--color-text)' }}>Boundary note:</strong>{' '}
+                  {' '}
+                  <strong style={{ color: 'var(--color-text)' }}>Boundary note:</strong>{' '}
                   <HelpTextWithLinks text={data.pccpHeroSummary.detail} />
                 </>
               ) : null}
@@ -552,7 +207,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         >
           <div>
             <SubsectionLabel>Record Facts</SubsectionLabel>
-            <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
+            <div className="text-detail" style={{ marginBottom: 12 }}>
               User-entered or selected fields from the current record.
             </div>
 
@@ -580,38 +235,19 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
           <div>
             <SubsectionLabel>System Basis</SubsectionLabel>
-            <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
+            <div className="text-detail" style={{ marginBottom: 12 }}>
               System-generated basis derived from the current record and pathway logic.
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {data.assessmentBasisView.systemBasis.length > 0 ? data.assessmentBasisView.systemBasis.map((item, index) => (
-                <div
-                  key={`basis-${index}`}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg-card)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: 13,
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: 1.65,
-                  }}
-                >
-                  <HelpTextWithLinks text={item} />
-                </div>
-              )) : (
-                <div
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg-card)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: 13,
-                    color: 'var(--color-text-muted)',
-                    lineHeight: 1.6,
-                  }}
-                >
+              {data.assessmentBasisView.systemBasis.length > 0 ? (
+                data.assessmentBasisView.systemBasis.map((item, index) => (
+                  <div key={`basis-${index}`} className="card-sm text-body" style={{ lineHeight: 1.65 }}>
+                    <HelpTextWithLinks text={item} />
+                  </div>
+                ))
+              ) : (
+                <div className="card-sm" style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
                   No additional assessment-basis detail is available for this record.
                 </div>
               )}
@@ -664,17 +300,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               ))}
             </div>
           ) : (
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg-card)',
-                border: '1px solid var(--color-border)',
-                fontSize: 13,
-                color: 'var(--color-text-muted)',
-                lineHeight: 1.6,
-              }}
-            >
+            <div className="card-sm" style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
               No decision-trace detail is available for this record.
             </div>
           )}
@@ -686,24 +312,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               <SectionHeading>What Would Change This Pathway</SectionHeading>
             </div>
 
-            <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
+            <div className="text-detail" style={{ marginBottom: 12 }}>
               System-generated conditions under which the current record would support a different pathway.
             </div>
 
             <div style={{ display: 'grid', gap: 10 }}>
               {data.alternativePathwayNotes.map((item, index) => (
-                <div
-                  key={`alternative-${index}`}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--color-bg-card)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: 13,
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: 1.65,
-                  }}
-                >
+                <div key={`alternative-${index}`} className="card-sm text-body" style={{ lineHeight: 1.65 }}>
                   <HelpTextWithLinks text={item} />
                 </div>
               ))}
@@ -760,7 +375,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               lineHeight: 1.6,
             }}
           >
-            No open issues are listed for this record. Continue with standard expert review and QMS controls before action.
+            No open issues are listed for this record. Continue with standard expert review and QMS controls before
+            action.
           </div>
         )}
       </SectionCard>
@@ -781,10 +397,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {data.citedSources.map((source) => (
-                <div
-                  key={`reasoning-source-${source}`}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}
-                >
+                <div key={`reasoning-source-${source}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                   <span style={{ color: 'var(--color-text-muted)', lineHeight: 1.4, flexShrink: 0 }}>•</span>
                   <EvidenceGapSourceRef code={source} />
                 </div>
@@ -828,22 +441,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             )}
 
             {onHandoff && !data.isIncomplete && (
-              <button
-                onClick={onHandoff}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-success)',
-                  border: 'none',
-                  color: '#fff',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
+              <button onClick={onHandoff} className="btn-success">
                 {determination.isPCCPImpl
                   ? 'Prepare PCCP Package'
                   : determination.isDocOnly
@@ -863,22 +461,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             <SectionHeading>Reviewer Notes</SectionHeading>
           </div>
 
-          <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
+          <div className="text-detail" style={{ marginBottom: 12 }}>
             Reviewer-entered comments for this assessment record.
           </div>
 
           {reviewerNotes && reviewerNotes.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: onAddNote ? 14 : 0 }}>
               {reviewerNotes.map((note) => (
-                <div
-                  key={note.id}
-                  style={{
-                    padding: '12px 14px',
-                    background: 'var(--color-bg-card)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
+                <div key={note.id} className="card-sm">
                   <div
                     style={{
                       display: 'flex',
@@ -889,9 +479,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       marginBottom: 6,
                     }}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
-                      {note.author}
-                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{note.author}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>
                         {new Date(note.timestamp).toLocaleString()}

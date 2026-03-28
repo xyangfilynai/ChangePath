@@ -42,11 +42,13 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
     gaps.push({
       id: 'GAP-BASELINE',
       category: 'Device profile',
-      description: 'Authorized baseline incomplete — authorization identifier, baseline version, or authorized IFU statement not provided',
+      description:
+        'Authorized baseline incomplete — authorization identifier, baseline version, or authorized IFU statement not provided',
       severity: 'critical',
       sourceClass: 'Final guidance',
       source: 'FDA-SW-510K-2017; FDA-PCCP-2025 §V',
-      remediation: 'Provide the authorization number, cleared/approved version identifier, and the authorized Indications for Use / IFU statement. Without these, the assessment cannot establish what the device is being compared against.',
+      remediation:
+        'Provide the authorization number, cleared/approved version identifier, and the authorized Indications for Use / IFU statement. Without these, the assessment cannot establish what the device is being compared against.',
     });
   }
 
@@ -60,7 +62,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'critical',
       sourceClass: 'Regulation',
       source: '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V',
-      remediation: 'Compare the clearance letter and IFU statement word-by-word against the post-change device. If unresolvable internally, file a Pre-Submission (Q-Sub) with FDA.',
+      remediation:
+        'Compare the clearance letter and IFU statement word-by-word against the post-change device. If unresolvable internally, file a Pre-Submission (Q-Sub) with FDA.',
     });
   }
 
@@ -80,7 +83,7 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
 
   if (answers.B3 === Answer.No && !isPMA) {
     const sigAnswers = [answers.C3, answers.C4, answers.C5, answers.C6];
-    const hasYesOrUncertain = sigAnswers.some(a => a === Answer.Yes || a === Answer.Uncertain);
+    const hasYesOrUncertain = sigAnswers.some((a) => a === Answer.Yes || a === Answer.Uncertain);
     // C3-C6 have cascading skip logic: if an earlier field is Yes, later ones are skipped.
     // Only check "all answered" for fields that are actually visible (not skipped by cascade).
     const yesNoUncertain = [Answer.Yes, Answer.No, Answer.Uncertain] as const;
@@ -88,7 +91,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
     const c4Visible = answers.C3 !== Answer.Yes;
     const c5Visible = c4Visible && answers.C4 !== Answer.Yes;
     const c6Visible = c5Visible && answers.C5 !== Answer.Yes;
-    const allAnswered = c3Answered &&
+    const allAnswered =
+      c3Answered &&
       (!c4Visible || answerIsOneOf(answers.C4, yesNoUncertain)) &&
       (!c5Visible || answerIsOneOf(answers.C5, yesNoUncertain)) &&
       (!c6Visible || answerIsOneOf(answers.C6, yesNoUncertain));
@@ -113,7 +117,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
         severity: 'important',
         sourceClass: 'Final guidance',
         source: 'FDA-SW-510K-2017 Q4; FDA-PCCP-2025 §VII',
-        remediation: 'Run pre/post performance comparison against predefined acceptance criteria. Validate subgroup performance independently.',
+        remediation:
+          'Run pre/post performance comparison against predefined acceptance criteria. Validate subgroup performance independently.',
       });
     }
   }
@@ -128,7 +133,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B',
-      remediation: 'Assess dataset representativeness against the authorized intended population. Document demographic composition, coverage gaps, and any compensating controls or mitigation plan.',
+      remediation:
+        'Assess dataset representativeness against the authorized intended population. Document demographic composition, coverage gaps, and any compensating controls or mitigation plan.',
     });
   }
 
@@ -140,7 +146,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B',
-      remediation: 'Provide subgroup analysis covering affected demographic groups. Document any performance disparities and mitigation measures.',
+      remediation:
+        'Provide subgroup analysis covering affected demographic groups. Document any performance disparities and mitigation measures.',
     });
   }
 
@@ -152,7 +159,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Regulation',
       source: '21 CFR 807.81(a)(3); FDA-LIFECYCLE-2025 §IV.B',
-      remediation: 'Confirm whether the newly introduced population remains within the authorized intended population and update subgroup performance evidence accordingly.',
+      remediation:
+        'Confirm whether the newly introduced population remains within the authorized intended population and update subgroup performance evidence accordingly.',
     });
   }
 
@@ -164,7 +172,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B',
-      remediation: 'Update the bias and equity assessment to reflect the modified model, data, workflow, and affected populations.',
+      remediation:
+        'Update the bias and equity assessment to reflect the modified model, data, workflow, and affected populations.',
     });
   }
 
@@ -176,7 +185,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B; ISO 14971:2019',
-      remediation: 'Review whether the modified bias mitigation remains effective, whether it functions as a risk control, and whether additional validation or risk analysis is required.',
+      remediation:
+        'Review whether the modified bias mitigation remains effective, whether it functions as a risk control, and whether additional validation or risk analysis is required.',
     });
   }
 
@@ -190,7 +200,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Final guidance',
       source: 'FDA-PCCP-2025 §VIII; FDA-SW-510K-2017',
-      remediation: 'Review the running change log. Calculate cumulative impact across all dimensions. Compare against the last authorized baseline.',
+      remediation:
+        'Review the running change log. Calculate cumulative impact across all dimensions. Compare against the last authorized baseline.',
     });
   }
 
@@ -202,7 +213,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'critical',
       sourceClass: 'Regulation',
       source: '21 CFR 807.87; 21 CFR 807.92',
-      remediation: 'Compare the modified device against the predicate device. If SE cannot be demonstrated, a new predicate or De Novo pathway may be needed.',
+      remediation:
+        'Compare the modified device against the predicate device. If SE cannot be demonstrated, a new predicate or De Novo pathway may be needed.',
     });
   }
 
@@ -216,7 +228,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'critical',
       sourceClass: 'Final guidance',
       source: 'FDA-PCCP-2025 §V–VI',
-      remediation: 'Complete PCCP scope verification fields (P1–P5). Verify change type, boundaries, validation protocol, monitoring, and cumulative impact.',
+      remediation:
+        'Complete PCCP scope verification fields (P1–P5). Verify change type, boundaries, validation protocol, monitoring, and cumulative impact.',
     });
   }
 
@@ -228,7 +241,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Final guidance',
       source: 'FDA-PCCP-2025 §V',
-      remediation: 'Identify which PCCP gate(s) failed. Consider expanding PCCP scope via new submission or proceeding through standard submission pathway.',
+      remediation:
+        'Identify which PCCP gate(s) failed. Consider expanding PCCP scope via new submission or proceeding through standard submission pathway.',
     });
   }
 
@@ -242,7 +256,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'critical',
       sourceClass: 'Regulation',
       source: '21 CFR Part 860 Subpart D',
-      remediation: 'Compare modified device against the De Novo classification order and each special control. File a Pre-Submission with FDA if uncertainty persists.',
+      remediation:
+        'Compare modified device against the De Novo classification order and each special control. File a Pre-Submission with FDA if uncertainty persists.',
     });
   }
 
@@ -257,15 +272,14 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
         severity: 'important',
         sourceClass: 'Draft guidance',
         source: 'FDA-LIFECYCLE-2025 §V.D',
-        remediation: 'Perform hallucination/factual accuracy testing appropriate for the GenAI component. Document test methodology and results.',
+        remediation:
+          'Perform hallucination/factual accuracy testing appropriate for the GenAI component. Document test methodology and results.',
       });
     }
 
     if (answers.D4 === Answer.Yes) {
       // For PMA devices, check C_PMA1 (safety/effectiveness) instead of C5 (risk control — not shown for PMA)
-      const guardrailImpactNotAssessed = isPMA
-        ? answers.C_PMA1 !== Answer.Yes
-        : answers.C5 !== Answer.Yes;
+      const guardrailImpactNotAssessed = isPMA ? answers.C_PMA1 !== Answer.Yes : answers.C5 !== Answer.Yes;
       if (guardrailImpactNotAssessed) {
         gaps.push({
           id: 'GAP-GENAI-GUARDRAIL',
@@ -274,7 +288,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
           severity: 'important',
           sourceClass: 'Final guidance',
           source: isPMA ? '21 CFR 814.39; ISO 14971:2019' : 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
-          remediation: 'Review the risk management file for impacts of the guardrail change on all identified hazardous situations.',
+          remediation:
+            'Review the risk management file for impacts of the guardrail change on all identified hazardous situations.',
         });
       }
     }
@@ -291,7 +306,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Final guidance',
       source: 'FDA-SW-510K-2017 Q1; FDA-CYBER-2026',
-      remediation: 'Perform analysis demonstrating the change is solely cybersecurity-related with zero functional impact, or confirm it is not eligible for exemption.',
+      remediation:
+        'Perform analysis demonstrating the change is solely cybersecurity-related with zero functional impact, or confirm it is not eligible for exemption.',
     });
   }
 
@@ -319,7 +335,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'important',
       sourceClass: 'Internal conservative policy',
       source: 'FDA-SW-510K-2017 Q3-Q4',
-      remediation: 'Gather additional evidence or consult with RA/clinical experts to convert "Uncertain" responses to definitive "Yes" or "No" answers.',
+      remediation:
+        'Gather additional evidence or consult with RA/clinical experts to convert "Uncertain" responses to definitive "Yes" or "No" answers.',
     });
   }
 

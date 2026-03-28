@@ -24,8 +24,7 @@ export const base510k = (overrides: Answers = {}): Answers => ({
   ...overrides,
 });
 
-export const baseDeNovo = (overrides: Answers = {}): Answers =>
-  base510k({ A1: AuthPathway.DeNovo, ...overrides });
+export const baseDeNovo = (overrides: Answers = {}): Answers => base510k({ A1: AuthPathway.DeNovo, ...overrides });
 
 export const basePMA = (overrides: Answers = {}): Answers => ({
   A1: AuthPathway.PMA,
