@@ -9,3 +9,11 @@ export {
   EvidenceGapSourceRef,
   IssueCard,
 } from './presentational';
+export {
+  ReviewAssessmentBasisSection,
+  ReviewDecisionSupportSection,
+  ReviewHeroSection,
+  ReviewOpenIssuesSection,
+  ReviewReviewerNotesSection,
+  ReviewSourcesAndPreparationSection,
+} from './sections';

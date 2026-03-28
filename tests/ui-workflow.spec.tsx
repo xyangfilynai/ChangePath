@@ -306,4 +306,46 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Regulatory Glossary')).not.toBeInTheDocument();
     expect(screen.queryByText('Response Details')).not.toBeInTheDocument();
   });
+
+  it('lets reviewers add notes from the extracted review notes section', () => {
+    const onAddNote = vi.fn();
+    const answers = {
+      A1: '510(k)',
+      A1b: 'K123456',
+      A1c: 'v4.2 cleared build',
+      A1d: 'Authorized IFU summary',
+      A2: 'No',
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B3: 'No',
+      C1: 'No',
+      C2: 'No',
+      C3: 'No',
+      C4: 'No',
+      C5: 'No',
+      C6: 'No',
+    } as const;
+
+    render(
+      <ReviewPanel
+        determination={computeDetermination(answers)}
+        answers={answers}
+        blocks={[]}
+        getFieldsForBlock={() => []}
+        reviewerNotes={[]}
+        onAddNote={onAddNote}
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Reviewer name'), { target: { value: 'Taylor Reviewer' } });
+    fireEvent.change(screen.getByPlaceholderText('Add reviewer note'), {
+      target: { value: 'Confirm scanner-shift validation evidence before relying on the outcome.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
+
+    expect(onAddNote).toHaveBeenCalledWith(
+      'Taylor Reviewer',
+      'Confirm scanner-shift validation evidence before relying on the outcome.',
+    );
+  });
 });

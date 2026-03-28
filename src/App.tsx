@@ -1,10 +1,7 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useCallback, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
-import { ReviewPanel } from './components/ReviewPanel';
-import { FeedbackSurvey } from './components/FeedbackSurvey';
-import { HandoffPage } from './components/HandoffPage';
 import { Icon } from './components/Icon';
 import { BlockBanners } from './components/BlockBanners';
 import { SAMPLE_CASES } from './sample-cases';
@@ -20,6 +17,32 @@ import { useCascadeClearing } from './hooks/useCascadeClearing';
 import { useAssessmentProgress, useCompletedBlocks } from './hooks/useAssessmentProgress';
 import { useAssessmentFlow } from './hooks/useAssessmentFlow';
 import { useAssessmentWorkspace } from './hooks/useAssessmentWorkspace';
+
+const LazyReviewPanel = lazy(() =>
+  import('./components/ReviewPanel').then((module) => ({ default: module.ReviewPanel })),
+);
+const LazyFeedbackSurvey = lazy(() =>
+  import('./components/FeedbackSurvey').then((module) => ({ default: module.FeedbackSurvey })),
+);
+const LazyHandoffPage = lazy(() =>
+  import('./components/HandoffPage').then((module) => ({ default: module.HandoffPage })),
+);
+
+const DeferredContentFallback: React.FC<{ fullScreen?: boolean }> = ({ fullScreen = false }) => (
+  <div
+    style={{
+      minHeight: fullScreen ? '100vh' : undefined,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: fullScreen ? '48px 24px' : '32px 0',
+    }}
+  >
+    <div className="card-sm" style={{ minWidth: 220, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+      Loading…
+    </div>
+  </div>
+);
 
 export const App: React.FC = () => {
   const {
@@ -117,23 +140,29 @@ export const App: React.FC = () => {
   }
 
   if (screen === 'feedback') {
-    return <FeedbackSurvey onBack={() => setScreen('assess')} />;
+    return (
+      <Suspense fallback={<DeferredContentFallback fullScreen />}>
+        <LazyFeedbackSurvey onBack={() => setScreen('assess')} />
+      </Suspense>
+    );
   }
 
   if (screen === 'handoff') {
     return (
-      <HandoffPage
-        determination={determination}
-        answers={answers}
-        onBack={() => {
-          setCurrentBlockIndex(blocks.length - 1);
-          setScreen('assess');
-        }}
-        onBackToAssessment={() => {
-          setCurrentBlockIndex(0);
-          setScreen('assess');
-        }}
-      />
+      <Suspense fallback={<DeferredContentFallback fullScreen />}>
+        <LazyHandoffPage
+          determination={determination}
+          answers={answers}
+          onBack={() => {
+            setCurrentBlockIndex(blocks.length - 1);
+            setScreen('assess');
+          }}
+          onBackToAssessment={() => {
+            setCurrentBlockIndex(0);
+            setScreen('assess');
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -143,17 +172,19 @@ export const App: React.FC = () => {
 
     if (currentBlock.id === 'review') {
       return (
-        <ReviewPanel
-          determination={determination}
-          answers={answers}
-          blocks={blocks}
-          getFieldsForBlock={getFieldsForBlock}
-          onHandoff={() => setScreen('handoff')}
-          reviewerNotes={currentReviewerNotes}
-          onAddNote={currentAssessmentId ? handleAddNote : undefined}
-          onRemoveNote={currentAssessmentId ? handleRemoveNote : undefined}
-          assessmentId={currentAssessmentId}
-        />
+        <Suspense fallback={<DeferredContentFallback />}>
+          <LazyReviewPanel
+            determination={determination}
+            answers={answers}
+            blocks={blocks}
+            getFieldsForBlock={getFieldsForBlock}
+            onHandoff={() => setScreen('handoff')}
+            reviewerNotes={currentReviewerNotes}
+            onAddNote={currentAssessmentId ? handleAddNote : undefined}
+            onRemoveNote={currentAssessmentId ? handleRemoveNote : undefined}
+            assessmentId={currentAssessmentId}
+          />
+        </Suspense>
       );
     }
 
