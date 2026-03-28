@@ -171,7 +171,7 @@ function buildRelianceQualification(
     return 'Not suitable for reliance. Pathway-critical items remain unresolved on the current record.';
   }
   if (mergedIssueCount > 0) {
-    return `Limited reliance only. ${mergedIssueCount} open issue${mergedIssueCount === 1 ? '' : 's'} remain and should be closed before the record is used beyond preliminary review.`;
+    return `Limited reliance only. ${mergedIssueCount} open issue${mergedIssueCount === 1 ? '' : 's'} remain${mergedIssueCount === 1 ? 's' : ''} and should be closed before the record is used beyond preliminary review.`;
   }
   return 'Use only after qualified regulatory review and normal QMS controls are completed.';
 }

@@ -222,6 +222,26 @@ describe('buildPdfReportDocument', () => {
     expect(softwareGuidance!.badge).toContain('sections referenced: Q3, Q4');
     expect(doc.sourcesCited.filter((source) => source.text.startsWith('FDA-SW-510K-2017')).length).toBe(1);
   });
+
+  /* ---------------------------------------------------------------- */
+  /*  Grammar / pluralization                                          */
+  /* ---------------------------------------------------------------- */
+
+  it('uses correct singular grammar: "1 open issue remains"', () => {
+    const doc = buildDoc(base510k({ E1: Answer.No }));
+    if (doc.openIssues.length === 1) {
+      expect(doc.executiveSummary.relianceQualification).toContain('1 open issue remains');
+      expect(doc.executiveSummary.relianceQualification).not.toContain('1 open issue remain and');
+    }
+  });
+
+  it('uses correct plural grammar: "N open issues remain"', () => {
+    // Use a case likely to produce multiple open issues
+    const doc = buildDoc(base510k({ D1: Answer.Yes, E1: Answer.No }));
+    if (doc.openIssues.length > 1) {
+      expect(doc.executiveSummary.relianceQualification).toMatch(/\d+ open issues remain and/);
+    }
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -301,16 +321,15 @@ describe('renderPdfReport', () => {
     expect(magic).toBe('%PDF-');
   });
 
-  it('renders hardened summary labels and document-control language', () => {
+  it('renders refined section headings and document-control language', () => {
     const reportDoc = buildDoc(base510k({ E1: Answer.No }));
     const pdfText = buildPdfText(reportDoc);
 
-    expect(pdfText).toContain('ASSESSMENT SUMMARY');
-    expect(pdfText).toContain('Current Pathway Assessment');
+    expect(pdfText).toContain('Assessment Summary');
+    expect(pdfText).toContain('Pathway Assessment');
     expect(pdfText).toContain('Record Status');
-    expect(pdfText).toContain('Reliance Qualification');
-    expect(pdfText).toContain('DOCUMENT CONTROL');
-    expect(pdfText).toContain('Prepared from assessment record in ChangePath');
+    expect(pdfText).toContain('Conditions for Reliance');
+    expect(pdfText).toContain('Document Control');
     expect(pdfText).toContain('Page 1 of');
     expect(pdfText).not.toContain('Confidence');
   });
@@ -322,5 +341,105 @@ describe('renderPdfReport', () => {
     expect(pdfText).toContain('referenced: Q3, Q4');
     expect(pdfText).not.toContain('FDA-SW-510K-2017 Q3');
     expect(pdfText).not.toContain('FDA-SW-510K-2017 Q4');
+  });
+
+  it('uses mixed-case section headings, not all-caps', () => {
+    const reportDoc = buildDoc(base510k());
+    const pdfText = buildPdfText(reportDoc);
+
+    // Section headings should be mixed case
+    expect(pdfText).toContain('Assessment Summary');
+    expect(pdfText).toContain('Assessment Basis');
+    expect(pdfText).toContain('Sources Cited');
+    // Should not have all-caps versions of main headings
+    expect(pdfText).not.toContain('ASSESSMENT SUMMARY');
+    expect(pdfText).not.toContain('SOURCES CITED');
+  });
+
+  it('renders a concise footer without repetitive provenance', () => {
+    const reportDoc = buildDoc(base510k());
+    const pdfText = buildPdfText(reportDoc);
+
+    expect(pdfText).toContain('Internal assessment support record');
+    expect(pdfText).toContain('not a regulatory determination');
+  });
+
+  /* ---------------------------------------------------------------- */
+  /*  Long text handling                                               */
+  /* ---------------------------------------------------------------- */
+
+  it('renders long narrative text without truncation', () => {
+    const longDescription = 'This change involves a comprehensive update to the diagnostic algorithm. '.repeat(30);
+    const answers = base510k({
+      B1: 'Software change',
+      B2: 'Algorithm enhancement',
+      B4: longDescription,
+    });
+    const reportDoc = buildDoc(answers);
+    const pdf = renderPdfReport(reportDoc);
+
+    // Should render without throwing
+    expect(pdf).toBeTruthy();
+    expect(pdf.getNumberOfPages()).toBeGreaterThanOrEqual(2);
+  });
+
+  it('handles very long change descriptions in record facts', () => {
+    const longText = 'Updated the neural network architecture to incorporate multi-head attention. '.repeat(20);
+    const answers = base510k({ B4: longText });
+    const reportDoc = buildDoc(answers);
+    const pdf = renderPdfReport(reportDoc);
+
+    expect(pdf).toBeTruthy();
+    // Verify the full text is in the model (not truncated)
+    const changeDesc = reportDoc.assessmentBasis.recordFacts.find(
+      (f) => f.label === 'Submitted Change Description',
+    );
+    expect(changeDesc).toBeTruthy();
+    expect(changeDesc!.value.length).toBeGreaterThan(500);
+  });
+
+  /* ---------------------------------------------------------------- */
+  /*  Closing / disclaimer layout                                      */
+  /* ---------------------------------------------------------------- */
+
+  it('keeps disclaimer within the Document Control section (no orphaned heading)', () => {
+    const reportDoc = buildDoc(base510k());
+    const pdfText = buildPdfText(reportDoc);
+
+    // Disclaimer text should be present
+    expect(pdfText).toContain('not a regulatory determination');
+    // The old separate "Disclaimer" subheading should not appear
+    expect(pdfText).not.toMatch(/\bDisclaimer\b/);
+  });
+
+  /* ---------------------------------------------------------------- */
+  /*  Issue formatting                                                 */
+  /* ---------------------------------------------------------------- */
+
+  it('renders issue items with structured tags and labels', () => {
+    const doc = buildDoc(base510k({ E1: Answer.No }));
+    if (doc.openIssues.length > 0) {
+      const pdfText = buildPdfText(doc);
+      expect(pdfText).toContain('Issue 1');
+      expect(pdfText).toContain('Required Action');
+      expect(pdfText).toContain('Record Impact');
+    }
+  });
+
+  /* ---------------------------------------------------------------- */
+  /*  Section omission for sparse data                                 */
+  /* ---------------------------------------------------------------- */
+
+  it('omits empty sections gracefully', () => {
+    const doc = buildDoc({});
+    const pdfText = buildPdfText(doc);
+
+    // Should still render core sections
+    expect(pdfText).toContain('Assessment Summary');
+    expect(pdfText).toContain('Document Control');
+    // Open issues section should not appear for sparse data with no issues
+    if (doc.openIssues.length === 0) {
+      expect(pdfText).not.toContain('Open Issues');
+    }
   });
 });

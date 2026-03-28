@@ -230,7 +230,7 @@ export const buildAssessmentBasis = (
           ? ' The cumulative-change review did not indicate material drift from the cleared specification.'
           : '';
     items.push(
-      `${changeCount} change${changeCount === 1 ? '' : 's'} since the last submission were reported, so cumulative-change review was included in this assessment.${driftOutcome}`,
+      `${changeCount} change${changeCount === 1 ? '' : 's'} since the last submission ${changeCount === 1 ? 'was' : 'were'} reported, so cumulative-change review was included in this assessment.${driftOutcome}`,
     );
   }
 
