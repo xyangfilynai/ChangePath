@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { assessmentStore, type SavedAssessment } from '../lib/assessment-store';
 import { buildAssessmentName } from '../lib/assessment-metadata';
 import { storage } from '../lib/storage';
@@ -70,19 +70,61 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setSavedAssessments(assessmentStore.list());
   }, []);
 
+  const pendingSaveRef = useRef<{ answers: Answers; blockIndex: number } | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    if (workspaceSource !== 'draft') return;
+    if (workspaceSource !== 'draft') {
+      // Cancel any pending draft save when leaving draft mode
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      pendingSaveRef.current = null;
+      return;
+    }
 
     if (Object.keys(answers).length === 0) {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      pendingSaveRef.current = null;
       storage.clearSession();
       setHasSavedDraft(false);
       return;
     }
 
-    storage.saveAnswers(answers);
-    storage.saveBlockIndex(currentBlockIndex);
     setHasSavedDraft(true);
+    pendingSaveRef.current = { answers, blockIndex: currentBlockIndex };
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      if (pendingSaveRef.current) {
+        storage.saveAnswers(pendingSaveRef.current.answers);
+        storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
+        pendingSaveRef.current = null;
+      }
+      saveTimerRef.current = null;
+    }, 500);
   }, [answers, currentBlockIndex, workspaceSource]);
+
+  // Flush any pending debounced save on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (pendingSaveRef.current) {
+        storage.saveAnswers(pendingSaveRef.current.answers);
+        storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
+        pendingSaveRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setValidationErrors((prev) => (Object.keys(prev).length > 0 ? {} : prev));
