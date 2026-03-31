@@ -5,7 +5,7 @@ import { storage } from '../lib/storage';
 import type { Answers } from '../lib/assessment-engine';
 import { SAMPLE_CASES_BY_ID } from '../sample-cases';
 
-export type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
+export type Screen = 'dashboard' | 'assess' | 'handoff';
 type WorkspaceSource = 'draft' | 'library' | 'sample';
 
 interface DraftSnapshot {

@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { assessmentStore } from '../src/lib/assessment-store';
-import { feedbackService } from '../src/lib/feedback-service';
-import { createEmptyForm } from '../src/lib/feedback-types';
 import { PERSISTENCE_KEYS } from '../src/lib/persistence-keys';
 import { storage } from '../src/lib/storage';
 
@@ -107,17 +105,5 @@ describe('browser persistence', () => {
 
     expect(secondList).toHaveLength(1);
     expect(secondList).not.toBe(firstList);
-  });
-
-  it('recovers from corrupt feedback storage and appends the new submission', async () => {
-    localStorage.setItem(PERSISTENCE_KEYS.feedback, '{not valid json');
-
-    const result = await feedbackService.submit({
-      submittedAt: '2026-03-28T10:00:00.000Z',
-      formData: createEmptyForm(),
-    });
-
-    expect(result.ok).toBe(true);
-    expect(JSON.parse(localStorage.getItem(PERSISTENCE_KEYS.feedback) || '[]')).toHaveLength(1);
   });
 });

@@ -4,7 +4,7 @@ ChangePath is a Vite + React + TypeScript prototype for structured regulatory pa
 
 ## Repository Overview
 
-- `src/App.tsx`: top-level screen composition for the dashboard, assessment flow, feedback survey, and handoff workflow.
+- `src/App.tsx`: top-level screen composition for the dashboard, assessment flow, and handoff workflow.
 - `src/hooks/useAssessmentWorkspace.ts`: session orchestration for draft work, saved-library records, and source-controlled sample cases.
 - `src/hooks/useAssessmentFlow.ts`: block navigation, pathway-critical validation, and assessment-step progression.
 - `src/lib/assessment-engine/`: domain engine for question visibility, derived state, change taxonomy, and pathway determination.
@@ -68,7 +68,7 @@ Saved assessments are normalized on read so legacy or partially malformed stored
 
 - Engine-focused tests validate pathway logic, question visibility, cumulative change handling, and report generation.
 - UI workflow tests exercise the dashboard, assessment layout, review panel, and end-to-end interaction paths.
-- Persistence tests cover malformed browser storage, saved-assessment normalization, and feedback submission fallback behavior.
+- Persistence tests cover malformed browser storage and saved-assessment normalization.
 
 ## Contributor Guidance
 

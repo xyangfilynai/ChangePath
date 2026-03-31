@@ -23,9 +23,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 const LazyReviewPanel = lazy(() =>
   import('./components/ReviewPanel').then((module) => ({ default: module.ReviewPanel })),
 );
-const LazyFeedbackSurvey = lazy(() =>
-  import('./components/FeedbackSurvey').then((module) => ({ default: module.FeedbackSurvey })),
-);
 const LazyHandoffPage = lazy(() =>
   import('./components/HandoffPage').then((module) => ({ default: module.HandoffPage })),
 );
@@ -184,14 +181,6 @@ export const App: React.FC = () => {
         onDuplicateAssessment={handleDuplicateAssessment}
         onDeleteAssessment={handleDeleteAssessment}
       />
-    );
-  }
-
-  if (screen === 'feedback') {
-    return (
-      <Suspense fallback={<DeferredContentFallback fullScreen />}>
-        <LazyFeedbackSurvey onBack={() => setScreen('assess')} />
-      </Suspense>
     );
   }
 
