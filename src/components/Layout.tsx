@@ -92,6 +92,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           isReviewBlock={Boolean(isReviewBlock)}
           reviewReady={reviewReady}
           sidebarOpen={sidebarOpen}
+          onCloseSidebar={handleCloseSidebar}
         />
 
         <main

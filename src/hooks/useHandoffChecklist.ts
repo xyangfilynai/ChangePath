@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChecklistSection } from '../lib/handoff-checklist';
 
 export function useHandoffChecklist(sections: ChecklistSection[]) {
@@ -14,6 +14,12 @@ export function useHandoffChecklist(sections: ChecklistSection[]) {
   const checkedCount = useMemo(() => itemKeys.filter((key) => checks[key]).length, [checks, itemKeys]);
   const totalItems = itemKeys.length;
   const progressPercent = totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
+
+  useEffect(() => {
+    if (markedComplete && checkedCount !== totalItems) {
+      setMarkedComplete(false);
+    }
+  }, [checkedCount, markedComplete, totalItems]);
 
   const toggleCheck = (key: string) => {
     setChecks((previousChecks) => ({

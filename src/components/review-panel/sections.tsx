@@ -94,7 +94,7 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
 
       <button onClick={onExport} disabled={isExporting} className="btn-primary" aria-busy={isExporting}>
         <Icon name="printer" size={14} color="#fff" />
-        Export Report
+        {isExporting ? 'Exporting…' : 'Export Report'}
       </button>
     </div>
 

@@ -131,10 +131,11 @@ interface LayoutSidebarProps {
   isReviewBlock: boolean;
   reviewReady: boolean;
   sidebarOpen: boolean;
+  onCloseSidebar: () => void;
 }
 
 export const LayoutSidebar: React.FC<LayoutSidebarProps> = React.memo(
-  ({ progress, currentMissingRequired, isReviewBlock, reviewReady, sidebarOpen }) => {
+  ({ progress, currentMissingRequired, isReviewBlock, reviewReady, sidebarOpen, onCloseSidebar }) => {
     const {
       blocks,
       currentBlockIndex,
@@ -230,7 +231,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = React.memo(
               key={block.id}
               block={block}
               isCurrent={index === currentBlockIndex}
-              onSelect={() => onBlockSelect(index)}
+              onSelect={() => {
+                onBlockSelect(index);
+                onCloseSidebar();
+              }}
               answered={answeredCounts[block.id] || 0}
               total={totalCounts[block.id] || 0}
               requiredAnswered={requiredAnsweredCounts[block.id] || 0}

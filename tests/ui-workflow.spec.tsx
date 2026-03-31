@@ -268,6 +268,56 @@ describe('UI workflow', () => {
     expect(screen.queryByPlaceholderText(/working title/i)).not.toBeInTheDocument();
   });
 
+  it('closes the mobile navigation overlay after a block is selected', () => {
+    const onBlockSelect = vi.fn();
+    const blocks: Block[] = [
+      {
+        id: 'A',
+        label: 'Device under assessment',
+        shortLabel: 'Device profile',
+        icon: 'shield',
+      },
+      {
+        id: 'B',
+        label: 'Change details',
+        shortLabel: 'Change details',
+        icon: 'layers',
+      },
+    ];
+
+    const { container } = renderWithLayoutContext(
+      <Layout>
+        <div>Assessment body</div>
+      </Layout>,
+      {
+        blocks,
+        currentBlockIndex: 0,
+        onBlockSelect,
+        completedBlocks: new Set(),
+        answeredCounts: { A: 1, B: 0 },
+        totalCounts: { A: 2, B: 2 },
+        requiredAnsweredCounts: { A: 1, B: 0 },
+        requiredCounts: { A: 1, B: 1 },
+        overallAnswered: 1,
+        overallTotal: 4,
+        overallRequiredAnswered: 1,
+        overallRequiredTotal: 2,
+        caseSummary: [],
+      },
+    );
+
+    const mobileMenuButton = container.querySelector('.mobile-menu-btn');
+    expect(mobileMenuButton).not.toBeNull();
+
+    fireEvent.click(mobileMenuButton as HTMLButtonElement);
+    expect(container.querySelector('.sidebar-overlay')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Change details/i }));
+
+    expect(onBlockSelect).toHaveBeenCalledWith(1);
+    expect(container.querySelector('.sidebar-overlay')).toBeNull();
+  });
+
   it('surfaces PCCP recommendation in the review hero and removes export/save actions', () => {
     const answers = {
       A1: '510(k)',
