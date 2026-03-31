@@ -49,8 +49,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     assessmentId,
   });
 
-  const showReviewerNotes = Boolean(onAddNote || (reviewerNotes && reviewerNotes.length > 0));
-
   return (
     <div
       className="animate-fade-in-up"
@@ -65,9 +63,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       <ReviewDecisionSupportSection data={data} />
       <ReviewOpenIssuesSection data={data} />
       <ReviewSourcesAndPreparationSection data={data} determination={determination} onHandoff={onHandoff} />
-      {showReviewerNotes && (
-        <ReviewReviewerNotesSection reviewerNotes={reviewerNotes} onAddNote={onAddNote} onRemoveNote={onRemoveNote} />
-      )}
+      <ReviewReviewerNotesSection reviewerNotes={reviewerNotes} onAddNote={onAddNote} onRemoveNote={onRemoveNote} />
     </div>
   );
 };

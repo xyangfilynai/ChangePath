@@ -404,6 +404,41 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Response Details')).not.toBeInTheDocument();
   });
 
+  it('shows a save-to-library note hint when reviewer notes are not yet available', () => {
+    const answers = {
+      A1: '510(k)',
+      A1b: 'K123456',
+      A1c: 'v4.2 cleared build',
+      A1d: 'Authorized IFU summary',
+      A2: 'No',
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B3: 'No',
+      C1: 'No',
+      C2: 'No',
+      C3: 'No',
+      C4: 'No',
+      C5: 'No',
+      C6: 'No',
+    } as const;
+
+    render(
+      <ReviewPanel
+        determination={computeDetermination(answers)}
+        answers={answers}
+        blocks={[]}
+        getFieldsForBlock={() => []}
+        reviewerNotes={[]}
+      />,
+    );
+
+    expect(screen.getByText('Reviewer Notes')).toBeInTheDocument();
+    expect(screen.getByText(/reviewer notes are attached to saved library records/i)).toBeInTheDocument();
+    expect(screen.getByText(/save this assessment to the library to add reviewer notes/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Reviewer name')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Add reviewer note')).not.toBeInTheDocument();
+  });
+
   it('lets reviewers add notes from the extracted review notes section', () => {
     const onAddNote = vi.fn();
     const answers = {

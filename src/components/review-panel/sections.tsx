@@ -449,6 +449,9 @@ export const ReviewReviewerNotesSection: React.FC<ReviewReviewerNotesSectionProp
 }) => {
   const [noteAuthor, setNoteAuthor] = useState('');
   const [noteText, setNoteText] = useState('');
+  const notes = reviewerNotes || [];
+  const hasReviewerNotes = notes.length > 0;
+  const isEditable = Boolean(onAddNote);
 
   return (
     <SectionCard>
@@ -457,12 +460,21 @@ export const ReviewReviewerNotesSection: React.FC<ReviewReviewerNotesSectionProp
       </div>
 
       <div className="text-detail" style={{ marginBottom: 12 }}>
-        Reviewer-entered comments for this assessment record.
+        {isEditable
+          ? 'Reviewer-entered comments for this saved assessment record.'
+          : 'Reviewer notes are attached to saved library records.'}
       </div>
 
-      {reviewerNotes && reviewerNotes.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: onAddNote ? 14 : 0 }}>
-          {reviewerNotes.map((note) => (
+      {!hasReviewerNotes && !isEditable && (
+        <div className="card-sm" style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+          Save this assessment to the library to add reviewer notes. Notes added to saved library records are preserved
+          with the record and included in report export.
+        </div>
+      )}
+
+      {hasReviewerNotes && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: isEditable ? 14 : 0 }}>
+          {notes.map((note) => (
             <div key={note.id} className="card-sm">
               <div
                 style={{
@@ -479,7 +491,7 @@ export const ReviewReviewerNotesSection: React.FC<ReviewReviewerNotesSectionProp
                   <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>
                     {new Date(note.timestamp).toLocaleString()}
                   </span>
-                  {onRemoveNote && (
+                  {isEditable && onRemoveNote && (
                     <button
                       onClick={() => onRemoveNote(note.id)}
                       style={{
@@ -513,7 +525,7 @@ export const ReviewReviewerNotesSection: React.FC<ReviewReviewerNotesSectionProp
         </div>
       )}
 
-      {onAddNote && (
+      {isEditable && onAddNote && (
         <div style={{ display: 'grid', gap: 10 }}>
           <input
             type="text"
