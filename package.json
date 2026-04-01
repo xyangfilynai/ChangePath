@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "access:keypair": "node scripts/generate-keypair.mjs",
+    "access:manage": "node scripts/access-toolkit.mjs",
     "access:pass": "node scripts/generate-pass.mjs",
     "dev": "vite",
     "build": "vite build",

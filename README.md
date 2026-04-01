@@ -15,6 +15,7 @@ ChangePath is a Vite + React + TypeScript prototype for structured regulatory pa
 - `src/components/`: assessment layout, dashboard, question rendering, review panel, and handoff UI.
 - `src/sample-cases/`: source-controlled scenarios used for demos and regression coverage.
 - `scripts/`: local-only admin tooling for generating access-pass keypairs and signed passes.
+- `.keys/`: local-only, gitignored operator materials such as the private key and optional pass registry.
 - `tests/`: Vitest and Testing Library coverage for engine logic, UI workflows, persistence, and report output.
 
 ## Local Development
@@ -27,6 +28,11 @@ ChangePath is a Vite + React + TypeScript prototype for structured regulatory pa
 Available scripts:
 
 - `npm run access:keypair`: generate a local Ed25519 signing keypair, write the private key to `.keys/`, and update the bundled public key used by the app.
+- `npm run access:manage -- status`: show local key, bundled-public-key, and registry status.
+- `npm run access:manage -- issue --kind temporary --label "QA tester"`: issue and record a temporary pass in the local registry.
+- `npm run access:manage -- list`: list locally recorded passes.
+- `npm run access:manage -- show --pass-id partner-001`: show a recorded pass and its raw pass string.
+- `npm run access:manage -- retire --pass-id partner-001 --reason "Superseded"`: retire a pass in the local registry only.
 - `npm run access:pass -- --kind temporary --label "QA tester"`: generate a signed temporary access pass using the local private key.
 - `npm run access:pass -- --kind permanent --label "Design partner"`: generate a signed permanent access pass using the local private key.
 - `npm run dev`: start the Vite dev server.
@@ -85,6 +91,21 @@ ChangePath now includes a local-only access gate that runs before the assessment
 
 The keypair script also updates `src/access/public-key.ts` so the frontend can verify signed passes offline. The `.keys/` directory is gitignored and is intended for local development and controlled distribution only.
 
+### Operator toolkit
+
+If you want a lighter-weight management flow than hand-running individual commands, use the local operator toolkit:
+
+```bash
+npm run access:manage -- status
+npm run access:manage -- issue --kind temporary --label "QA tester"
+npm run access:manage -- list
+npm run access:manage -- show --pass-id partner-001
+```
+
+The toolkit keeps a local registry at `.keys/access-pass-registry.json`. That registry is gitignored and can store the raw pass strings you generated so you can look them up later without regenerating them.
+
+Important: the registry is sensitive. Anyone who gets a valid raw pass string can use it to unlock a local copy until it expires or you rotate the keypair.
+
 ### Pass format
 
 The app accepts a single pasted string in this envelope format:
@@ -107,10 +128,22 @@ Signatures are generated with an Ed25519 private key outside the app. The SPA ve
 Temporary pass:
 
 ```bash
+npm run access:manage -- issue --kind temporary --label "QA tester"
+```
+
+You can still generate a one-off pass without recording it:
+
+```bash
 npm run access:pass -- --kind temporary --label "QA tester"
 ```
 
 Permanent pass:
+
+```bash
+npm run access:manage -- issue --kind permanent --label "Design partner"
+```
+
+Or generate a one-off permanent pass without recording it:
 
 ```bash
 npm run access:pass -- --kind permanent --label "Design partner"
@@ -121,6 +154,19 @@ Optional flags:
 - `--issued-at "2026-04-01T00:00:00.000Z"` to generate deterministic test passes.
 - `--pass-id "partner-001"` to set your own identifier.
 - `--private-key "/path/to/access-pass-private-key.pem"` to use a non-default key location.
+- `--note "pilot cohort"` to attach a local note when using `access:manage issue`.
+
+### Local retirement tracking
+
+The operator toolkit supports:
+
+```bash
+npm run access:manage -- retire --pass-id partner-001 --reason "Superseded"
+```
+
+That marks the pass as retired in your local registry so it no longer looks active in your operator view.
+
+It does not remotely revoke already shared passes. Because the system is offline-only, a copied pass remains valid until it expires or you rotate the signing keypair.
 
 ### Temporary expiry rules
 

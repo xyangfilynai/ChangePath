@@ -1,13 +1,6 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { randomUUID, webcrypto } from 'node:crypto';
+import { issueAccessPass, parseArgs, resolvePrivateKeyPath } from './access-pass-lib.mjs';
 
-const SUPPORTED_ACCESS_PASS_VERSION = 1;
-const TEMPORARY_ACCESS_PASS_LIFETIME_MS = 14 * 24 * 60 * 60 * 1000;
 const REQUIRED_ARGS = ['kind', 'label'];
-const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(scriptDir, '..');
 
 const usage = `Usage:
   npm run access:pass -- --kind temporary --label "QA tester"
@@ -21,49 +14,7 @@ Options:
   --private-key "/absolute/or/relative/path/to/private-key.pem"
 `;
 
-const parseArgs = (argv) => {
-  const args = {};
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const current = argv[index];
-    if (!current.startsWith('--')) {
-      continue;
-    }
-
-    const [flag, inlineValue] = current.slice(2).split('=');
-    const nextValue = inlineValue ?? argv[index + 1];
-    if (inlineValue === undefined) {
-      index += 1;
-    }
-    args[flag] = nextValue;
-  }
-
-  return args;
-};
-
-const encodeBase64Url = (value) =>
-  Buffer.from(value)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
-
-const decodePem = (pem, beginLabel, endLabel) => {
-  const body = pem.replace(beginLabel, '').replace(endLabel, '').replace(/\s+/g, '');
-  return Buffer.from(body, 'base64');
-};
-
-const serializeAccessPassPayload = (payload) =>
-  JSON.stringify({
-    version: payload.version,
-    passId: payload.passId,
-    label: payload.label,
-    kind: payload.kind,
-    issuedAt: payload.issuedAt,
-    expiresAt: payload.expiresAt,
-  });
-
-const args = parseArgs(process.argv.slice(2));
+const { options: args } = parseArgs(process.argv.slice(2));
 
 for (const key of REQUIRED_ARGS) {
   if (!args[key]) {
@@ -84,27 +35,12 @@ if (!Number.isFinite(Date.parse(issuedAt))) {
   process.exit(1);
 }
 
-const privateKeyPath = path.resolve(repoRoot, args['private-key'] ?? path.join('.keys', 'access-pass-private-key.pem'));
-const privateKeyPem = await readFile(privateKeyPath, 'utf8');
-const privateKeyBytes = decodePem(privateKeyPem, '-----BEGIN PRIVATE KEY-----', '-----END PRIVATE KEY-----');
-
-const privateKey = await webcrypto.subtle.importKey('pkcs8', privateKeyBytes, 'Ed25519', false, ['sign']);
-
-const payload = {
-  version: SUPPORTED_ACCESS_PASS_VERSION,
-  passId: args['pass-id'] ?? randomUUID(),
-  label: args.label,
+const { rawPass: passString } = await issueAccessPass({
   kind: args.kind,
+  label: args.label,
+  passId: typeof args['pass-id'] === 'string' ? args['pass-id'] : undefined,
   issuedAt,
-  expiresAt:
-    args.kind === 'temporary'
-      ? new Date(Date.parse(issuedAt) + TEMPORARY_ACCESS_PASS_LIFETIME_MS).toISOString()
-      : null,
-};
-
-const payloadJson = serializeAccessPassPayload(payload);
-const payloadBytes = Buffer.from(payloadJson, 'utf8');
-const signature = await webcrypto.subtle.sign('Ed25519', privateKey, payloadBytes);
-const passString = `${encodeBase64Url(payloadBytes)}.${encodeBase64Url(Buffer.from(signature))}`;
+  privateKeyPath: resolvePrivateKeyPath(typeof args['private-key'] === 'string' ? args['private-key'] : undefined),
+});
 
 console.log(passString);
