@@ -3,7 +3,7 @@
  * Keep the private key outside the frontend repo; only the public key belongs here.
  */
 export const ACCESS_PASS_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAs0W4G7G0VDtORoL1EhtYF0TbtsGosvZ4j7vFR6yMWGA=
+MCowBQYDK2VwAyEANqDzaNat+zUlm3Em7eihzddbldh8zYrT7GhrRJ004q0=
 -----END PUBLIC KEY-----`;
 
 export const hasConfiguredAccessPassPublicKey = (
