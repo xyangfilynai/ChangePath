@@ -48,8 +48,7 @@ export const PassEntryScreen: React.FC<PassEntryScreenProps> = ({ notice, isSubm
         <div style={{ display: 'grid', gap: 8 }}>
           <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>Access pass required</h1>
           <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            Paste a signed access pass to unlock this device. Verification happens locally in the browser, with no
-            account, no signup, and no backend validation.
+            Paste a signed access pass to unlock the application.
           </p>
         </div>
 
@@ -127,7 +126,7 @@ export const PassEntryScreen: React.FC<PassEntryScreenProps> = ({ notice, isSubm
             }}
           >
             <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 13, lineHeight: 1.5 }}>
-              Temporary passes expire 14 days after issue, not after first open.
+              Temporary passes expire 14 days after issue.
             </p>
             <button
               type="submit"
