@@ -3,10 +3,6 @@ import react from '@vitejs/plugin-react';
 
 const manualChunkGroups: Array<{ name: string; patterns: string[] }> = [
   {
-    name: 'feedback',
-    patterns: ['/src/components/FeedbackSurvey.tsx'],
-  },
-  {
     name: 'handoff',
     patterns: [
       '/src/components/HandoffPage.tsx',

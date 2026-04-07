@@ -1,5 +1,6 @@
 import { Answer, AuthPathway, Pathway, Answers, answerIsOneOf } from './types';
 import { CATEGORY_POST_MARKET, CHANGE_MONITORING_THRESHOLD_PREFIX } from './changeTaxonomy';
+import { parseNumericAnswer } from '../utils';
 
 type PathwayValue = (typeof Pathway)[keyof typeof Pathway];
 
@@ -148,6 +149,9 @@ const selectFirstMatchingRule = <Facts extends object, Outcome>(
 ): DeclarativeRule<Facts, Outcome> => {
   const matchedRule = rules.find((rule) => matchesCondition(facts, rule.when));
   if (!matchedRule) {
+    // Unreachable: the final pathway rule uses an unconditional all() match as a
+    // catch-all fallback, so at least one rule will always match. This throw exists
+    // only as a defensive safeguard in case rules are inadvertently reordered.
     throw new Error('No declarative determination rule matched the current fact set.');
   }
   return matchedRule;
@@ -204,7 +208,8 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     !isBugFix &&
     allUSSignificanceAnswersNo;
 
-  const hasChangesSinceLastSub = !!ans.A8 && Number.parseInt(String(ans.A8), 10) > 0;
+  const changeCount = parseNumericAnswer(ans.A8);
+  const hasChangesSinceLastSub = changeCount !== null && changeCount > 0;
   const cumulativeEscalation =
     isNonPMA && hasChangesSinceLastSub && (ans.C10 === Answer.Yes || ans.C10 === Answer.Uncertain);
   const seNotSupportable = isNonPMA && hasChangesSinceLastSub && ans.C11 === Answer.No;

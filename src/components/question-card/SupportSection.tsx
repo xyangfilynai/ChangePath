@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { Icon } from '../Icon';
 import { HelpTextWithLinks, AuthorityTag, GuidanceRef } from '../ui';
 import { NoteBox } from './NoteBox';
+import { hasSupportingContext } from './field-support';
 import type { AssessmentField } from '../../lib/assessment-engine';
 
 interface FieldReasoning {
@@ -28,18 +29,7 @@ interface SupportSectionProps {
 export const SupportSection: React.FC<SupportSectionProps> = ({ field, qReasoning }) => {
   const [showSupport, setShowSupport] = useState(false);
 
-  const hasSupportingContext = Boolean(
-    field.help ||
-    qReasoning ||
-    field.mlguidance ||
-    field.infoNote ||
-    field.classificationGuidance ||
-    field.selectedTypeData ||
-    field.autoWarn ||
-    field.boundaryNote,
-  );
-
-  if (!hasSupportingContext) return null;
+  if (!hasSupportingContext(field, qReasoning)) return null;
 
   return (
     <div style={{ marginTop: 'var(--space-sm)' }}>

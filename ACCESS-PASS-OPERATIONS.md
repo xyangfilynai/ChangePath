@@ -318,10 +318,44 @@ Check production build:
 npm run build
 ```
 
+## Revoking Access (Key Rotation as Revocation)
+
+There is no per-pass remote revocation mechanism. A signed pass remains
+cryptographically valid until the public key it was signed against is no longer
+bundled in the deployed application. To revoke **all** outstanding passes:
+
+1. Rotate the keypair:
+
+```bash
+npm run access:keypair
+```
+
+2. Commit, push, and redeploy:
+
+```bash
+git add src/access/public-key.ts
+git commit -m "Rotate access pass keypair to revoke all outstanding passes"
+git push origin main
+```
+
+3. After the new build deploys, all previously issued passes will fail
+   signature verification on next app load and the gate will relock.
+
+4. Reissue new passes to users who should retain access:
+
+```bash
+npm run access:manage -- issue --kind temporary --label "QA tester"
+npm run access:manage -- issue --kind permanent --label "Design partner"
+```
+
+To limit the blast radius of a future revocation, prefer **temporary passes**
+(14-day expiry) over permanent passes whenever practical. Temporary passes
+self-expire without requiring a key rotation.
+
 ## Important Limitations
 
 - This is an offline access gate, not full DRM
-- There is no remote revocation
+- There is no per-pass remote revocation; the only revocation mechanism is key rotation plus redeploy
 - Deleting or retiring a registry entry does not invalidate copies already shared
 - The strongest reset is key rotation plus redeploy plus reissuing passes
 
