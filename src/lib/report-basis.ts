@@ -1,4 +1,5 @@
 import { Answer, AuthPathway, computeDerivedState, type Answers, type DeterminationResult } from './assessment-engine';
+import { parseNumericAnswer } from './utils';
 
 export interface ReportNarrativeView {
   headlineReason: string;
@@ -17,11 +18,7 @@ export interface AssessmentBasisView {
   systemBasis: string[];
 }
 
-const getChangeCount = (answers: Answers): number | null => {
-  if (answers.A8 === undefined || answers.A8 === null || answers.A8 === '') return null;
-  const parsed = Number.parseInt(String(answers.A8), 10);
-  return Number.isFinite(parsed) ? parsed : null;
-};
+const getChangeCount = (answers: Answers): number | null => parseNumericAnswer(answers.A8);
 
 const getTextValue = (value: unknown): { value: string; isMissing: boolean } => {
   if (typeof value === 'string' && value.trim()) {

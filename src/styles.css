@@ -483,6 +483,15 @@ a:hover {
   color: var(--color-danger);
 }
 
+/* Interactive card hover (replaces inline onMouseEnter/onMouseLeave handlers) */
+.action-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-load:hover {
+  background: var(--color-primary-hover);
+}
+
 /* Badge / pill */
 .pill {
   display: inline-flex;

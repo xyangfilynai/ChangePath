@@ -115,6 +115,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
   <button
     onClick={onClick}
     data-testid={dataTestId}
+    className="action-card"
     style={{
       display: 'flex',
       alignItems: 'flex-start',
@@ -127,12 +128,6 @@ const ActionCard: React.FC<ActionCardProps> = ({
       textAlign: 'left',
       cursor: 'pointer',
       transition: 'all var(--transition-fast)',
-    }}
-    onMouseEnter={(event) => {
-      event.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-    }}
-    onMouseLeave={(event) => {
-      event.currentTarget.style.boxShadow = 'none';
     }}
   >
     <div
@@ -535,6 +530,7 @@ export const SavedAssessmentsSection: React.FC<SavedAssessmentsSectionProps> = (
                   {onLoadAssessment && (
                     <button
                       onClick={() => onLoadAssessment(assessment.id)}
+                      className="btn-load"
                       style={{
                         padding: '6px 12px',
                         borderRadius: 4,
@@ -545,12 +541,6 @@ export const SavedAssessmentsSection: React.FC<SavedAssessmentsSectionProps> = (
                         fontWeight: 600,
                         cursor: 'pointer',
                         transition: 'background var(--transition-fast)',
-                      }}
-                      onMouseEnter={(event) => {
-                        event.currentTarget.style.background = 'var(--color-primary-hover)';
-                      }}
-                      onMouseLeave={(event) => {
-                        event.currentTarget.style.background = 'var(--color-primary)';
                       }}
                     >
                       Open

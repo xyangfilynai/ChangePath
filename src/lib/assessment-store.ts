@@ -211,7 +211,13 @@ function saveAll(assessments: SavedAssessment[]): void {
   rebuildIndex(assessments);
 }
 
-/** Exposed for tests only — forces the next loadAll() to re-read localStorage. */
+/**
+ * Force the next loadAll() to re-read localStorage.
+ *
+ * @internal Intended for tests and the access-storage cleanup path only.
+ * Do not call from general application code — the write-through cache is
+ * kept consistent by saveAll() during normal operation.
+ */
 export function _invalidateCache(): void {
   _cache = null;
   _indexById = null;

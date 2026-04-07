@@ -11,6 +11,7 @@ import {
   TextInput,
   NumericInput,
   SupportSection,
+  hasSupportingContext,
 } from './question-card';
 
 /* ------------------------------------------------------------------ */
@@ -53,33 +54,17 @@ interface QuestionCardProps {
   hasValidationError?: boolean;
 }
 
+/**
+ * Generic shallow-equal for AssessmentField objects.
+ * Compares all own enumerable keys so it stays correct automatically
+ * when new fields are added to the AssessmentField interface.
+ */
 function areFieldsShallowEqual(a: AssessmentField, b: AssessmentField): boolean {
   if (a === b) return true;
-  return (
-    a.id === b.id &&
-    a.q === b.q &&
-    a.type === b.type &&
-    a.skip === b.skip &&
-    a.sectionDivider === b.sectionDivider &&
-    a.label === b.label &&
-    a.sublabel === b.sublabel &&
-    a.icon === b.icon &&
-    a.help === b.help &&
-    a.pathwayCritical === b.pathwayCritical &&
-    a.critical === b.critical &&
-    a.dynamic === b.dynamic &&
-    a.disabled === b.disabled &&
-    a.infoNote === b.infoNote &&
-    a.autoWarn === b.autoWarn &&
-    a.forcedValue === b.forcedValue &&
-    a.mlguidance === b.mlguidance &&
-    a.draftRef === b.draftRef &&
-    a.classificationGuidance === b.classificationGuidance &&
-    a.boundaryNote === b.boundaryNote &&
-    a.options === b.options &&
-    a.consequencePreview === b.consequencePreview &&
-    a.selectedTypeData === b.selectedTypeData
-  );
+  const keysA = Object.keys(a) as (keyof AssessmentField)[];
+  const keysB = Object.keys(b) as (keyof AssessmentField)[];
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => Object.is(a[key], b[key]));
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = React.memo(
@@ -160,16 +145,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(
       ? value.length > 0
       : value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '');
 
-    const hasSupportingContext = Boolean(
-      field.help ||
-      qReasoning ||
-      field.mlguidance ||
-      field.infoNote ||
-      field.classificationGuidance ||
-      field.selectedTypeData ||
-      field.autoWarn ||
-      field.boundaryNote,
-    );
+    const hasSupport = hasSupportingContext(field, qReasoning);
 
     // Commit text value on blur
     const commitText = () => {
@@ -438,9 +414,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(
           <div
             style={{
               marginBottom:
-                hasSupportingContext || Boolean(field.consequencePreview) || field.selectedTypeData
-                  ? 'var(--space-md)'
-                  : 0,
+                hasSupport || Boolean(field.consequencePreview) || field.selectedTypeData ? 'var(--space-md)' : 0,
             }}
           >
             {renderInput()}
