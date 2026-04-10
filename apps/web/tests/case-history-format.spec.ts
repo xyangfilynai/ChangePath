@@ -47,6 +47,36 @@ describe('case history formatting', () => {
     );
   });
 
+  it('reconstructs changed answers for legacy assessment audit events', () => {
+    const rows = getAuditDetailRows({
+      ...BASE_EVENT,
+      entityType: 'assessment_response_set',
+      action: 'update',
+      reason: null,
+      beforeJson: {
+        answersJson: {
+          A1: '510(k)',
+          B3: 'No',
+          E1: 'Yes',
+        },
+      },
+      afterJson: {
+        answersJson: {
+          A1: 'PMA',
+          B3: 'No',
+          E1: 'Uncertain',
+        },
+      },
+    });
+
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { label: 'A1', before: '510(k)', after: 'PMA' },
+        { label: 'E1', before: 'Yes', after: 'Uncertain' },
+      ]),
+    );
+  });
+
   it('summarizes case field changes', () => {
     const rows = getAuditDetailRows({
       ...BASE_EVENT,

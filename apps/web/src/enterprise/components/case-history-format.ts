@@ -81,6 +81,53 @@ function formatCompleteness(value: unknown): string | null {
   return null;
 }
 
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+
+  if (isRecord(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function readAnswers(value: unknown): Record<string, unknown> | null {
+  if (!isRecord(value)) return null;
+  return isRecord(value.answersJson) ? value.answersJson : null;
+}
+
+function buildAnswerDiffRows(
+  beforeAnswers: Record<string, unknown> | null,
+  afterAnswers: Record<string, unknown> | null,
+): AuditDetailRow[] {
+  if (!beforeAnswers || !afterAnswers) return [];
+
+  const changedKeys = Array.from(new Set([...Object.keys(beforeAnswers), ...Object.keys(afterAnswers)]))
+    .filter((key) => stableStringify(beforeAnswers[key]) !== stableStringify(afterAnswers[key]))
+    .sort();
+
+  const visibleKeys = changedKeys.slice(0, 6);
+  const rows: AuditDetailRow[] = visibleKeys.map((key) => ({
+    label: key,
+    before: formatPrimitive(beforeAnswers[key]),
+    after: formatPrimitive(afterAnswers[key]),
+  }));
+
+  if (changedKeys.length > visibleKeys.length) {
+    rows.push({
+      label: 'Additional changes',
+      after: `${changedKeys.length - visibleKeys.length} more field${changedKeys.length - visibleKeys.length === 1 ? '' : 's'}`,
+    });
+  }
+
+  return rows;
+}
+
 function pickCaseSnapshot(value: unknown): Record<string, unknown> | null {
   if (!isRecord(value)) return null;
   return {
@@ -132,6 +179,8 @@ function diffRows(
 function assessmentRows(event: HistoryEvent): AuditDetailRow[] {
   const before = isRecord(event.beforeJson) ? event.beforeJson : null;
   const after = isRecord(event.afterJson) ? event.afterJson : null;
+  const beforeAnswers = readAnswers(before);
+  const afterAnswers = readAnswers(after);
 
   const rows: AuditDetailRow[] = [];
   const beforePathway = before ? formatPrimitive(before.pathway) : null;
@@ -143,7 +192,10 @@ function assessmentRows(event: HistoryEvent): AuditDetailRow[] {
   const changedFieldIds = Array.isArray(after?.changedFieldIds)
     ? after.changedFieldIds.filter((value): value is string => typeof value === 'string')
     : [];
-  if (changedFieldIds.length > 0) {
+  const answerDiffRows = buildAnswerDiffRows(beforeAnswers, afterAnswers);
+  if (answerDiffRows.length > 0) {
+    rows.push(...answerDiffRows);
+  } else if (changedFieldIds.length > 0) {
     rows.push({ label: 'Changed fields', after: changedFieldIds.join(', ') });
   }
 
@@ -167,10 +219,10 @@ function assessmentRows(event: HistoryEvent): AuditDetailRow[] {
     });
   }
 
-  if (rows.length === 0 && after && isRecord(after.answersJson)) {
+  if (rows.length === 0 && afterAnswers) {
     rows.push({
       label: 'Captured answers',
-      after: `${Object.keys(after.answersJson).length} fields`,
+      after: `${Object.keys(afterAnswers).length} fields`,
     });
   }
 
