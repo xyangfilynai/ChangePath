@@ -13,5 +13,11 @@
       "includeFiles": "node_modules/.prisma/client/**",
       "maxDuration": 60
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/:path((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

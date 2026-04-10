@@ -193,6 +193,7 @@ export function useSaveAssessment(caseId: string) {
       // without needing a separate fetch.
       qc.setQueryData(['assessment', caseId], data);
       qc.invalidateQueries({ queryKey: ['cases', caseId] });
+      qc.invalidateQueries({ queryKey: ['case-history', caseId] });
     },
   });
 }
