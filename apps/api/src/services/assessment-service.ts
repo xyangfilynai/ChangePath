@@ -27,6 +27,22 @@ export class AssessmentConflictError extends Error {
 const toJsonValue = (value: unknown): Prisma.InputJsonValue =>
   value as Prisma.InputJsonValue;
 
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
 export async function getAssessment(caseId: string, organizationId: string) {
   // Verify case belongs to org
   const changeCase = await prisma.changeCase.findFirst({
@@ -45,6 +61,10 @@ export interface SaveAssessmentInput {
   delta?: Record<string, AnswerValue>;
   /** Optional full snapshot — used for initial save and reconciliation fallbacks. */
   answersJson?: Record<string, AnswerValue>;
+  /** Optional client-side provisional derived state for discrepancy logging. */
+  clientDerivedStateJson?: Record<string, unknown>;
+  /** Optional client-side provisional engine output for discrepancy logging. */
+  clientEngineOutputJson?: Record<string, unknown>;
   /**
    * Expected `updated_at` of the latest assessment row, as observed by the
    * client. If supplied and stale, the save is rejected with an
@@ -110,6 +130,10 @@ export async function saveAssessment(
   // Run authoritative engine execution
   const { derivedState, determination, completenessStatus } =
     executeEngine(cleanedAnswers);
+  const clientServerDiscrepancy =
+    input.clientEngineOutputJson !== undefined &&
+    (stableStringify(input.clientEngineOutputJson) !== stableStringify(determination) ||
+      stableStringify(input.clientDerivedStateJson ?? null) !== stableStringify(derivedState));
 
   // Upsert assessment
   const assessment = existingAssessment
@@ -159,6 +183,27 @@ export async function saveAssessment(
     afterJson: { answersJson: toJsonValue(cleanedAnswers) },
     performedByUserId: userId,
   });
+
+  if (clientServerDiscrepancy) {
+    await createAuditEvent({
+      organizationId,
+      caseId,
+      entityType: 'assessment_reconciliation',
+      entityId: assessment.id,
+      action: 'discrepancy_detected',
+      beforeJson: {
+        clientDerivedStateJson: input.clientDerivedStateJson ?? null,
+        clientEngineOutputJson: input.clientEngineOutputJson ?? null,
+      },
+      afterJson: {
+        answersJson: cleanedAnswers,
+        serverDerivedStateJson: derivedState,
+        serverEngineOutputJson: determination,
+      },
+      performedByUserId: userId,
+      reason: 'Client provisional result differed from server authoritative execution',
+    });
+  }
 
   return assessment;
 }

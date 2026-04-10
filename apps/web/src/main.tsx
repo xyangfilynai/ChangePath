@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './styles.css';
+import { AuthenticatedLayout } from './auth/AuthenticatedLayout';
+import { LoginPage } from './auth/LoginPage';
 import { PortfolioDashboard } from './enterprise/pages/PortfolioDashboard';
 import { CreateCasePage } from './enterprise/pages/CreateCasePage';
 import { CaseDetailPage } from './enterprise/pages/CaseDetailPage';
@@ -22,12 +24,15 @@ root.render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<PortfolioDashboard />} />
-          <Route path="/cases/new" element={<CreateCasePage />} />
-          <Route path="/cases/:id" element={<CaseDetailPage />} />
-          {/* TODO: Add routes for products management */}
-          {/* TODO: Add routes for organization settings */}
-          {/* TODO: Add routes for evidence uploads, reviews, approvals, exports */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<AuthenticatedLayout />}>
+            <Route path="/" element={<PortfolioDashboard />} />
+            <Route path="/cases/new" element={<CreateCasePage />} />
+            <Route path="/cases/:id" element={<CaseDetailPage />} />
+            {/* TODO: Add routes for products management */}
+            {/* TODO: Add routes for organization settings */}
+            {/* TODO: Add routes for evidence uploads, reviews, approvals, exports */}
+          </Route>
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: ChangePath Phase 2b API Contract
+  version: 0.1.0
+  description: Section checkout and concurrency contract defined at the end of Phase 2a.
+paths:
+  /api/cases/{caseId}/sections:
+    get:
+      summary: List section assignments and lock state for a case
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current section assignment state
+  /api/cases/{caseId}/sections/{sectionId}/checkout:
+    post:
+      summary: Check out a section for editing
+      responses:
+        '200':
+          description: Lock acquired
+        '409':
+          description: Section already locked by another user
+  /api/cases/{caseId}/sections/{sectionId}/release:
+    post:
+      summary: Release a checked-out section
+      responses:
+        '200':
+          description: Lock released
+  /api/cases/{caseId}/sections/{sectionId}/force-release:
+    post:
+      summary: Force-release a section lock as case owner or org admin
+      responses:
+        '200':
+          description: Lock force released
+  /api/cases/{caseId}/assessment:
+    put:
+      summary: Save assessment answers with optimistic locking
+      description: |
+        Existing Phase 2a endpoint. In Phase 2b it will additionally validate
+        section locks and reject stale writes with 409 Conflict responses.
+      responses:
+        '200':
+          description: Save accepted
+        '409':
+          description: Stale assessment timestamp or section lock conflict
+components:
+  schemas:
+    SectionAssignment:
+      type: object
+      required: [id, caseId, sectionId, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        caseId:
+          type: string
+          format: uuid
+        sectionId:
+          type: string
+        assignedToUserId:
+          type: string
+          format: uuid
+          nullable: true
+        lockedByUserId:
+          type: string
+          format: uuid
+          nullable: true
+        lockExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [unlocked, checked_out]

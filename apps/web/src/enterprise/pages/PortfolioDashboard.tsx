@@ -92,6 +92,7 @@ export const PortfolioDashboard: React.FC = () => {
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600 }}>Product</th>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600 }}>Status</th>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600 }}>Decision</th>
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600 }}>Due Date</th>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600 }}>Priority</th>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600 }}>Owner</th>
               </tr>
@@ -124,6 +125,9 @@ export const PortfolioDashboard: React.FC = () => {
                     </span>
                   </td>
                   <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 13 }}>{c.currentDecision ?? '—'}</td>
+                  <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 13 }}>
+                    {c.dueDate ? new Date(c.dueDate).toLocaleDateString() : '—'}
+                  </td>
                   <td style={{ padding: '10px 16px' }}>
                     <span style={{ color: PRIORITY_COLORS[c.priority] ?? '#6b7280', fontWeight: 500, fontSize: 13 }}>
                       {c.priority}

@@ -201,6 +201,37 @@ describe('saveAssessment', () => {
     });
   });
 
+  describe('reconciliation logging', () => {
+    it('logs a discrepancy when client provisional execution differs', async () => {
+      vi.mocked(prisma.assessmentResponseSet.findFirst).mockResolvedValue({
+        id: ASSESSMENT_ID,
+        caseId: CASE_ID,
+        answersJson: { A1: '510(k)' },
+        updatedAt: T0,
+      } as never);
+      vi.mocked(prisma.assessmentResponseSet.update).mockResolvedValue({
+        id: ASSESSMENT_ID,
+        updatedAt: T1,
+      } as never);
+
+      await saveAssessment(
+        CASE_ID,
+        {
+          delta: { A2: 'No' },
+          clientDerivedStateJson: { hasGenAI: false },
+          clientEngineOutputJson: { pathway: 'Some other pathway' },
+        },
+        ORG_ID,
+        USER_ID,
+      );
+
+      expect(prisma.auditEvent.create).toHaveBeenCalledTimes(2);
+      const discrepancyAuditCall = vi.mocked(prisma.auditEvent.create).mock.calls[1][0];
+      expect(discrepancyAuditCall.data.entityType).toBe('assessment_reconciliation');
+      expect(discrepancyAuditCall.data.action).toBe('discrepancy_detected');
+    });
+  });
+
   describe('input validation', () => {
     it('throws when neither delta nor answersJson is provided', async () => {
       await expect(

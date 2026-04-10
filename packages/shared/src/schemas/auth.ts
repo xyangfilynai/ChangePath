@@ -45,3 +45,38 @@ export const AuthContextSchema = z.object({
   organization: OrganizationSchema,
 });
 export type AuthContext = z.infer<typeof AuthContextSchema>;
+
+export const LoginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+export type LoginRequest = z.infer<typeof LoginRequestSchema>;
+
+export const SessionTokenSchema = z.object({
+  token: z.string().min(1),
+  expiresAt: z.coerce.date(),
+});
+export type SessionToken = z.infer<typeof SessionTokenSchema>;
+
+export const LoginResponseSchema = AuthContextSchema.extend({
+  session: SessionTokenSchema,
+});
+export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+
+export const RefreshSessionResponseSchema = z.object({
+  session: SessionTokenSchema,
+});
+export type RefreshSessionResponse = z.infer<typeof RefreshSessionResponseSchema>;
+
+export const LogoutResponseSchema = z.object({
+  ok: z.literal(true),
+});
+export type LogoutResponse = z.infer<typeof LogoutResponseSchema>;
+
+export const UpdateOrganizationSettingsSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  planTier: z.string().min(1).max(50).optional(),
+  ssoConfigJson: z.record(z.unknown()).optional().nullable(),
+  dataRetentionPolicyJson: z.record(z.unknown()).optional().nullable(),
+});
+export type UpdateOrganizationSettings = z.infer<typeof UpdateOrganizationSettingsSchema>;

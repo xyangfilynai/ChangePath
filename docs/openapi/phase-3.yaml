@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: ChangePath Phase 3 API Contract
+  version: 0.1.0
+  description: Collaboration contract defined at the end of Phase 2a.
+paths:
+  /api/cases/{caseId}/comments/threads:
+    get:
+      summary: List comment threads for a case
+      responses:
+        '200':
+          description: Thread list
+    post:
+      summary: Create a new comment thread
+      responses:
+        '201':
+          description: Thread created
+  /api/comments/threads/{threadId}/messages:
+    post:
+      summary: Append a message to a thread
+      responses:
+        '201':
+          description: Message created
+  /api/comments/threads/{threadId}/resolve:
+    post:
+      summary: Resolve a thread
+      responses:
+        '200':
+          description: Thread resolved
+  /api/comments/threads/{threadId}/reopen:
+    post:
+      summary: Reopen a resolved thread
+      responses:
+        '200':
+          description: Thread reopened
+  /api/cases/{caseId}/tasks:
+    get:
+      summary: List case tasks
+      responses:
+        '200':
+          description: Task list
+    post:
+      summary: Create a task
+      responses:
+        '201':
+          description: Task created
+  /api/notifications:
+    get:
+      summary: List notifications for the current user
+      responses:
+        '200':
+          description: Notification list
+components:
+  schemas:
+    CommentThread:
+      type: object
+      required: [threadId, caseId, anchorType, status, isBlocking]
+      properties:
+        threadId:
+          type: string
+          format: uuid
+        caseId:
+          type: string
+          format: uuid
+        anchorType:
+          type: string
+          enum: [case, section, question, evidence]
+        anchorId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [open, resolved]
+        isBlocking:
+          type: boolean
+    Task:
+      type: object
+      required: [taskId, caseId, title, status]
+      properties:
+        taskId:
+          type: string
+          format: uuid
+        caseId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, complete, cancelled]
+    Notification:
+      type: object
+      required: [notificationId, type, read, createdAt]
+      properties:
+        notificationId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time

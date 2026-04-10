@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  Answer,
-  AuthPathway,
-  applyCascadeClearingBatch,
-  type Answers,
-} from '@changepath/engine';
+import { Answer, AuthPathway, applyCascadeClearingBatch, type Answers } from '@changepath/engine';
 
 describe('applyCascadeClearingBatch (server-side defence)', () => {
   it('clears downstream when only A1 changed in the candidate', () => {

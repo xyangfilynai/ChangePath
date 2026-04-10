@@ -18,7 +18,7 @@ import {
 } from '@changepath/engine';
 import { QuestionCard } from '../../components/QuestionCard';
 
-const AUTOSAVE_DELAY_MS = 3000;
+const AUTOSAVE_DELAY_MS = 30_000;
 
 /**
  * Reconciliation state machine — describes the relationship between
@@ -40,6 +40,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
   const [activeBlockIndex, setActiveBlockIndex] = useState(0);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [reconciliationMessage, setReconciliationMessage] = useState<string | null>(null);
 
   // Refs hold the latest values for use inside debounced timers and callbacks,
   // avoiding stale-closure bugs where a 3-second-old answer set gets posted.
@@ -48,6 +49,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
   const expectedUpdatedAtRef = useRef<string | null>(null);
   const hasInitializedRef = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconciliationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep refs in lockstep with state.
   useEffect(() => {
@@ -77,14 +79,8 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
 
   // Provisional client-side engine execution (always runs on local state).
   const derivedState = useMemo(() => computeDerivedState(localAnswers), [localAnswers]);
-  const blocks = useMemo(
-    () => getBlocks(localAnswers, derivedState),
-    [localAnswers, derivedState],
-  );
-  const provisionalDetermination = useMemo(
-    () => computeDetermination(localAnswers),
-    [localAnswers],
-  );
+  const blocks = useMemo(() => getBlocks(localAnswers, derivedState), [localAnswers, derivedState]);
+  const provisionalDetermination = useMemo(() => computeDetermination(localAnswers), [localAnswers]);
 
   const currentBlock = blocks[activeBlockIndex];
   const currentFields = useMemo(() => {
@@ -109,6 +105,8 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
 
     const payload: SaveAssessmentPayload = {
       delta: payloadDelta as Record<string, unknown>,
+      clientDerivedStateJson: computeDerivedState(localAnswersRef.current) as Record<string, unknown>,
+      clientEngineOutputJson: computeDetermination(localAnswersRef.current) as unknown as Record<string, unknown>,
       expectedUpdatedAt: expectedUpdatedAtRef.current,
     };
 
@@ -140,6 +138,19 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
         if (data.updatedAt) {
           expectedUpdatedAtRef.current = data.updatedAt;
         }
+        const clientPathway = (payload.clientEngineOutputJson as { pathway?: string } | undefined)?.pathway ?? null;
+        const nextServerPathway = (data.engineOutputJson as { pathway?: string } | null)?.pathway ?? null;
+        if (clientPathway !== null && nextServerPathway !== null && clientPathway !== nextServerPathway) {
+          setReconciliationMessage(
+            'Server recalculated a different authoritative determination. The local view has been updated.',
+          );
+          if (reconciliationTimer.current) {
+            clearTimeout(reconciliationTimer.current);
+          }
+          reconciliationTimer.current = setTimeout(() => {
+            setReconciliationMessage(null);
+          }, 2500);
+        }
         setConflictMessage(null);
       },
       onError: (err: unknown) => {
@@ -155,9 +166,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
           }
           expectedUpdatedAtRef.current = err.conflict.serverUpdatedAt;
           setSyncStatus('conflict');
-          setConflictMessage(
-            'Another save reached the server first. Reconciling and retrying...',
-          );
+          setConflictMessage('Another save reached the server first. Reconciling and retrying...');
           // Retry on the next tick so React Query has settled.
           setTimeout(flushSave, 0);
         } else {
@@ -168,9 +177,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
             }
           }
           setSyncStatus('editing');
-          setConflictMessage(
-            err instanceof Error ? `Save failed: ${err.message}` : 'Save failed',
-          );
+          setConflictMessage(err instanceof Error ? `Save failed: ${err.message}` : 'Save failed');
         }
       },
     });
@@ -203,6 +210,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
 
       setSyncStatus('editing');
       setConflictMessage(null);
+      setReconciliationMessage(null);
 
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
       autosaveTimer.current = setTimeout(flushSave, AUTOSAVE_DELAY_MS);
@@ -221,12 +229,18 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
         clearTimeout(autosaveTimer.current);
         autosaveTimer.current = null;
       }
+      if (reconciliationTimer.current) {
+        clearTimeout(reconciliationTimer.current);
+        reconciliationTimer.current = null;
+      }
       // Best-effort sync flush — fire-and-forget.
       if (Object.keys(pendingDeltaRef.current).length > 0) {
         const payloadDelta = { ...pendingDeltaRef.current };
         pendingDeltaRef.current = {};
         saveAssessment.mutate({
           delta: payloadDelta as Record<string, unknown>,
+          clientDerivedStateJson: computeDerivedState(localAnswersRef.current) as Record<string, unknown>,
+          clientEngineOutputJson: computeDetermination(localAnswersRef.current) as unknown as Record<string, unknown>,
           expectedUpdatedAt: expectedUpdatedAtRef.current,
         });
       }
@@ -245,8 +259,10 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
 
   const provisionalPathway = provisionalDetermination.pathway;
   const serverPathway = (serverDecision as { pathway?: string } | null)?.pathway ?? null;
+  const showProvisionalLabel = syncStatus !== 'idle' || !serverPathway;
   const pathwayMismatch =
-    serverPathway !== null && provisionalPathway !== serverPathway && syncStatus !== 'idle';
+    (serverPathway !== null && provisionalPathway !== serverPathway && syncStatus !== 'idle') ||
+    reconciliationMessage !== null;
 
   const dirty = syncStatus === 'editing' || syncStatus === 'saving' || syncStatus === 'conflict';
 
@@ -266,31 +282,25 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
         }}
       >
         <div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>PROVISIONAL: </span>
-          <span style={{ fontWeight: 600, color: '#059669' }}>{provisionalPathway}</span>
-          {serverPathway && (
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>
+            {showProvisionalLabel ? 'PROVISIONAL: ' : 'AUTHORITATIVE: '}
+          </span>
+          <span style={{ fontWeight: 600, color: showProvisionalLabel ? '#059669' : '#1d4ed8' }}>
+            {showProvisionalLabel ? provisionalPathway : serverPathway}
+          </span>
+          {serverPathway && showProvisionalLabel && (
             <>
               <span style={{ margin: '0 12px', color: '#d1d5db' }}>|</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>SERVER: </span>
               <span style={{ fontWeight: 600, color: '#1d4ed8' }}>{serverPathway}</span>
             </>
           )}
-          {pathwayMismatch && (
-            <span style={{ marginLeft: 12, fontSize: 12, color: '#92400e' }}>
-              recalculating...
-            </span>
-          )}
+          {pathwayMismatch && <span style={{ marginLeft: 12, fontSize: 12, color: '#92400e' }}>recalculating...</span>}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {syncStatus === 'editing' && (
-            <span style={{ fontSize: 12, color: '#d97706' }}>Unsaved changes</span>
-          )}
-          {syncStatus === 'saving' && (
-            <span style={{ fontSize: 12, color: '#6b7280' }}>Saving...</span>
-          )}
-          {syncStatus === 'conflict' && (
-            <span style={{ fontSize: 12, color: '#dc2626' }}>Reconciling...</span>
-          )}
+          {syncStatus === 'editing' && <span style={{ fontSize: 12, color: '#d97706' }}>Unsaved changes</span>}
+          {syncStatus === 'saving' && <span style={{ fontSize: 12, color: '#6b7280' }}>Saving...</span>}
+          {syncStatus === 'conflict' && <span style={{ fontSize: 12, color: '#dc2626' }}>Reconciling...</span>}
           <button
             onClick={handleExplicitSave}
             disabled={saveAssessment.isPending || !dirty}
@@ -317,11 +327,24 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
         </div>
       )}
 
+      {reconciliationMessage && (
+        <div
+          style={{
+            padding: '8px 12px',
+            background: '#fef3c7',
+            color: '#92400e',
+            borderRadius: 6,
+            marginBottom: 16,
+            fontSize: 13,
+          }}
+        >
+          {reconciliationMessage}
+        </div>
+      )}
+
       {/* Completeness summary */}
       {serverAssessment?.completenessStatusJson && (
-        <CompleteSummary
-          status={serverAssessment.completenessStatusJson as unknown as CompletenessData}
-        />
+        <CompleteSummary status={serverAssessment.completenessStatusJson as unknown as CompletenessData} />
       )}
 
       {/* Block navigation */}
@@ -373,9 +396,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
           Previous
         </button>
         <button
-          onClick={() =>
-            setActiveBlockIndex(Math.min(assessmentBlocks.length - 1, activeBlockIndex + 1))
-          }
+          onClick={() => setActiveBlockIndex(Math.min(assessmentBlocks.length - 1, activeBlockIndex + 1))}
           disabled={activeBlockIndex >= assessmentBlocks.length - 1}
           className="btn-continue"
         >

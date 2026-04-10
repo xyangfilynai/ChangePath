@@ -51,6 +51,15 @@ export async function createCase(
     throw new Error('Product not found in organization');
   }
 
+  if (data.caseOwnerUserId) {
+    const caseOwner = await prisma.user.findFirst({
+      where: { id: data.caseOwnerUserId, organizationId },
+    });
+    if (!caseOwner) {
+      throw new Error('Case owner not found in organization');
+    }
+  }
+
   // Lock current engine version
   const engineVersion = await getCurrentEngineVersion();
 
@@ -100,6 +109,15 @@ export async function updateCase(
     where: { id, organizationId },
   });
   if (!existing) return null;
+
+  if (data.caseOwnerUserId) {
+    const caseOwner = await prisma.user.findFirst({
+      where: { id: data.caseOwnerUserId, organizationId },
+    });
+    if (!caseOwner) {
+      throw new Error('Case owner not found in organization');
+    }
+  }
 
   const changeCase = await prisma.changeCase.update({
     where: { id },

@@ -61,6 +61,8 @@ export async function assessmentRoutes(app: FastifyInstance) {
           answersJson: parsed.data.answersJson as
             | Record<string, AnswerValue>
             | undefined,
+          clientDerivedStateJson: parsed.data.clientDerivedStateJson,
+          clientEngineOutputJson: parsed.data.clientEngineOutputJson,
           expectedUpdatedAt: parsed.data.expectedUpdatedAt ?? null,
         },
         request.organization.id,

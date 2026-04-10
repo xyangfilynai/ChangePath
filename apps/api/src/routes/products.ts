@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { CreateProductSchema, UpdateProductSchema } from '@changepath/shared';
+import { requireRole } from '../plugins/auth.js';
 import * as productService from '../services/product-service.js';
 
 export async function productRoutes(app: FastifyInstance) {
@@ -20,6 +21,7 @@ export async function productRoutes(app: FastifyInstance) {
   });
 
   app.post('/api/products', async (request, reply) => {
+    if (!(await requireRole(request, reply, ['org_admin']))) return;
     const parsed = CreateProductSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400).send({ error: 'Validation failed', details: parsed.error.flatten() });
@@ -34,6 +36,7 @@ export async function productRoutes(app: FastifyInstance) {
   });
 
   app.patch<{ Params: { id: string } }>('/api/products/:id', async (request, reply) => {
+    if (!(await requireRole(request, reply, ['org_admin']))) return;
     const parsed = UpdateProductSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400).send({ error: 'Validation failed', details: parsed.error.flatten() });

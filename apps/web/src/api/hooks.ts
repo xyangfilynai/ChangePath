@@ -1,9 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from './client';
+import { api, clearStoredSession, storeSession } from './client';
 import type {
   AuthContext,
+  LoginRequest,
+  LoginResponse,
+  LogoutResponse,
+  RefreshSessionResponse,
   Product,
   CreateProduct,
+  User,
   ChangeCase,
   CreateCase,
   UpdateCase,
@@ -15,7 +20,41 @@ import type {
 export function useMe() {
   return useQuery({
     queryKey: ['me'],
-    queryFn: () => api.get<AuthContext>('/api/me'),
+    queryFn: () => api.get<AuthContext>('/api/auth/session'),
+  });
+}
+
+export function useLogin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: LoginRequest) => api.post<LoginResponse>('/api/auth/login', data),
+    onSuccess: (data) => {
+      storeSession(data.session);
+      qc.setQueryData(['me'], {
+        user: data.user,
+        organization: data.organization,
+      } satisfies AuthContext);
+    },
+  });
+}
+
+export function useRefreshSession() {
+  return useMutation({
+    mutationFn: () => api.post<RefreshSessionResponse>('/api/auth/refresh', {}),
+    onSuccess: (data) => {
+      storeSession(data.session);
+    },
+  });
+}
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<LogoutResponse>('/api/auth/logout', {}),
+    onSettled: () => {
+      clearStoredSession();
+      qc.removeQueries();
+    },
   });
 }
 
@@ -33,6 +72,13 @@ export function useProduct(id: string | undefined) {
     queryKey: ['products', id],
     queryFn: () => api.get<Product>(`/api/products/${id}`),
     enabled: !!id,
+  });
+}
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.get<User[]>('/api/users'),
   });
 }
 
@@ -115,6 +161,10 @@ export interface SaveAssessmentPayload {
   delta?: Record<string, unknown>;
   /** Full snapshot — used for the very first save or after reconciliation. */
   answersJson?: Record<string, unknown>;
+  /** Client-side provisional engine result used for reconciliation logging. */
+  clientEngineOutputJson?: Record<string, unknown>;
+  /** Client-side provisional derived state used for reconciliation logging. */
+  clientDerivedStateJson?: Record<string, unknown>;
   /** ISO timestamp from the latest assessment row the client was working from. */
   expectedUpdatedAt?: string | null;
 }

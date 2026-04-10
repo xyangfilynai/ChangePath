@@ -19,6 +19,10 @@ export const SaveAssessmentSchema = z
     delta: z.record(z.unknown()).optional(),
     /** Full snapshot — used for initial save or after a reconciliation. */
     answersJson: z.record(z.unknown()).optional(),
+    /** Provisional client-side engine result used for reconciliation logging. */
+    clientEngineOutputJson: z.record(z.unknown()).optional(),
+    /** Provisional client-side derived state used for reconciliation logging. */
+    clientDerivedStateJson: z.record(z.unknown()).optional(),
     /**
      * The `updated_at` of the assessment row the client based its edits on.
      * Server rejects with 409 if this is stale (optimistic locking).

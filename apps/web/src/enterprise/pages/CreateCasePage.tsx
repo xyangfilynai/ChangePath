@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProducts, useCreateCase, useMe } from '../../api/hooks';
+import { useProducts, useCreateCase, useMe, useUsers } from '../../api/hooks';
 
 export const CreateCasePage: React.FC = () => {
   const navigate = useNavigate();
   const { data: products, isLoading: productsLoading } = useProducts();
+  const { data: users, isLoading: usersLoading } = useUsers();
   const { data: me } = useMe();
   const createCase = useCreateCase();
 
@@ -14,6 +15,7 @@ export const CreateCasePage: React.FC = () => {
   const [changeType, setChangeType] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
   const [dueDate, setDueDate] = useState('');
+  const [caseOwnerUserId, setCaseOwnerUserId] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,7 @@ export const CreateCasePage: React.FC = () => {
         changeType: changeType || null,
         priority,
         dueDate: dueDate ? new Date(dueDate) : null,
+        caseOwnerUserId: caseOwnerUserId || undefined,
       });
       navigate(`/cases/${result.id}`);
     } catch {
@@ -144,8 +147,30 @@ export const CreateCasePage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ color: '#6b7280', fontSize: 13 }}>
-            Case owner: <strong>{me?.user.name ?? 'Loading...'}</strong> (you)
+          <div>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Case Owner</label>
+            {usersLoading ? (
+              <p style={{ color: '#6b7280' }}>Loading users...</p>
+            ) : (
+              <select
+                value={caseOwnerUserId}
+                onChange={(event) => setCaseOwnerUserId(event.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #d1d5db',
+                  fontSize: 14,
+                }}
+              >
+                <option value="">Assign to me ({me?.user.name ?? 'current user'})</option>
+                {users?.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} — {user.roleType}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {createCase.error && (

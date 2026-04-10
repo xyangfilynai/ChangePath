@@ -1,12 +1,18 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../lib/prisma.js';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import {
+  extractBearerToken,
+  loadAuthenticatedContext,
+  verifySessionToken,
+} from '../services/session-service.js';
 
 /**
  * Development auth plugin.
  *
- * Resolves the current user from an `x-user-id` header (dev stub).
- * In production, this will be replaced with SAML/OIDC middleware
- * that validates a real session/token and injects the same shape.
+ * Primary auth path: signed bearer token returned by `/api/auth/login`.
+ * Legacy dev/test fallback: `x-user-id` header.
+ *
+ * This keeps local development lightweight while preserving the request shape
+ * expected by later SSO-backed implementations.
  */
 
 declare module 'fastify' {
@@ -31,34 +37,56 @@ declare module 'fastify' {
       dataRetentionPolicyJson: unknown;
       createdAt: Date;
     };
+    sessionExpiresAt: Date | null;
   }
 }
 
 export async function authPlugin(app: FastifyInstance) {
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.headers['x-user-id'] as string | undefined;
+    const url = request.raw.url ?? '';
+    if (
+      url.startsWith('/api/health') ||
+      url.startsWith('/api/auth/login') ||
+      url.startsWith('/api/auth/refresh')
+    ) {
+      return;
+    }
+
+    request.sessionExpiresAt = null;
+
+    const session = verifySessionToken(
+      extractBearerToken(request.headers.authorization),
+    );
+    const userId = session?.sub ?? (request.headers['x-user-id'] as string | undefined);
 
     if (!userId) {
-      reply.code(401).send({ error: 'Missing x-user-id header' });
+      reply.code(401).send({ error: 'Authentication required' });
       return;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { organization: true },
-    });
-
-    if (!user) {
-      reply.code(401).send({ error: 'User not found' });
+    const context = await loadAuthenticatedContext(userId);
+    if (!context) {
+      reply.code(401).send({ error: 'User not found or inactive' });
       return;
     }
 
-    if (user.status !== 'active') {
-      reply.code(403).send({ error: 'User account is deactivated' });
-      return;
-    }
-
-    request.currentUser = user;
-    request.organization = user.organization;
+    request.currentUser = context.user;
+    request.organization = context.organization;
+    request.sessionExpiresAt = session ? new Date(session.exp) : null;
   });
+}
+
+export async function requireRole(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  allowedRoles: string[],
+): Promise<boolean> {
+  if (allowedRoles.includes(request.currentUser.roleType)) {
+    return true;
+  }
+
+  reply.code(403).send({
+    error: `Requires one of: ${allowedRoles.join(', ')}`,
+  });
+  return false;
 }

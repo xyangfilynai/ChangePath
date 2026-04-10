@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useCase, FEATURE_FLAGS } from '../../api/hooks';
 import { CaseOverviewTab } from '../components/CaseOverviewTab';
 import { CaseAssessmentTab } from '../components/CaseAssessmentTab';
@@ -21,7 +21,9 @@ const TABS: Array<{ id: TabId; label: string }> = [
 export const CaseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { data: changeCase, isLoading, error } = useCase(id);
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeTab: TabId = TABS.some((tab) => tab.id === tabParam) ? (tabParam as TabId) : 'overview';
 
   if (isLoading) {
     return (
@@ -56,7 +58,7 @@ export const CaseDetailPage: React.FC = () => {
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => setSearchParams({ tab: tab.id })}
             style={{
               padding: '10px 20px',
               fontSize: 14,
