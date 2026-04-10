@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -7,6 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    exclude: ['e2e/**', 'node_modules/**'],
     coverage: {
       reporter: ['text', 'html'],
       thresholds: {
@@ -19,8 +21,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@engine': '/src/lib/assessment-engine',
-      '@content': '/src/lib/content',
+      '@engine': path.resolve(__dirname, '../../packages/engine/src'),
+      '@content': path.resolve(__dirname, 'src/lib/content'),
     },
   },
 });
