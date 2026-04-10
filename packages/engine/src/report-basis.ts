@@ -1,7 +1,7 @@
-import type { DeterminationResult } from './computeDetermination';
-import { computeDerivedState } from './computeDerivedState';
-import { Answer, AuthPathway, type Answers } from './types';
-import { parseNumericAnswer } from './utils';
+import type { DeterminationResult } from './computeDetermination.js';
+import { computeDerivedState } from './computeDerivedState.js';
+import { Answer, AuthPathway, type Answers } from './types.js';
+import { parseNumericAnswer } from './utils.js';
 
 export interface ReportNarrativeView {
   headlineReason: string;

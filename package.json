@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "postinstall": "npm run build --workspace=packages/shared && npm run build --workspace=packages/engine",
     "dev": "npm run dev --workspace=apps/web & npm run dev --workspace=apps/api & wait",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",

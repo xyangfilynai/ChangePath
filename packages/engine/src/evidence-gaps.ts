@@ -3,9 +3,9 @@
  * Produces a structured checklist of open items before an assessment can be relied on.
  */
 
-import type { DeterminationResult } from './computeDetermination';
-import type { SourceClass } from './source-classification';
-import { Answer, AuthPathway, answerIsOneOf, type Answers } from './types';
+import type { DeterminationResult } from './computeDetermination.js';
+import type { SourceClass } from './source-classification.js';
+import { Answer, AuthPathway, answerIsOneOf, type Answers } from './types.js';
 
 export type GapSeverity = 'critical' | 'important' | 'advisory';
 

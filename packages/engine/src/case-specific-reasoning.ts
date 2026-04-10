@@ -5,12 +5,12 @@ import {
   isAnsweredValue,
   answerIsOneOf,
   type Answers,
-} from './types';
-import type { AssessmentField, Block } from './getQuestions';
-import type { DeterminationResult } from './computeDetermination';
-import { ruleReasoningLibrary } from './content';
-import { joinWithAnd, getChangeLabel, getSelectedChangeContext, type SelectedChangeContext } from './change-utils';
-import { parseSources, pushUnique } from './utils';
+} from './types.js';
+import type { AssessmentField, Block } from './getQuestions.js';
+import type { DeterminationResult } from './computeDetermination.js';
+import { ruleReasoningLibrary } from './content/index.js';
+import { joinWithAnd, getChangeLabel, getSelectedChangeContext, type SelectedChangeContext } from './change-utils.js';
+import { parseSources, pushUnique } from './utils.js';
 
 export interface CaseSpecificReasoning {
   ruleKey: string | null;

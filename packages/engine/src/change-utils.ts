@@ -3,8 +3,8 @@
  * Used by review-insights, case-specific-reasoning, and other analysis modules.
  */
 
-import { changeTaxonomy } from './changeTaxonomy';
-import { answerAsString, type Answers } from './types';
+import { changeTaxonomy } from './changeTaxonomy.js';
+import { answerAsString, type Answers } from './types.js';
 
 export interface SelectedChangeContext {
   category: string | null;

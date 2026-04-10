@@ -5,8 +5,8 @@
  * the pathway determination and assessment answers.
  */
 
-import type { DeterminationResult } from './computeDetermination';
-import { AuthPathway, type Answers } from './types';
+import type { DeterminationResult } from './computeDetermination.js';
+import { AuthPathway, type Answers } from './types.js';
 
 export interface ChecklistSection {
   n: number;

@@ -13,8 +13,8 @@
  * editing) and on the server (defensively, before engine execution).
  */
 
-import type { Answers, AnswerValue } from './types';
-import { CATEGORY_INTENDED_USE } from './changeTaxonomy';
+import type { Answers, AnswerValue } from './types.js';
+import { CATEGORY_INTENDED_USE } from './changeTaxonomy.js';
 
 /** Prefixes of field IDs that are downstream of A1. */
 const DOWNSTREAM_OF_A1 = ['B', 'C', 'P', 'D', 'E', 'F'];

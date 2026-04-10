@@ -1,5 +1,5 @@
-import { Answer, AuthPathway, Answers, answerAsString } from './types';
-import { changeTaxonomy, type ChangeTypeDefinition } from './changeTaxonomy';
+import { Answer, AuthPathway, Answers, answerAsString } from './types.js';
+import { changeTaxonomy, type ChangeTypeDefinition } from './changeTaxonomy.js';
 
 /**
  * Derived-state shape expected by getBlockFields / getBlocks.

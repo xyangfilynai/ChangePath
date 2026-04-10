@@ -1,6 +1,6 @@
-import { Answer, AuthPathway, Pathway, Answers, answerIsOneOf } from './types';
-import { CATEGORY_POST_MARKET, CHANGE_MONITORING_THRESHOLD_PREFIX } from './changeTaxonomy';
-import { parseNumericAnswer } from './utils';
+import { Answer, AuthPathway, Pathway, Answers, answerIsOneOf } from './types.js';
+import { CATEGORY_POST_MARKET, CHANGE_MONITORING_THRESHOLD_PREFIX } from './changeTaxonomy.js';
+import { parseNumericAnswer } from './utils.js';
 
 type PathwayValue = (typeof Pathway)[keyof typeof Pathway];
 

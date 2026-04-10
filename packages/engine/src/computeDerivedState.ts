@@ -1,5 +1,5 @@
-import { Answer, AuthPathway, Answers, answerAsArray } from './types';
-import { CATEGORY_INTENDED_USE } from './changeTaxonomy';
+import { Answer, AuthPathway, Answers, answerAsArray } from './types.js';
+import { CATEGORY_INTENDED_USE } from './changeTaxonomy.js';
 
 export const computeDerivedState = (answers: Answers) => {
   return {

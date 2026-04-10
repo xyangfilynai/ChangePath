@@ -1,8 +1,8 @@
-import type { DeterminationResult } from './computeDetermination';
-import type { EvidenceGap, GapSeverity } from './evidence-gaps';
-import { joinWithAnd, getChangeLabel, getSelectedChangeContext } from './change-utils';
-import { Answer, type Answers } from './types';
-import { parseSources } from './utils';
+import type { DeterminationResult } from './computeDetermination.js';
+import type { EvidenceGap, GapSeverity } from './evidence-gaps.js';
+import { joinWithAnd, getChangeLabel, getSelectedChangeContext } from './change-utils.js';
+import { Answer, type Answers } from './types.js';
+import { parseSources } from './utils.js';
 
 export interface ReviewInsightItem {
   id: string;

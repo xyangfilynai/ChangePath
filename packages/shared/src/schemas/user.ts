@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RoleType, UserStatus, UserSchema } from './auth';
+import { RoleType, UserStatus, UserSchema } from './auth.js';
 
 export { RoleType, UserStatus, UserSchema };
 
