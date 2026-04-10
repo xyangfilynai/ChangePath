@@ -5,9 +5,19 @@
   "installCommand": "npm install",
   "framework": "vite",
   "functions": {
-    "api/[...route].ts": {
+    "api/index.ts": {
       "includeFiles": "node_modules/.prisma/client/**",
       "maxDuration": 60
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api?__pathname=/api"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api?__pathname=/api/$1"
+    }
+  ]
 }
