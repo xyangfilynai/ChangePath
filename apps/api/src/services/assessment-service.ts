@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import {
   applyCascadeClearingBatch,
+  isAnsweredValue,
   type Answers,
   type AnswerValue,
 } from '@changepath/engine';
@@ -41,6 +42,39 @@ function stableStringify(value: unknown): string {
   }
 
   return JSON.stringify(value);
+}
+
+function getChangedAnswerKeys(before: Answers, after: Answers): string[] {
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+
+  return Array.from(keys)
+    .filter((key) => stableStringify(before[key]) !== stableStringify(after[key]))
+    .sort();
+}
+
+function countAnsweredFields(answers: Answers): number {
+  return Object.values(answers).filter((value) => isAnsweredValue(value)).length;
+}
+
+function readPathway(value: unknown): string | null {
+  return typeof (value as { pathway?: unknown } | null)?.pathway === 'string'
+    ? ((value as { pathway: string }).pathway)
+    : null;
+}
+
+function buildAssessmentAuditSnapshot(
+  answers: Answers,
+  engineOutputJson: unknown,
+  completenessStatusJson: unknown,
+  changedFieldIds: string[],
+) {
+  return {
+    pathway: readPathway(engineOutputJson),
+    answerCount: countAnsweredFields(answers),
+    changedFieldIds,
+    answersJson: answers,
+    completenessStatusJson: completenessStatusJson ?? null,
+  };
 }
 
 export async function getAssessment(caseId: string, organizationId: string) {
@@ -126,6 +160,7 @@ export async function saveAssessment(
   // Defensively re-apply cascade clearing on the server. The client should
   // already have applied this, but the engine cannot trust client state.
   const cleanedAnswers = applyCascadeClearingBatch(mergedAnswers, baselineAnswers);
+  const changedFieldIds = getChangedAnswerKeys(baselineAnswers, cleanedAnswers);
 
   // Run authoritative engine execution
   const { derivedState, determination, completenessStatus } =
@@ -178,10 +213,24 @@ export async function saveAssessment(
     entityId: assessment.id,
     action: existingAssessment ? 'update' : 'create',
     beforeJson: existingAssessment
-      ? { answersJson: existingAssessment.answersJson as Prisma.InputJsonValue }
+      ? buildAssessmentAuditSnapshot(
+          baselineAnswers,
+          existingAssessment.engineOutputJson,
+          existingAssessment.completenessStatusJson,
+          changedFieldIds,
+        )
       : null,
-    afterJson: { answersJson: toJsonValue(cleanedAnswers) },
+    afterJson: buildAssessmentAuditSnapshot(
+      cleanedAnswers,
+      determination,
+      completenessStatus,
+      changedFieldIds,
+    ),
     performedByUserId: userId,
+    reason:
+      changedFieldIds.length > 0
+        ? `${changedFieldIds.length} answer field${changedFieldIds.length === 1 ? '' : 's'} changed`
+        : 'Assessment recalculated without answer changes',
   });
 
   if (clientServerDiscrepancy) {
@@ -194,8 +243,11 @@ export async function saveAssessment(
       beforeJson: {
         clientDerivedStateJson: input.clientDerivedStateJson ?? null,
         clientEngineOutputJson: input.clientEngineOutputJson ?? null,
+        clientPathway: readPathway(input.clientEngineOutputJson ?? null),
       },
       afterJson: {
+        changedFieldIds,
+        pathway: determination.pathway,
         answersJson: cleanedAnswers,
         serverDerivedStateJson: derivedState,
         serverEngineOutputJson: determination,

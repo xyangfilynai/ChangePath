@@ -140,6 +140,15 @@ describe('saveAssessment', () => {
         A2: 'Yes', // updated by delta
         A6: ['LLM / Large Language Model'], // preserved
       });
+
+      const auditCall = vi.mocked(prisma.auditEvent.create).mock.calls[0][0];
+      expect(auditCall.data.entityType).toBe('assessment_response_set');
+      expect(auditCall.data.reason).toBe('1 answer field changed');
+      expect(auditCall.data.afterJson).toMatchObject({
+        pathway: 'Assessment Incomplete',
+        changedFieldIds: ['A2'],
+        answerCount: 3,
+      });
     });
 
     it('applies cascade clearing defensively even when client only sent A1', async () => {
@@ -229,6 +238,12 @@ describe('saveAssessment', () => {
       const discrepancyAuditCall = vi.mocked(prisma.auditEvent.create).mock.calls[1][0];
       expect(discrepancyAuditCall.data.entityType).toBe('assessment_reconciliation');
       expect(discrepancyAuditCall.data.action).toBe('discrepancy_detected');
+      expect(discrepancyAuditCall.data.beforeJson).toMatchObject({
+        clientPathway: 'Some other pathway',
+      });
+      expect(discrepancyAuditCall.data.afterJson).toMatchObject({
+        changedFieldIds: ['A2'],
+      });
     });
   });
 
