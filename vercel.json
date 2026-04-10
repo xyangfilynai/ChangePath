@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build --workspace=apps/web",
+  "buildCommand": "npm run db:generate --workspace=apps/api && npm run build --workspace=apps/web",
   "outputDirectory": "apps/web/dist",
   "installCommand": "npm install",
   "framework": "vite",
   "functions": {
     "api/[...route].ts": {
-      "includeFiles": "apps/api/prisma/**",
+      "includeFiles": "node_modules/.prisma/client/**",
       "maxDuration": 60
     }
   }
