@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 
 interface CreateAuditEventInput {
@@ -6,8 +7,8 @@ interface CreateAuditEventInput {
   entityType: string;
   entityId: string;
   action: string;
-  beforeJson?: Record<string, unknown> | null;
-  afterJson?: Record<string, unknown> | null;
+  beforeJson?: Record<string, unknown> | Prisma.InputJsonValue | null;
+  afterJson?: Record<string, unknown> | Prisma.InputJsonValue | null;
   performedByUserId: string;
   reason?: string | null;
   ipAddress?: string | null;
@@ -21,8 +22,8 @@ export async function createAuditEvent(input: CreateAuditEventInput) {
       entityType: input.entityType,
       entityId: input.entityId,
       action: input.action,
-      beforeJson: input.beforeJson ?? null,
-      afterJson: input.afterJson ?? null,
+      beforeJson: (input.beforeJson as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+      afterJson: (input.afterJson as Prisma.InputJsonValue) ?? Prisma.JsonNull,
       performedByUserId: input.performedByUserId,
       reason: input.reason ?? null,
       ipAddress: input.ipAddress ?? null,

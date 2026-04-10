@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -152,8 +152,8 @@ async function main() {
         isPMA: false,
         isDeNovo: false,
       },
-      engineOutputJson: null, // Will be computed on first save
-      completenessStatusJson: null,
+      engineOutputJson: Prisma.JsonNull, // Will be computed on first save
+      completenessStatusJson: Prisma.JsonNull,
       updatedByUserId: MEMBER_USER_ID,
     },
   });
@@ -166,7 +166,7 @@ async function main() {
       entityType: 'change_case',
       entityId: CASE_1_ID,
       action: 'create',
-      afterJson: changeCase as unknown as Record<string, unknown>,
+      afterJson: changeCase as unknown as Prisma.InputJsonValue,
       performedByUserId: ADMIN_USER_ID,
     },
   });

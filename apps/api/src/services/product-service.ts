@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { createAuditEvent } from './audit-service.js';
 import type { CreateProduct, UpdateProduct } from '@changepath/shared';
@@ -30,7 +31,9 @@ export async function createProduct(
       predicateDevice: data.predicateDevice ?? null,
       pccpStatus: data.pccpStatus,
       softwareLevelOfConcern: data.softwareLevelOfConcern,
-      jurisdictionsJson: data.jurisdictionsJson ?? null,
+      jurisdictionsJson: data.jurisdictionsJson
+        ? (data.jurisdictionsJson as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
   });
 
@@ -39,7 +42,7 @@ export async function createProduct(
     entityType: 'product',
     entityId: product.id,
     action: 'create',
-    afterJson: product as unknown as Record<string, unknown>,
+    afterJson: product as unknown as Prisma.InputJsonValue,
     performedByUserId: userId,
   });
 
@@ -57,18 +60,23 @@ export async function updateProduct(
   });
   if (!existing) return null;
 
+  const updateData: Prisma.ProductUpdateInput = {};
+  if (data.productName !== undefined) updateData.productName = data.productName;
+  if (data.deviceFamily !== undefined) updateData.deviceFamily = data.deviceFamily;
+  if (data.deviceClass !== undefined) updateData.deviceClass = data.deviceClass;
+  if (data.regulatoryPathwayBaseline !== undefined) updateData.regulatoryPathwayBaseline = data.regulatoryPathwayBaseline;
+  if (data.predicateDevice !== undefined) updateData.predicateDevice = data.predicateDevice;
+  if (data.pccpStatus !== undefined) updateData.pccpStatus = data.pccpStatus;
+  if (data.softwareLevelOfConcern !== undefined) updateData.softwareLevelOfConcern = data.softwareLevelOfConcern;
+  if (data.jurisdictionsJson !== undefined) {
+    updateData.jurisdictionsJson = data.jurisdictionsJson
+      ? (data.jurisdictionsJson as Prisma.InputJsonValue)
+      : Prisma.JsonNull;
+  }
+
   const product = await prisma.product.update({
     where: { id },
-    data: {
-      ...(data.productName !== undefined && { productName: data.productName }),
-      ...(data.deviceFamily !== undefined && { deviceFamily: data.deviceFamily }),
-      ...(data.deviceClass !== undefined && { deviceClass: data.deviceClass }),
-      ...(data.regulatoryPathwayBaseline !== undefined && { regulatoryPathwayBaseline: data.regulatoryPathwayBaseline }),
-      ...(data.predicateDevice !== undefined && { predicateDevice: data.predicateDevice }),
-      ...(data.pccpStatus !== undefined && { pccpStatus: data.pccpStatus }),
-      ...(data.softwareLevelOfConcern !== undefined && { softwareLevelOfConcern: data.softwareLevelOfConcern }),
-      ...(data.jurisdictionsJson !== undefined && { jurisdictionsJson: data.jurisdictionsJson }),
-    },
+    data: updateData,
   });
 
   await createAuditEvent({
@@ -76,8 +84,8 @@ export async function updateProduct(
     entityType: 'product',
     entityId: product.id,
     action: 'update',
-    beforeJson: existing as unknown as Record<string, unknown>,
-    afterJson: product as unknown as Record<string, unknown>,
+    beforeJson: existing as unknown as Prisma.InputJsonValue,
+    afterJson: product as unknown as Prisma.InputJsonValue,
     performedByUserId: userId,
   });
 

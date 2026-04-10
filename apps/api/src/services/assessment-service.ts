@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { createAuditEvent } from './audit-service.js';
 import { executeEngine } from './engine-executor.js';
@@ -5,6 +6,10 @@ import { executeEngine } from './engine-executor.js';
 export { executeEngine } from './engine-executor.js';
 
 const SCHEMA_VERSION = '1.0.0';
+
+/** Helper to cast values for Prisma JSON columns. */
+const toJsonValue = (value: unknown): Prisma.InputJsonValue =>
+  value as Prisma.InputJsonValue;
 
 export async function getAssessment(caseId: string, organizationId: string) {
   // Verify case belongs to org
@@ -48,10 +53,10 @@ export async function saveAssessment(
     ? await prisma.assessmentResponseSet.update({
         where: { id: existingAssessment.id },
         data: {
-          answersJson,
-          derivedStateJson: derivedState as unknown as Record<string, unknown>,
-          engineOutputJson: determination as unknown as Record<string, unknown>,
-          completenessStatusJson: completenessStatus as unknown as Record<string, unknown>,
+          answersJson: toJsonValue(answersJson),
+          derivedStateJson: toJsonValue(derivedState),
+          engineOutputJson: toJsonValue(determination),
+          completenessStatusJson: toJsonValue(completenessStatus),
           updatedByUserId: userId,
         },
       })
@@ -59,10 +64,10 @@ export async function saveAssessment(
         data: {
           caseId,
           schemaVersion: SCHEMA_VERSION,
-          answersJson,
-          derivedStateJson: derivedState as unknown as Record<string, unknown>,
-          engineOutputJson: determination as unknown as Record<string, unknown>,
-          completenessStatusJson: completenessStatus as unknown as Record<string, unknown>,
+          answersJson: toJsonValue(answersJson),
+          derivedStateJson: toJsonValue(derivedState),
+          engineOutputJson: toJsonValue(determination),
+          completenessStatusJson: toJsonValue(completenessStatus),
           updatedByUserId: userId,
         },
       });
@@ -84,9 +89,9 @@ export async function saveAssessment(
     entityId: assessment.id,
     action: existingAssessment ? 'update' : 'create',
     beforeJson: existingAssessment
-      ? { answersJson: existingAssessment.answersJson }
+      ? { answersJson: existingAssessment.answersJson as Prisma.InputJsonValue }
       : null,
-    afterJson: { answersJson },
+    afterJson: { answersJson: toJsonValue(answersJson) },
     performedByUserId: userId,
   });
 
